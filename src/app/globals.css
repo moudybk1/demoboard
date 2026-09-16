@@ -1,16 +1,13 @@
-/* Fredoka for the toy UI · Press Start kept only for the BOARD wordmark. */
-@import "@fontsource/fredoka/500.css";
-@import "@fontsource/fredoka/600.css";
-@import "@fontsource/fredoka/700.css";
-@import "@fontsource/press-start-2p/400.css";
+/* Pixelify Sans: pixel letterforms that stay readable at UI sizes. */
+@import "@fontsource/pixelify-sans/400.css";
+@import "@fontsource/pixelify-sans/500.css";
+@import "@fontsource/pixelify-sans/600.css";
+@import "@fontsource/pixelify-sans/700.css";
 @import "tailwindcss";
 
 /* ==========================================================================
-   BOARD design system (cartoon playground)
-   Sunny sky + green felt table + chocolate outlines + jelly buttons.
-   Fun to sit down and play · not a CRT cabinet.
-   Backup of the prior phosphor CRT theme:
-   src/app/themes/backup-phosphor-crt/globals.css
+   BOARD design system (cartoon pixel playground)
+   Candy colors + chocolate outlines + jelly press, rendered as 16-bit toys.
    ========================================================================== */
 @theme {
   /* Chocolate ink · used for outlines, button labels, and dark overlays */
@@ -41,10 +38,10 @@
   --color-success: #1a9f4b;
   --color-felt: #2ecf7a;
 
-  --font-pixel: "Fredoka", "Trebuchet MS", sans-serif;
-  --font-sans: "Fredoka", "Trebuchet MS", sans-serif;
-  --font-mono: "Fredoka", "Trebuchet MS", sans-serif;
-  --font-mark: "Press Start 2P", "Fredoka", monospace;
+  --font-pixel: "Pixelify Sans", "Trebuchet MS", sans-serif;
+  --font-sans: "Pixelify Sans", "Trebuchet MS", sans-serif;
+  --font-mono: "Pixelify Sans", ui-monospace, monospace;
+  --font-mark: "Pixelify Sans", "Trebuchet MS", sans-serif;
 
   --spacing-px-1: 4px;
   --spacing-px-2: 8px;
@@ -71,11 +68,11 @@
   --z-toast: 60;
   --z-modal: 70;
 
-  /* Chunky storybook elevation · thick bottom lip, not a blur shadow */
-  --shadow-pixel: 0 6px 0 0 var(--color-void);
-  --shadow-pixel-sm: 0 3px 0 0 var(--color-void);
-  --shadow-pixel-lg: 0 10px 0 0 var(--color-void);
-  --shadow-pixel-gold: 0 6px 0 0 var(--color-gold-deep);
+  /* Classic 8-bit offset shadow, snapped to the 4px grid */
+  --shadow-pixel: 4px 4px 0 0 var(--color-void);
+  --shadow-pixel-sm: 2px 2px 0 0 var(--color-void);
+  --shadow-pixel-lg: 6px 6px 0 0 var(--color-void);
+  --shadow-pixel-gold: 4px 4px 0 0 var(--color-gold-deep);
 
   --duration-instant: 100ms;
   --duration-fast: 180ms;
@@ -88,7 +85,7 @@
   --animate-scan: scan 8s linear infinite;
   --animate-pixel-pop: pixel-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-slide-up: slide-up 360ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
-  --animate-wiggle: wiggle 700ms ease-in-out infinite;
+  --animate-wiggle: wiggle 700ms steps(4, end) infinite;
 }
 
 @keyframes float {
@@ -97,7 +94,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-8px);
   }
 }
 
@@ -134,26 +131,26 @@
 
 @keyframes pixel-pop {
   0% {
-    transform: scale(0.82) rotate(-3deg);
+    transform: scale(0.82);
     opacity: 0;
   }
   70% {
-    transform: scale(1.06) rotate(1deg);
+    transform: scale(1.06);
     opacity: 1;
   }
   100% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
     opacity: 1;
   }
 }
 
 @keyframes slide-up {
   from {
-    transform: translateY(14px) scale(0.98);
+    transform: translateY(12px);
     opacity: 0;
   }
   to {
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -161,10 +158,13 @@
 @keyframes wiggle {
   0%,
   100% {
-    transform: rotate(-1.4deg);
+    transform: rotate(0deg);
   }
-  50% {
-    transform: rotate(1.4deg);
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
   }
 }
 
@@ -179,80 +179,68 @@
   }
 
   /*
-    Cartoon playground:
-    - Sky wash + lemon sun in the corner
-    - Soft hills of felt at the bottom
-    - Candy blooms (sky / pink / mint) so Monopoly and Ludo share the table
+    Cartoon pixel playground:
+    - Hard-edged sky, sun, clouds, and felt hills
+    - 4px grid overlay so UI chrome sits on a sprite sheet
   */
   body {
     position: relative;
+    isolation: isolate;
     min-height: 100dvh;
     color: var(--color-parchment);
-    font-family: "Fredoka", "Trebuchet MS", sans-serif;
-    font-size: 16px;
+    font-family: var(--font-pixel);
+    font-size: 17px;
     font-weight: 500;
-    line-height: 1.5;
-    letter-spacing: 0.01em;
+    line-height: 1.55;
+    letter-spacing: 0.03em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #7ed6ff;
-    background-image:
-      radial-gradient(circle at 88% 8%, #ffe566 0 7%, transparent 8%),
-      radial-gradient(
-        ellipse 70% 45% at 12% -10%,
-        #fff7d1 0%,
-        transparent 62%
-      ),
-      radial-gradient(
-        ellipse 50% 40% at 100% 30%,
-        color-mix(in srgb, var(--color-ludo) 28%, transparent),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 45% 35% at 0% 70%,
-        color-mix(in srgb, var(--color-monopoly) 26%, transparent),
-        transparent 68%
-      ),
-      radial-gradient(
-        ellipse 90% 40% at 50% 115%,
-        #2ecf7a 0%,
-        #25b56a 38%,
-        transparent 70%
-      ),
-      linear-gradient(180deg, #9ae4ff 0%, #7ed6ff 42%, #b8f0c8 100%);
-    background-attachment: fixed;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Soft paper grain only · no CRT grit */
+  /* Pixel sky/hills + 4px grid. Isolated so type and icons stay crisp. */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
-    z-index: 80;
+    z-index: -1;
     pointer-events: none;
-    opacity: 0.18;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-    background-size: 180px 180px;
-    mix-blend-mode: multiply;
+    background-color: #7ed6ff;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0 3px,
+        rgba(45, 23, 12, 0.05) 3px 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent 0 3px,
+        rgba(45, 23, 12, 0.04) 3px 4px
+      ),
+      url("/pixel-playground.svg");
+    background-repeat: repeat, repeat, no-repeat;
+    background-position: 0 0, 0 0, center top;
+    background-size: auto, auto, cover;
+    background-attachment: fixed;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
 
-  /* Optional confetti dots (settings "scanlines" toggle) */
+  /* Optional confetti squares (settings "scanlines" toggle) */
   body::after {
     content: "";
     position: fixed;
     inset: 0;
     z-index: 81;
     pointer-events: none;
-    opacity: 0.16;
-    background-image:
-      radial-gradient(circle at 12% 18%, #ffd23a 0 3px, transparent 4px),
-      radial-gradient(circle at 78% 22%, #e83f86 0 2px, transparent 3px),
-      radial-gradient(circle at 32% 64%, #fff 0 2.5px, transparent 3.5px),
-      radial-gradient(circle at 88% 70%, #1298c9 0 3px, transparent 4px),
-      radial-gradient(circle at 54% 40%, #2ecf7a 0 2px, transparent 3px);
+    opacity: 0.55;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background-image: url("/pixel-confetti.svg");
     background-size: 180px 180px;
+    background-repeat: repeat;
   }
 
   html[data-scanlines="off"] body::after {
@@ -262,14 +250,17 @@
   img[data-pixel],
   canvas,
   [data-pixel] {
-    image-rendering: auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
 
   .font-pixel,
+  .font-mark,
   .font-sans,
   .font-mono {
-    font-family: "Fredoka", "Trebuchet MS", sans-serif;
-    letter-spacing: 0.01em;
+    font-family: var(--font-pixel);
+    letter-spacing: 0.04em;
+    line-height: 1.45;
   }
 
   ::selection {
@@ -312,13 +303,17 @@
    -------------------------------------------------------------------------- */
 
 @utility pixel-corners {
-  border-radius: 1.25rem;
+  border-radius: 4px;
+}
+
+@utility pixel-corners-lg {
+  border-radius: 8px;
 }
 
 @utility font-mark {
-  font-family: var(--font-mark);
-  letter-spacing: 0.08em;
-  line-height: 1.2;
+  font-family: var(--font-pixel);
+  letter-spacing: 0.04em;
+  line-height: 1.45;
 }
 
 @utility scanlines {
@@ -329,22 +324,22 @@
     inset: 0;
     pointer-events: none;
     border-radius: inherit;
-    opacity: 0.35;
-    background-image:
-      radial-gradient(circle at 18% 24%, #ffd23a 0 4px, transparent 5px),
-      radial-gradient(circle at 82% 70%, #e83f86 0 3px, transparent 4px);
+    opacity: 0.45;
+    image-rendering: pixelated;
+    background-image: url("/pixel-confetti.svg");
+    background-size: 120px 120px;
+    background-repeat: repeat;
   }
 }
 
 @utility text-shadow-pixel {
-  text-shadow: 2px 3px 0 color-mix(in srgb, var(--color-cream) 80%, transparent);
+  text-shadow: 3px 3px 0 color-mix(in srgb, var(--color-void) 35%, transparent);
 }
 
 @utility font-pixel {
   font-family: var(--font-pixel);
-  letter-spacing: 0.01em;
-  line-height: 1.35;
-  font-weight: 650;
+  letter-spacing: 0.04em;
+  line-height: 1.45;
 }
 
 @utility board-atmosphere {
@@ -359,12 +354,12 @@
     background:
       radial-gradient(
         ellipse 55% 40% at 90% 0%,
-        color-mix(in srgb, var(--color-gold) 35%, transparent),
+        color-mix(in srgb, var(--color-gold) 28%, transparent),
         transparent 62%
       ),
       radial-gradient(
         ellipse 45% 40% at 0% 80%,
-        color-mix(in srgb, var(--color-ludo) 22%, transparent),
+        color-mix(in srgb, var(--color-ludo) 18%, transparent),
         transparent 65%
       );
   }
@@ -373,23 +368,22 @@
 @utility felt-stage {
   position: relative;
   border: 4px solid var(--color-void);
-  border-radius: 2rem;
+  border-radius: 8px;
   background:
-    radial-gradient(
-      ellipse 80% 55% at 50% 0%,
-      rgba(255, 255, 255, 0.22),
-      transparent 58%
-    ),
     repeating-linear-gradient(
       90deg,
-      transparent 0 22px,
-      rgba(255, 255, 255, 0.05) 22px 23px
+      transparent 0 7px,
+      rgba(45, 23, 12, 0.08) 7px 8px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 7px,
+      rgba(255, 255, 255, 0.08) 7px 8px
     ),
     linear-gradient(180deg, #3ee08a 0%, #22c36e 100%);
   box-shadow:
-    0 10px 0 0 var(--color-void),
-    inset 0 0 0 10px color-mix(in srgb, var(--color-void) 16%, transparent),
-    inset 0 12px 0 0 rgba(255, 255, 255, 0.12);
+    6px 6px 0 0 var(--color-void),
+    inset 0 0 0 8px color-mix(in srgb, var(--color-void) 16%, transparent);
 }
 
 @utility board-container {
@@ -415,8 +409,8 @@
 
 @utility pixel-inset {
   box-shadow:
-    inset 0 3px 0 0 color-mix(in srgb, var(--color-void) 18%, transparent),
-    inset 0 -2px 0 0 rgba(255, 255, 255, 0.35);
+    inset 2px 2px 0 0 color-mix(in srgb, var(--color-void) 22%, transparent),
+    inset -2px -2px 0 0 rgba(255, 255, 255, 0.35);
 }
 
 @utility text-pixel-fluid-sm {

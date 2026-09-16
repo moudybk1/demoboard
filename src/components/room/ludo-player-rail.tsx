@@ -65,14 +65,14 @@ function LudoPlayerCard({
           aria-hidden
           className={cn("size-3 shrink-0 border-2 border-void/40", color.bg)}
         />
-        <span className={cn("truncate font-pixel text-[9px] sm:text-[10px]", color.text)}>
+        <span className={cn("truncate font-pixel text-xs sm:text-[10px]", color.text)}>
           {player.username}
         </span>
         {player.isYou && (
-          <span className="font-pixel text-[8px] uppercase text-faint">You</span>
+          <span className="font-pixel text-xs uppercase text-faint">You</span>
         )}
         {active && !done && (
-          <span className="ml-auto font-pixel text-[8px] uppercase text-gold animate-blink">
+          <span className="ml-auto font-pixel text-xs uppercase text-gold animate-blink">
             Turn
           </span>
         )}

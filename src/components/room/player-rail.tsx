@@ -58,7 +58,7 @@ function PlayerCard({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate font-pixel text-[6px] leading-tight",
+            "truncate font-pixel text-[10px] leading-tight",
             out ? "text-faint line-through" : color.text,
           )}
         >
@@ -73,7 +73,7 @@ function PlayerCard({
               tone="default"
               showTicker={false}
             />
-            <span className="flex items-center gap-0.5 font-pixel text-[6px] text-faint">
+            <span className="flex items-center gap-0.5 font-pixel text-[10px] text-faint">
               <Landmark className="size-2" aria-hidden />
               {player.owned}
             </span>

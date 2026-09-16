@@ -93,7 +93,7 @@ export function CaptureBurst({
     >
       <span
         data-label
-        className="absolute left-1/2 top-[-1.4rem] -translate-x-1/2 font-pixel text-[8px] uppercase text-gold text-shadow-pixel"
+        className="absolute left-1/2 top-[-1.4rem] -translate-x-1/2 font-pixel text-xs uppercase text-gold text-shadow-pixel"
       >
         Captured!
       </span>

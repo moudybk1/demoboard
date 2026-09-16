@@ -138,7 +138,7 @@ export function ProfileMenu({ className }: { className?: string }) {
           playSfx("ui_click");
           setOpen((v) => !v);
         }}
-        className="inline-flex max-w-[10.5rem] items-center justify-center rounded-full border-[3px] border-void bg-gold px-3 py-2 font-pixel text-xs font-bold uppercase text-void shadow-pixel-sm transition-[transform,box-shadow,background-color] duration-100 hover:bg-[#ffe566] active:translate-y-[3px] active:shadow-none sm:text-sm"
+        className="inline-flex max-w-[10.5rem] items-center justify-center pixel-corners border-[3px] border-void bg-gold px-3 py-2 font-pixel text-xs font-semibold uppercase leading-none text-void shadow-pixel-sm transition-[transform,box-shadow,background-color] duration-100 hover:bg-[#ffe566] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none sm:text-[10px]"
       >
         <span className="truncate">
           {authLoading ? "…" : label}
@@ -148,29 +148,29 @@ export function ProfileMenu({ className }: { className?: string }) {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-[55] w-[min(18.5rem,calc(100vw-1.5rem))] rounded-[1.35rem] border-[3px] border-void bg-surface shadow-pixel-lg"
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-[55] w-[min(18.5rem,calc(100vw-1.5rem))] pixel-corners-lg border-[3px] border-void bg-surface shadow-pixel-lg"
         >
           <div className="border-b-2 border-edge px-3 py-3">
-            <p className="font-pixel text-xs font-bold uppercase tracking-wide text-gold-deep">
+            <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
               Profile
             </p>
-            <p className="mt-2 break-all font-pixel text-sm text-parchment">
+            <p className="mt-2 break-all font-pixel text-sm font-bold text-parchment">
               {address ? shortenAddress(address, 6) : "—"}
             </p>
             {user?.username ? (
-              <p className="mt-1 font-pixel text-[8px] uppercase text-faint">
+              <p className="mt-1 font-pixel text-xs uppercase text-faint">
                 {user.username}
               </p>
             ) : null}
           </div>
 
           <div className="border-b-2 border-edge px-3 py-3">
-            <p className="font-pixel text-[8px] uppercase tracking-wider text-faint">
+            <p className="font-pixel text-xs uppercase tracking-wider text-faint">
               Balance
             </p>
             <div className="mt-2 flex items-end justify-between gap-3">
               <div>
-                <p className="font-pixel text-[8px] uppercase text-muted">
+                <p className="font-pixel text-xs uppercase text-muted">
                   Available
                 </p>
                 <p className="mt-1 font-pixel text-[12px] text-gold">
@@ -180,7 +180,7 @@ export function ProfileMenu({ className }: { className?: string }) {
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-pixel text-[8px] uppercase text-muted">
+                <p className="font-pixel text-xs uppercase text-muted">
                   Locked
                 </p>
                 <p className="mt-1 font-pixel text-[10px] text-parchment">
@@ -188,18 +188,18 @@ export function ProfileMenu({ className }: { className?: string }) {
                 </p>
               </div>
             </div>
-            <p className="mt-2 font-pixel text-[8px] uppercase text-faint">
+            <p className="mt-2 font-pixel text-xs uppercase text-faint">
               Available to stake
             </p>
           </div>
 
           <div className="border-b-2 border-edge px-3 py-3">
-            <p className="font-pixel text-[8px] uppercase tracking-wider text-faint">
+            <p className="font-pixel text-xs uppercase tracking-wider text-faint">
               Game history
             </p>
 
             {winsLoading ? (
-              <p className="mt-3 font-pixel text-[8px] uppercase text-muted">
+              <p className="mt-3 font-pixel text-xs uppercase text-muted">
                 Loading…
               </p>
             ) : wins.length === 0 ? (
@@ -214,14 +214,14 @@ export function ProfileMenu({ className }: { className?: string }) {
                     className="flex items-center justify-between gap-2 border border-edge bg-surface/40 px-2 py-2"
                   >
                     <span className="min-w-0">
-                      <span className="block font-pixel text-[8px] uppercase text-parchment">
+                      <span className="block font-pixel text-xs uppercase text-parchment">
                         {win.gameType}
                       </span>
-                      <span className="mt-1 block font-pixel text-[7px] uppercase text-faint">
+                      <span className="mt-1 block font-pixel text-[11px] uppercase text-faint">
                         {formatAge(win.settledAt, winsLoadedAt)}
                       </span>
                     </span>
-                    <span className="shrink-0 font-pixel text-[9px] text-gold">
+                    <span className="shrink-0 font-pixel text-xs text-gold">
                       +{formatBoard(win.netPayout)}
                     </span>
                   </li>
@@ -234,7 +234,7 @@ export function ProfileMenu({ className }: { className?: string }) {
             <Link
               href="/account"
               role="menuitem"
-              className="rounded-full inline-flex items-center justify-center border-[3px] border-void bg-cream px-3 py-2 font-pixel text-xs font-bold uppercase text-parchment shadow-pixel-sm hover:bg-gold"
+              className="pixel-corners inline-flex items-center justify-center border-[3px] border-void bg-cream px-3 py-2 font-pixel text-xs font-semibold uppercase leading-none text-parchment shadow-pixel-sm hover:bg-gold"
               onClick={() => {
                 playSfx("ui_click");
                 setOpen(false);

@@ -78,9 +78,9 @@ export function SettingsBoard({ className }: { className?: string }) {
             checked={scanlines}
             onChange={setScanlines}
           />
-          <p className="rounded-[1rem] border-[3px] border-void bg-cream px-3 py-3 text-sm leading-relaxed text-muted">
-            Type stays round and readable either way. The table stays a sunny
-            cartoon playground.
+          <p className="pixel-corners border-[3px] border-void bg-cream px-3 py-3 text-sm leading-relaxed text-muted">
+            Every line uses Pixelify Sans — a pixel face sized so labels,
+            buttons, and body copy stay easy to read.
           </p>
         </div>
       </PixelPanel>

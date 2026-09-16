@@ -82,24 +82,24 @@ export function WelcomeHero({
       <div className="relative z-20 mx-auto grid w-full max-w-[90rem] flex-1 grid-cols-1 px-3 pb-6 pt-3 sm:px-6 sm:pb-10 lg:grid-cols-2 lg:items-center lg:gap-8 lg:px-10 lg:pb-16 xl:px-14">
         {/* Mobile: leave top air for dice; desktop: center the dock */}
         <div className="flex flex-col justify-end pt-[38vh] sm:pt-[32vh] lg:justify-center lg:pt-0">
-          <div className="w-full max-w-[26rem] rounded-[1.75rem] border-[4px] border-void bg-surface p-5 shadow-pixel-lg sm:max-w-[28rem] sm:p-7">
+          <div className="w-full max-w-[26rem] pixel-corners-lg border-[4px] border-void bg-surface p-5 shadow-pixel-lg sm:max-w-[28rem] sm:p-7">
             <p
               data-hero-in
-              className="font-pixel text-xs font-bold uppercase tracking-wide text-gold-deep"
+              className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep"
             >
               {WELCOME_HERO.eyebrow}
             </p>
 
             <h1
               data-hero-brand
-              className="mt-3 font-pixel text-[clamp(2.4rem,8vw,4rem)] font-bold leading-[1.05] tracking-tight text-parchment"
+              className="mt-3 font-pixel text-[clamp(2rem,7vw,3.25rem)] font-bold leading-[1.2] text-parchment"
             >
               {WELCOME_HERO.brand}
             </h1>
 
             <p
               data-hero-in
-              className="mt-5 text-lg font-semibold leading-snug text-parchment sm:text-xl"
+              className="mt-5 font-pixel text-lg font-semibold leading-snug text-parchment sm:text-xl"
             >
               {WELCOME_HERO.headline}
             </p>
@@ -154,26 +154,26 @@ export function WelcomeHero({
               className="mt-4 grid grid-cols-3 gap-2 border-t-[3px] border-void pt-4"
             >
               <div>
-                <dt className="font-pixel text-[11px] font-bold uppercase tracking-wide text-faint">
+                <dt className="font-pixel text-xs font-semibold uppercase leading-none text-faint">
                   Rooms
                 </dt>
-                <dd className="mt-1 font-pixel text-base font-bold text-parchment sm:text-lg">
+                <dd className="mt-2 font-pixel text-base font-bold text-parchment sm:text-lg">
                   {WELCOME_LIVE_PULSE.openRooms}
                 </dd>
               </div>
               <div>
-                <dt className="font-pixel text-[11px] font-bold uppercase tracking-wide text-faint">
+                <dt className="font-pixel text-xs font-semibold uppercase leading-none text-faint">
                   Seated
                 </dt>
-                <dd className="mt-1 font-pixel text-base font-bold text-parchment sm:text-lg">
+                <dd className="mt-2 font-pixel text-base font-bold text-parchment sm:text-lg">
                   {WELCOME_LIVE_PULSE.playersOnline.toLocaleString("en-US")}
                 </dd>
               </div>
               <div>
-                <dt className="font-pixel text-[11px] font-bold uppercase tracking-wide text-faint">
+                <dt className="font-pixel text-xs font-semibold uppercase leading-none text-faint">
                   Won
                 </dt>
-                <dd className="mt-1 font-pixel text-base font-bold text-gold-deep sm:text-lg">
+                <dd className="mt-2 font-pixel text-base font-bold text-gold-deep sm:text-lg">
                   {formatBoardCompact(WELCOME_LIVE_PULSE.potToday)}
                 </dd>
               </div>

@@ -87,11 +87,11 @@ export function WelcomeHighlights({ className }: { className?: string }) {
               )}
             >
               <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-                <div className="relative overflow-hidden rounded-[1.75rem] border-[4px] border-void bg-cream p-4 shadow-pixel-lg sm:p-5">
+                <div className="relative overflow-hidden pixel-corners-lg border-[4px] border-void bg-cream p-4 shadow-pixel-lg sm:p-5">
                   <div
                     aria-hidden
                     className={cn(
-                      "pointer-events-none absolute inset-x-8 bottom-3 h-8 rounded-[100%] blur-xl",
+                      "pointer-events-none absolute inset-x-6 bottom-3 h-6",
                       mode.id === "monopoly" ? "bg-monopoly/30" : "bg-ludo/30",
                     )}
                   />
@@ -102,7 +102,7 @@ export function WelcomeHighlights({ className }: { className?: string }) {
               <div className="max-w-md">
                 <h3
                   className={cn(
-                    "font-pixel text-2xl font-bold sm:text-3xl",
+                    "font-pixel text-[18px] leading-snug sm:text-[22px]",
                     mode.id === "monopoly" ? "text-monopoly" : "text-ludo",
                   )}
                 >
@@ -127,7 +127,7 @@ export function WelcomeHighlights({ className }: { className?: string }) {
         <ul className="mt-20 grid gap-6 border-t-[3px] border-void pt-10 sm:grid-cols-3">
           {WELCOME_HIGHLIGHTS.map((item) => (
             <li key={item.id}>
-              <h3 className="font-pixel text-base font-bold uppercase tracking-wide text-gold-deep">
+              <h3 className="font-pixel text-xs font-semibold uppercase leading-snug text-gold-deep">
                 {item.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">

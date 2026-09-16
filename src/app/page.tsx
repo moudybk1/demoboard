@@ -12,9 +12,9 @@ import {
 } from "@/lib/wallet/chains";
 
 export const metadata: Metadata = {
-  title: "BOARD | Cartoon Monopoly & Ludo with real pots",
+  title: "BOARD | Cartoon pixel Monopoly & Ludo with real pots",
   description:
-    "Roll, buy, capture, cash out. Four-player Monopoly and Ludo on a cartoon tabletop, paid in BOARD on Robinhood Chain.",
+    "Roll, buy, capture, cash out. Four-player Monopoly and Ludo on a cartoon pixel tabletop, paid in BOARD on Robinhood Chain.",
 };
 
 export default function Home() {

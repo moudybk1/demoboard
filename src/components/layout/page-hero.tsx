@@ -27,7 +27,7 @@ export function PageHero({
     <header
       data-reveal
       className={cn(
-        "relative isolate overflow-hidden rounded-[1.75rem] border-[4px] border-void bg-cream shadow-pixel-lg",
+        "relative isolate overflow-hidden pixel-corners-lg border-[4px] border-void bg-cream shadow-pixel-lg",
         className,
       )}
     >
@@ -51,13 +51,13 @@ export function PageHero({
       >
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="font-pixel text-xs font-bold uppercase tracking-wide text-gold-deep">
+            <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
               {eyebrow}
             </p>
           ) : null}
           <h1
             className={cn(
-              "max-w-xl font-pixel text-pixel-fluid-lg font-bold leading-[1.15] tracking-tight text-parchment",
+              "max-w-xl font-pixel text-pixel-fluid-lg font-bold leading-[1.2] tracking-tight text-parchment",
               eyebrow ? "mt-3" : "mt-0",
             )}
           >
@@ -94,14 +94,14 @@ export function HeroStat({
   pulse?: boolean;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border-[3px] border-void bg-surface px-3 py-1.5 shadow-pixel-sm">
+    <span className="inline-flex items-center gap-2 pixel-corners border-[3px] border-void bg-surface px-3 py-1.5 shadow-pixel-sm">
       {pulse ? (
         <i
-          className="size-2 shrink-0 rounded-full bg-success animate-pulse-glow"
+          className="size-2 shrink-0 bg-success animate-pulse-glow"
           aria-hidden
         />
       ) : null}
-      <span className="font-pixel text-xs font-bold uppercase text-faint">
+      <span className="font-pixel text-xs font-semibold uppercase leading-none text-faint">
         {label}
       </span>
       <span className="font-pixel text-sm font-bold text-parchment">

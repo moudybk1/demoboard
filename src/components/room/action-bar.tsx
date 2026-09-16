@@ -44,7 +44,7 @@ export function ActionBar({
     >
       <DiceTray values={dice} rolling={rolling} />
 
-      <p className="font-pixel text-[9px] uppercase text-muted">
+      <p className="font-pixel text-xs uppercase text-muted">
         {moving ? (
           <span className="text-gold animate-blink">Moving</span>
         ) : yourTurn ? (

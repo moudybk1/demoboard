@@ -36,7 +36,7 @@ export function PayoutStatusBadge({
   return (
     <span
       className={cn(
-        "pixel-corners inline-flex border px-2 py-1 font-pixel text-[8px] uppercase tracking-wide",
+        "pixel-corners inline-flex border px-2 py-1 font-pixel text-xs uppercase tracking-wide",
         copy.className,
         className,
       )}

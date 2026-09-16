@@ -230,10 +230,12 @@ export function AppBootLoader() {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 88% 12%, #ffe566 0 8%, transparent 9%), radial-gradient(ellipse at 50% 30%, rgba(255,210,58,0.35), transparent 55%), radial-gradient(ellipse at 85% 70%, rgba(232,63,134,0.18), transparent 50%), radial-gradient(ellipse at 15% 80%, rgba(18,152,201,0.2), transparent 50%)",
+          backgroundImage: "url('/pixel-playground.svg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          imageRendering: "pixelated",
         }}
       />
 
@@ -243,11 +245,12 @@ export function AppBootLoader() {
           alt=""
           width={40}
           height={40}
+          data-pixel
           className="mb-5 size-9 bg-transparent sm:size-10"
           draggable={false}
         />
 
-        <p className="font-pixel text-[clamp(1.6rem,6vw,2.4rem)] font-bold tracking-tight text-parchment">
+        <p className="font-pixel text-[clamp(2rem,6vw,2.6rem)] font-bold leading-[1.25] text-parchment">
           BOARD
         </p>
 
@@ -259,18 +262,18 @@ export function AppBootLoader() {
           <BootDie face={faces[1]} which="b" />
         </div>
 
-        <p className="mt-8 font-pixel text-sm font-bold uppercase tracking-wide text-muted">
+        <p className="mt-8 font-pixel text-xs font-semibold uppercase text-muted">
           Rolling tables
         </p>
 
         <div className="mt-6 w-full">
-          <div className="h-4 w-full overflow-hidden rounded-full border-[3px] border-void bg-cream p-0.5 shadow-pixel-sm">
+          <div className="h-4 w-full overflow-hidden pixel-corners border-[3px] border-void bg-cream p-0.5 shadow-pixel-sm">
             <div
-              className="h-full rounded-full bg-gold transition-[width] duration-150 ease-out"
+              className="h-full bg-gold transition-[width] duration-150 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="mt-3 flex items-center justify-between font-pixel text-xs font-bold uppercase tracking-wide text-faint">
+          <div className="mt-3 flex items-center justify-between font-pixel text-xs font-semibold uppercase text-faint">
             <span>{phase === "leaving" ? "Ready" : "Loading"}</span>
             <span className="text-gold-deep">{Math.round(progress)}%</span>
           </div>
@@ -293,11 +296,11 @@ function BootDie({
     <div className="relative">
       <div
         data-boot-shadow={which}
-        className="absolute -bottom-2.5 left-1/2 h-2.5 w-[78%] -translate-x-1/2 rounded-full bg-void/35"
+        className="absolute -bottom-2.5 left-1/2 h-2.5 w-[78%] -translate-x-1/2 bg-void/35"
       />
       <div
         data-boot-die={which}
-        className="relative grid size-[4.25rem] grid-cols-3 grid-rows-3 gap-1.5 rounded-[1.1rem] border-4 border-void bg-cream p-1.5 shadow-pixel-lg sm:size-[4.75rem] sm:gap-[7px] sm:p-2"
+        className="relative grid size-[4.25rem] grid-cols-3 grid-rows-3 gap-1.5 pixel-corners border-4 border-void bg-cream p-1.5 shadow-pixel-lg sm:size-[4.75rem] sm:gap-[7px] sm:p-2"
         style={{ transformOrigin: "50% 85%" }}
       >
         <span className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-white/35" />
@@ -306,8 +309,7 @@ function BootDie({
           <span
             key={cell}
             className={cn(
-              "rounded-full",
-              pips.includes(cell) ? "bg-void" : "bg-transparent",
+              pips.includes(cell) ? "bg-void pixel-corners" : "bg-transparent",
             )}
           />
         ))}

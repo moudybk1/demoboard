@@ -100,7 +100,7 @@ function VolumeControl({
           type="button"
           onClick={onToggleMute}
           className={cn(
-            "font-pixel text-[8px] uppercase",
+            "font-pixel text-xs uppercase",
             muted ? "text-danger" : "text-success",
           )}
         >
@@ -118,7 +118,7 @@ function VolumeControl({
           className="w-full accent-gold"
           aria-label={`${label} volume`}
         />
-        <span className="w-8 text-right font-pixel text-[8px] text-faint">
+        <span className="w-8 text-right font-pixel text-xs text-faint">
           {muted ? 0 : Math.round(volume * 100)}
         </span>
       </div>

@@ -515,7 +515,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
           onRoll={handleRoll}
           onEndTurn={handleEndTurn}
         />
-        <p className="text-center font-mono text-[9px] uppercase tracking-wide text-faint">
+        <p className="text-center font-mono text-xs uppercase tracking-wide text-faint">
           {finished
             ? "Match over"
             : awaitingPick
@@ -538,7 +538,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
         <FinishCountPanel players={players} />
 
         <details className="group lg:hidden">
-          <summary className="pixel-corners mb-2 cursor-pointer list-none border-2 border-edge bg-surface px-3 py-2 font-pixel text-[9px] uppercase text-muted marker:content-none">
+          <summary className="pixel-corners mb-2 cursor-pointer list-none border-2 border-edge bg-surface px-3 py-2 font-pixel text-xs uppercase text-muted marker:content-none">
             Activity
             <span className="float-right text-faint group-open:hidden">
               Show

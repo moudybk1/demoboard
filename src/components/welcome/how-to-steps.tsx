@@ -56,7 +56,7 @@ function HowToStepCard({
         >
           {step.number}
         </span>
-        <span className="font-pixel text-[8px] uppercase text-faint">
+        <span className="font-pixel text-xs uppercase text-faint">
           Step {step.number}
         </span>
       </div>

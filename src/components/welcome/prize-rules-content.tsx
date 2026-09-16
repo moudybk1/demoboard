@@ -12,10 +12,10 @@ export function PrizeRulesContent({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-10", className)}>
       <header className="border-b-2 border-edge pb-8">
-        <p className="font-pixel text-[9px] uppercase tracking-widest text-gold">
+        <p className="font-pixel text-xs uppercase tracking-widest text-gold">
           Economy
         </p>
-        <h1 className="mt-3 font-pixel text-lg text-parchment text-shadow-pixel sm:text-xl">
+        <h1 className="mt-3 font-pixel text-lg font-bold text-parchment text-shadow-pixel sm:text-xl">
           {PRIZE_RULES_INTRO.title}
         </h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted">
@@ -48,7 +48,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-3">
           <div>
-            <dt className="font-pixel text-[8px] uppercase text-faint">
+            <dt className="font-pixel text-xs uppercase text-faint">
               Gross pot
             </dt>
             <dd className="mt-2 font-pixel text-xs text-parchment">
@@ -56,7 +56,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             </dd>
           </div>
           <div>
-            <dt className="font-pixel text-[8px] uppercase text-faint">
+            <dt className="font-pixel text-xs uppercase text-faint">
               Fee ({ex.feePercent}%)
             </dt>
             <dd className="mt-2 font-pixel text-xs text-danger">
@@ -64,7 +64,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             </dd>
           </div>
           <div>
-            <dt className="font-pixel text-[8px] uppercase text-faint">
+            <dt className="font-pixel text-xs uppercase text-faint">
               Winner gets
             </dt>
             <dd className="mt-2 font-pixel text-xs text-gold">

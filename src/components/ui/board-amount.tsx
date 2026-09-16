@@ -23,7 +23,7 @@ const amount = cva("font-pixel font-bold tabular-nums", {
 });
 
 const TICKER_SIZE = {
-  xs: "text-[10px]",
+  xs: "text-xs",
   sm: "text-xs",
   md: "text-xs",
   lg: "text-sm",
@@ -74,7 +74,7 @@ export function BoardAmount({
       {showTicker && (
         <span
           className={cn(
-            "font-pixel opacity-60",
+            "font-pixel font-semibold opacity-70",
             amount({ size, tone }),
             TICKER_SIZE[size ?? "md"],
           )}

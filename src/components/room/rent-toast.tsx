@@ -65,7 +65,7 @@ export function RentToast({
           tone="raised"
           className={cn("border-2 px-4 py-3 text-center", payer.border)}
         >
-          <p className="font-pixel text-[9px] uppercase text-faint">
+          <p className="font-pixel text-xs uppercase text-faint">
             {notice.bankrupted ? "Bankrupt" : "Rent paid"}
           </p>
 
@@ -83,7 +83,7 @@ export function RentToast({
           <p className="mt-1 text-[11px] text-muted">for {notice.country}</p>
 
           {notice.bankrupted && (
-            <p className="mt-2 font-pixel text-[9px] uppercase text-danger">
+            <p className="mt-2 font-pixel text-xs uppercase text-danger">
               {notice.youArePayer
                 ? "You are out of the game"
                 : `${notice.payerName} is out`}

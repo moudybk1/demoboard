@@ -17,7 +17,7 @@ import { boardColors } from "@/lib/design-system";
 export const metadata = {
   title: "Design system | BOARD",
   description:
-    "Global cartoon design tokens and UI primitives for the BOARD gaming platform.",
+    "Global cartoon-pixel design tokens and UI primitives for the BOARD gaming platform.",
 };
 
 const SWATCHES = [
@@ -45,12 +45,12 @@ export default function DesignSystemPage() {
         <header className="max-w-2xl space-y-3">
           <PixelLabel>Design system</PixelLabel>
           <PixelHeading as="h1" size="xl">
-            Cartoon table
+            Cartoon pixel table
           </PixelHeading>
           <p className="text-sm leading-relaxed text-muted sm:text-base">
-            Cream stickers, chocolate outlines, jelly buttons, and Fredoka
-            type. Use these primitives everywhere so BOARD feels like a toy
-            you want to sit down and play.
+            Cream tiles, chocolate outlines, pixel buttons, and Pixelify
+            Sans on every line. Use these primitives everywhere so BOARD
+            feels like a 16-bit toy you can actually read.
           </p>
         </header>
 
@@ -69,7 +69,7 @@ export default function DesignSystemPage() {
                   style={{ backgroundColor: hex }}
                   data-pixel
                 />
-                <p className="mt-2 font-pixel text-[8px] uppercase text-parchment">
+                <p className="mt-2 font-pixel text-xs uppercase text-parchment">
                   {name}
                 </p>
                 <p className="font-mono text-[10px] text-faint">{hex}</p>
@@ -101,8 +101,9 @@ export default function DesignSystemPage() {
             </PixelPanelHeader>
             <div className="space-y-3 p-5 text-sm leading-relaxed text-muted">
               <p>
-                The whole UI runs on Fredoka. Keep lines short on small
-                screens so the round face stays bouncy, not cramped.
+                The whole UI runs on Pixelify Sans. Labels sit at 12px
+                minimum, body at 17px, so the pixel face stays chunky
+                without turning into confetti.
               </p>
               <p className="text-parchment">
                 Four seats. One winner. Two percent fee · treasury and burn.
@@ -173,7 +174,7 @@ export default function DesignSystemPage() {
               </PixelHeading>
               <p className="max-w-md text-sm text-muted">
                 Use PixelFrame for Monopoly / Ludo stages. Thick chocolate
-                rim, jelly shadow, optional confetti.
+                rim, pixel shadow, optional confetti.
               </p>
             </div>
           </PixelFrame>

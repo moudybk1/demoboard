@@ -42,7 +42,7 @@ export function TransactionHistory({ className }: { className?: string }) {
     >
       <div className="flex flex-col gap-3 border-b-2 border-edge bg-surface-raised/60 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
         <div>
-          <p className="font-pixel text-[8px] uppercase tracking-[0.18em] text-gold">
+          <p className="font-pixel text-xs uppercase tracking-[0.18em] text-gold">
             Ledger
           </p>
           <h2
@@ -52,7 +52,7 @@ export function TransactionHistory({ className }: { className?: string }) {
             Transaction history
           </h2>
         </div>
-        <p className="font-pixel text-[8px] uppercase text-faint">Newest first</p>
+        <p className="font-pixel text-xs uppercase text-faint">Newest first</p>
       </div>
 
       <div className="flex gap-2 overflow-x-auto border-b-2 border-edge px-4 py-3 sm:px-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -62,7 +62,7 @@ export function TransactionHistory({ className }: { className?: string }) {
             type="button"
             onClick={() => setFilter(item.id)}
             className={cn(
-              "shrink-0 border-2 px-3 py-1.5 font-pixel text-[8px] uppercase transition-colors",
+              "shrink-0 border-2 px-3 py-1.5 font-pixel text-xs uppercase transition-colors",
               filter === item.id
                 ? "border-gold bg-gold/15 text-gold"
                 : "border-edge text-muted hover:border-edge-bright hover:text-parchment",
@@ -104,7 +104,7 @@ function TxRow({ tx, now }: { tx: MockTx; now: number }) {
           <p className="font-pixel text-[10px] uppercase text-parchment">
             {tx.type.replace("_", " ")}
           </p>
-          <span className={cn("font-pixel text-[8px] uppercase", statusTone)}>
+          <span className={cn("font-pixel text-xs uppercase", statusTone)}>
             {tx.status}
           </span>
         </div>
@@ -123,7 +123,7 @@ function TxRow({ tx, now }: { tx: MockTx; now: number }) {
         showTicker={false}
         className={cn(!positive && tx.status !== "failed" && "opacity-90")}
       />
-      <span className="w-full font-pixel text-[8px] uppercase text-faint sm:w-auto sm:text-right">
+      <span className="w-full font-pixel text-xs uppercase text-faint sm:w-auto sm:text-right">
         {positive ? "in" : "out"}
       </span>
     </li>

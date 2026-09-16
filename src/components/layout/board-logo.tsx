@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Wordmark: board-game mark + BOARD. Pixel type reserved for the mark only.
+ * Wordmark: pixel mark + Pixelify BOARD.
  */
 export function BoardLogo({
   className,
@@ -10,7 +10,7 @@ export function BoardLogo({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2.5 font-pixel text-lg font-bold leading-none tracking-tight text-parchment",
+        "inline-flex items-center gap-2.5 font-pixel text-lg font-bold leading-none text-parchment sm:text-xl",
         className,
       )}
       {...props}
@@ -21,6 +21,7 @@ export function BoardLogo({
         alt=""
         width={36}
         height={36}
+        data-pixel
         className="size-8 shrink-0 bg-transparent sm:size-9"
         draggable={false}
       />

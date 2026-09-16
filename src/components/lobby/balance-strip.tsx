@@ -32,13 +32,13 @@ export function BalanceStrip({
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-[1.5rem] border-[3px] border-void bg-gold shadow-pixel",
+        "relative overflow-hidden pixel-corners-lg border-[3px] border-void bg-gold shadow-pixel",
         className,
       )}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-gold/10 blur-2xl"
+        className="pointer-events-none absolute -right-6 -top-6 size-24 bg-gold-deep/20"
       />
       <div className="relative p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
@@ -80,7 +80,7 @@ export function BalanceStrip({
               <Link2 className="size-3" aria-hidden />
               {balance.chain}
             </PixelBadge>
-            <p className="mt-2 font-pixel text-xs text-faint">
+            <p className="mt-2 font-pixel text-xs font-semibold text-faint">
               {shortAddress(balance.address)}
             </p>
           </div>

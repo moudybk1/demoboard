@@ -255,7 +255,7 @@ export function MonopolyDemo({ className }: { className?: string }) {
 
       <div
         data-mnp-die
-        className="absolute bottom-[18%] left-1/2 z-20 -translate-x-1/2 border-2 border-edge-bright bg-surface px-2 py-1 font-pixel text-lg text-parchment shadow-pixel-sm will-change-transform"
+        className="absolute bottom-[18%] left-1/2 z-20 -translate-x-1/2 border-2 border-edge-bright bg-surface px-2 py-1 font-pixel text-xs font-semibold text-parchment shadow-pixel-sm will-change-transform"
       >
         ⚄
       </div>
@@ -536,7 +536,7 @@ export function LudoDemo({ className }: { className?: string }) {
             ))}
             <div
               data-lud-die
-              className="absolute bottom-[3%] left-1/2 z-30 -translate-x-1/2 border-2 border-edge-bright bg-ink px-2 py-1 font-pixel text-base text-parchment shadow-pixel-sm will-change-transform"
+              className="absolute bottom-[3%] left-1/2 z-30 -translate-x-1/2 border-2 border-edge-bright bg-ink px-2 py-1 font-pixel text-xs font-semibold text-parchment shadow-pixel-sm will-change-transform"
             >
               ⚄
             </div>

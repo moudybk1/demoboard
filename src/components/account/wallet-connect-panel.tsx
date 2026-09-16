@@ -207,7 +207,7 @@ export function WalletConnectPanel({
         {signedInHere ? (
           <>
             <div className="border-2 border-success/40 bg-success/5 p-3">
-              <p className="font-pixel text-[9px] uppercase text-success">
+              <p className="font-pixel text-xs uppercase text-success">
                 Signed in
               </p>
               <p className="mt-2 break-all font-mono text-xs text-parchment">
@@ -248,7 +248,7 @@ export function WalletConnectPanel({
                           <span className="block font-pixel text-[10px] uppercase tracking-wide text-parchment">
                             {option.label}
                           </span>
-                          <span className="mt-1 block font-pixel text-[8px] uppercase tracking-wider text-faint">
+                          <span className="mt-1 block font-pixel text-xs uppercase tracking-wider text-faint">
                             Not detected
                           </span>
                         </span>
@@ -257,7 +257,7 @@ export function WalletConnectPanel({
                             href={option.installUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-pixel text-[8px] uppercase text-muted underline-offset-2 hover:text-gold hover:underline"
+                            className="font-pixel text-xs uppercase text-muted underline-offset-2 hover:text-gold hover:underline"
                           >
                             Install
                           </a>
@@ -287,11 +287,11 @@ export function WalletConnectPanel({
                         <span className="block font-pixel text-[10px] uppercase tracking-wide text-parchment">
                           {option.label}
                         </span>
-                        <span className="mt-1 block font-pixel text-[8px] uppercase tracking-wider text-faint">
+                        <span className="mt-1 block font-pixel text-xs uppercase tracking-wider text-faint">
                           {isPending ? "Opening…" : option.hint}
                         </span>
                       </span>
-                      <span className="font-pixel text-[8px] uppercase text-gold">
+                      <span className="font-pixel text-xs uppercase text-gold">
                         {isPending ? "…" : "Select"}
                       </span>
                     </button>
@@ -305,7 +305,7 @@ export function WalletConnectPanel({
         {!signedInHere && isConnected && wrongNetwork ? (
           <>
             <div role="alert" className="border-2 border-gold/50 bg-gold/5 p-3">
-              <p className="font-pixel text-[9px] uppercase text-gold">
+              <p className="font-pixel text-xs uppercase text-gold">
                 Wrong network
               </p>
               <p className="mt-2 text-sm text-muted">
@@ -336,7 +336,7 @@ export function WalletConnectPanel({
         {!signedInHere && isConnected && !wrongNetwork ? (
           <>
             <div className="border-2 border-edge bg-surface/40 p-3">
-              <p className="font-pixel text-[9px] uppercase text-gold">
+              <p className="font-pixel text-xs uppercase text-gold">
                 Wallet ready
               </p>
               <p className="mt-2 break-all font-mono text-xs text-parchment">

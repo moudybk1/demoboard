@@ -36,7 +36,7 @@ export function RoomCard({
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[1.5rem] border-[3px] bg-surface-raised shadow-pixel transition-[transform,border-color,box-shadow] duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        "group relative flex flex-col overflow-hidden pixel-corners-lg border-[3px] bg-surface-raised shadow-pixel transition-[transform,border-color,box-shadow] duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         joinable && "hover:-translate-y-1 hover:shadow-pixel-lg",
         open && !affordable && "border-danger",
         !open && "border-void opacity-70",
@@ -51,7 +51,7 @@ export function RoomCard({
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-pixel text-sm font-bold text-parchment">{room.id}</p>
+            <p className="font-pixel text-xs font-semibold text-parchment">{room.id}</p>
             <p className="mt-1 text-xs text-faint">
               Opened {formatAge(room.createdAt, now)}
             </p>
@@ -68,7 +68,7 @@ export function RoomCard({
         </div>
 
         <dl className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-[1rem] border-[3px] border-void bg-cream px-2.5 py-2.5">
+          <div className="pixel-corners border-[3px] border-void bg-cream px-2.5 py-2.5">
             <dt className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-faint">
               <Coins className="size-3" aria-hidden />
               Entry
@@ -81,7 +81,7 @@ export function RoomCard({
               />
             </dd>
           </div>
-          <div className="rounded-[1rem] border-[3px] border-void bg-gold px-2.5 py-2.5">
+          <div className="pixel-corners border-[3px] border-void bg-gold px-2.5 py-2.5">
             <dt className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-void">
               <Trophy className="size-3" aria-hidden />
               You win
@@ -96,7 +96,7 @@ export function RoomCard({
           </div>
         </dl>
 
-        <p className="font-pixel text-[11px] font-bold uppercase leading-relaxed text-faint">
+        <p className="font-pixel text-xs font-semibold uppercase leading-relaxed text-faint">
           Pot {room.entryFee * room.maxPlayers} · winner keeps 98%
         </p>
 
@@ -137,7 +137,7 @@ export function RoomCard({
           ) : null}
 
           {!open ? (
-            <span className="font-pixel text-[8px] uppercase text-faint">
+            <span className="font-pixel text-xs font-semibold uppercase text-faint">
               Locked
             </span>
           ) : null}
@@ -147,7 +147,7 @@ export function RoomCard({
           <div
             id={shortfallId}
             role="status"
-            className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[1rem] border-[3px] border-danger bg-danger/10 px-3 py-2"
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 pixel-corners border-[3px] border-danger bg-danger/10 px-3 py-2"
           >
             <TriangleAlert
               className="size-3 shrink-0 text-danger"

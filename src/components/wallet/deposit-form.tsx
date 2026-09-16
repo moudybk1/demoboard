@@ -99,7 +99,7 @@ export function DepositForm({ className }: { className?: string }) {
     return (
       <div className={cn("space-y-5", className)}>
         <div>
-          <p className="font-pixel text-[9px] uppercase tracking-widest text-gold">
+          <p className="font-pixel text-xs uppercase tracking-widest text-gold">
             Confirm deposit
           </p>
           <p className="mt-2 text-sm text-muted">
@@ -147,7 +147,7 @@ export function DepositForm({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-4", className)}>
       <label className="block">
-        <span className="font-pixel text-[9px] uppercase text-muted">
+        <span className="font-pixel text-xs uppercase text-muted">
           Deposit amount
         </span>
         <input
@@ -159,14 +159,14 @@ export function DepositForm({ className }: { className?: string }) {
             if (formError) setFormError(null);
           }}
           className={cn(
-            "mt-2 w-full rounded-[1.15rem] border-[3px] bg-cream px-3 py-3 font-pixel text-base text-parchment outline-none focus:border-gold-deep",
+            "mt-2 w-full pixel-corners border-[3px] bg-cream px-3 py-3 font-pixel text-base text-parchment outline-none focus:border-gold-deep",
             formError ? "border-danger" : "border-edge",
           )}
         />
       </label>
 
       {formError ? (
-        <p role="alert" className="font-pixel text-[9px] text-danger">
+        <p role="alert" className="font-pixel text-xs text-danger">
           {formError}
         </p>
       ) : null}
@@ -180,7 +180,7 @@ export function DepositForm({ className }: { className?: string }) {
               setAmount(String(preset));
               setFormError(null);
             }}
-            className="pixel-corners border border-edge px-3 py-1.5 font-pixel text-[8px] text-muted hover:border-gold hover:text-gold"
+            className="pixel-corners border border-edge px-3 py-1.5 font-pixel text-xs text-muted hover:border-gold hover:text-gold"
           >
             {formatBoard(preset)}
           </button>
@@ -191,7 +191,7 @@ export function DepositForm({ className }: { className?: string }) {
             setAmount(String(MOCK_DEPOSIT_FAIL_AMOUNT));
             setFormError(null);
           }}
-          className="pixel-corners border border-danger/50 px-3 py-1.5 font-pixel text-[8px] text-danger/80 hover:border-danger hover:text-danger"
+          className="pixel-corners border border-danger/50 px-3 py-1.5 font-pixel text-xs text-danger/80 hover:border-danger hover:text-danger"
         >
           Fail demo
         </button>
@@ -270,7 +270,7 @@ function SummaryRow({
 }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
-      <dt className="font-pixel text-[8px] uppercase text-faint">{label}</dt>
+      <dt className="font-pixel text-xs uppercase text-faint">{label}</dt>
       <dd
         className={cn(
           "text-sm",

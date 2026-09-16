@@ -100,18 +100,18 @@ export function WithdrawForm({ className }: { className?: string }) {
   if (phase === "confirm" && isValid) {
     return (
       <div className={cn("space-y-5", className)}>
-        <p className="font-pixel text-[9px] uppercase tracking-widest text-gold">
+        <p className="font-pixel text-xs uppercase tracking-widest text-gold">
           Confirm withdraw
         </p>
         <dl className="space-y-3 border-2 border-edge bg-void/50 p-4">
           <div className="flex justify-between gap-2 text-sm">
-            <dt className="font-pixel text-[8px] uppercase text-faint">Amount</dt>
+            <dt className="font-pixel text-xs uppercase text-faint">Amount</dt>
             <dd className="font-pixel text-gold">
               {formatBoard(parsed)} BOARD
             </dd>
           </div>
           <div className="flex justify-between gap-2 text-sm">
-            <dt className="font-pixel text-[8px] uppercase text-faint">
+            <dt className="font-pixel text-xs uppercase text-faint">
               Remaining available
             </dt>
             <dd className="text-parchment">
@@ -119,7 +119,7 @@ export function WithdrawForm({ className }: { className?: string }) {
             </dd>
           </div>
           <div className="flex justify-between gap-2 text-sm">
-            <dt className="font-pixel text-[8px] uppercase text-faint">To</dt>
+            <dt className="font-pixel text-xs uppercase text-faint">To</dt>
             <dd className="text-parchment">{MOCK_NETWORK.walletLabel}</dd>
           </div>
         </dl>
@@ -149,7 +149,7 @@ export function WithdrawForm({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-4", className)}>
       <label className="block">
-        <span className="font-pixel text-[9px] uppercase text-muted">
+        <span className="font-pixel text-xs uppercase text-muted">
           Withdraw amount
         </span>
         <input
@@ -161,7 +161,7 @@ export function WithdrawForm({ className }: { className?: string }) {
             if (error) setError(null);
           }}
           className={cn(
-            "mt-2 w-full rounded-[1.15rem] border-[3px] bg-cream px-3 py-3 font-pixel text-base text-parchment outline-none focus:border-gold-deep",
+            "mt-2 w-full pixel-corners border-[3px] bg-cream px-3 py-3 font-pixel text-base text-parchment outline-none focus:border-gold-deep",
             error ? "border-danger" : "border-edge",
           )}
         />
@@ -170,7 +170,7 @@ export function WithdrawForm({ className }: { className?: string }) {
       {error ? (
         <p
           role="alert"
-          className="font-pixel text-[9px] leading-relaxed text-danger"
+          className="font-pixel text-xs leading-relaxed text-danger"
         >
           {error}
         </p>
@@ -185,7 +185,7 @@ export function WithdrawForm({ className }: { className?: string }) {
               setAmount(String(preset));
               setError(null);
             }}
-            className="pixel-corners border border-edge px-3 py-1.5 font-pixel text-[8px] text-muted hover:border-gold hover:text-gold"
+            className="pixel-corners border border-edge px-3 py-1.5 font-pixel text-xs text-muted hover:border-gold hover:text-gold"
           >
             {formatBoard(preset)}
           </button>
@@ -196,7 +196,7 @@ export function WithdrawForm({ className }: { className?: string }) {
             setAmount(String(available));
             setError(null);
           }}
-          className="pixel-corners border border-edge px-3 py-1.5 font-pixel text-[8px] text-muted hover:border-gold hover:text-gold"
+          className="pixel-corners border border-edge px-3 py-1.5 font-pixel text-xs text-muted hover:border-gold hover:text-gold"
         >
           Max
         </button>
@@ -206,7 +206,7 @@ export function WithdrawForm({ className }: { className?: string }) {
             setAmount(String(available + 500));
             setError(null);
           }}
-          className="pixel-corners border border-danger/40 px-3 py-1.5 font-pixel text-[8px] text-danger/80 hover:border-danger"
+          className="pixel-corners border border-danger/40 px-3 py-1.5 font-pixel text-xs text-danger/80 hover:border-danger"
         >
           Over max
         </button>
@@ -216,7 +216,7 @@ export function WithdrawForm({ className }: { className?: string }) {
             setAmount(String(FAIL_DEMO));
             setError(null);
           }}
-          className="pixel-corners border border-danger/40 px-3 py-1.5 font-pixel text-[8px] text-danger/80 hover:border-danger"
+          className="pixel-corners border border-danger/40 px-3 py-1.5 font-pixel text-xs text-danger/80 hover:border-danger"
         >
           Fail demo
         </button>
