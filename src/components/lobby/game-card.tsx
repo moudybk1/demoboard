@@ -36,7 +36,7 @@ export function GameCard({
       onClick={onSelect}
       onKeyDown={onKeyDown}
       className={cn(
-        "group relative flex min-h-[12.5rem] flex-col overflow-hidden rounded-[1.5rem] border-[4px] p-0 text-left",
+        "group relative flex min-h-[12.5rem] flex-col overflow-hidden pixel-corners-lg border-[4px] p-0 text-left",
         "transition-[transform,box-shadow,border-color,background-color] duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep",
         selected
@@ -61,7 +61,7 @@ export function GameCard({
           <span
             aria-hidden
             className={cn(
-              "grid size-14 shrink-0 place-items-center rounded-[1.1rem] border-[3px] border-void text-2xl sm:size-16 sm:text-3xl",
+              "grid size-14 shrink-0 place-items-center pixel-corners border-[3px] border-void text-2xl sm:size-16 sm:text-3xl",
               selected && "animate-float",
               isMonopoly
                 ? "bg-monopoly/20 text-monopoly"
@@ -109,7 +109,7 @@ export function GameCard({
           </span>
           <span
             className={cn(
-              "ml-auto font-pixel text-xs uppercase transition-colors",
+              "ml-auto font-pixel text-xs font-semibold uppercase transition-colors",
               selected ? "text-gold-deep" : "text-faint group-hover:text-parchment",
             )}
           >

@@ -34,10 +34,10 @@ export default function HowToPage() {
                 key={step.id}
                 className="flex items-center gap-2 border-2 border-edge bg-ink/75 px-2.5 py-2.5 pixel-inset"
               >
-                <span className="grid size-7 shrink-0 place-items-center border-2 border-gold-deep bg-gold font-pixel text-[9px] text-void">
+                <span className="grid size-7 shrink-0 place-items-center border-2 border-gold-deep bg-gold font-pixel text-xs text-void">
                   {step.number}
                 </span>
-                <span className="font-pixel text-[7px] uppercase leading-relaxed text-parchment">
+                <span className="font-pixel text-[11px] uppercase leading-relaxed text-parchment">
                   {step.title}
                 </span>
               </div>

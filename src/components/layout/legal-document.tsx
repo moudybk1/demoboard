@@ -34,7 +34,7 @@ export function LegalDocument({
         role="note"
         className="border-danger/50 bg-danger/10 px-5 py-4"
       >
-        <p className="font-pixel text-[9px] uppercase tracking-wider text-danger">
+        <p className="font-pixel text-xs uppercase tracking-wider text-danger">
           Draft, not in force
         </p>
         <p className="mt-2 text-xs leading-relaxed text-parchment">
@@ -51,7 +51,7 @@ export function LegalDocument({
         {sections.map((section, index) => (
           <li key={section.heading}>
             <PixelPanel className="px-5 py-4">
-              <p className="font-pixel text-[9px] uppercase tracking-wider text-gold">
+              <p className="font-pixel text-xs uppercase tracking-wider text-gold">
                 {String(index + 1).padStart(2, "0")} · {section.heading}
               </p>
               <p className="mt-2 text-xs leading-relaxed text-faint">

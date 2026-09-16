@@ -56,14 +56,14 @@ export function WinResultBoard({
   return (
     <div ref={root} className="mx-auto w-full max-w-lg space-y-6">
       <header data-win-in className="text-center">
-        <p className="font-pixel text-[9px] uppercase tracking-widest text-gold">
+        <p className="font-pixel text-xs uppercase tracking-widest text-gold">
           Match settled
         </p>
-        <h1 className="mt-3 font-pixel text-lg text-parchment text-shadow-pixel sm:text-xl">
+        <h1 className="mt-3 font-pixel text-lg font-bold text-parchment text-shadow-pixel sm:text-xl">
           {result.winner.isYou ? "You win!" : `${result.winner.username} wins!`}
         </h1>
         <p className="mt-3 text-sm text-muted">{result.subtitle}</p>
-        <p className="mt-2 font-pixel text-[8px] uppercase text-faint">
+        <p className="mt-2 font-pixel text-xs uppercase text-faint">
           {result.gameType} · {formatAge(result.settledAt, now)}
         </p>
       </header>
@@ -84,11 +84,11 @@ export function WinResultBoard({
             >
               <Trophy className="size-8" />
             </span>
-            <p className={cn("font-pixel text-sm", color.text)}>
+            <p className={cn("font-pixel text-sm font-bold", color.text)}>
               Seat {result.winner.seat} · {result.winner.username}
             </p>
             <div className="text-center">
-              <p className="font-pixel text-[8px] uppercase text-faint">
+              <p className="font-pixel text-xs uppercase text-faint">
                 Net payout
               </p>
               <BoardAmount

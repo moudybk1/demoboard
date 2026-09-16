@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Chunky cartoon toggle — replaces native checkboxes in settings.
+ * Chunky pixel toggle — replaces native checkboxes in settings.
  */
 export function PixelSwitch({
   checked,
@@ -30,7 +30,7 @@ export function PixelSwitch({
       )}
     >
       <span className="min-w-0">
-        <span className="font-pixel text-sm font-bold uppercase tracking-wide text-parchment">
+        <span className="font-pixel text-sm font-semibold uppercase leading-snug text-parchment">
           {label}
         </span>
         {description ? (
@@ -43,7 +43,7 @@ export function PixelSwitch({
       <span
         aria-hidden
         className={cn(
-          "relative mt-0.5 inline-flex h-8 w-14 shrink-0 items-center rounded-full border-[3px] px-0.5 transition-[background-color,border-color] duration-[var(--duration-fast)]",
+          "relative mt-0.5 inline-flex h-8 w-14 shrink-0 items-center pixel-corners border-[3px] px-0.5 transition-[background-color,border-color] duration-[var(--duration-fast)]",
           checked
             ? "border-void bg-gold"
             : "border-void bg-cream",
@@ -51,7 +51,7 @@ export function PixelSwitch({
       >
         <span
           className={cn(
-            "size-5 rounded-full border-[3px] border-void transition-transform duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+            "size-5 pixel-corners border-[3px] border-void transition-transform duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
             checked
               ? "translate-x-6 bg-gold-deep"
               : "translate-x-0 bg-muted",

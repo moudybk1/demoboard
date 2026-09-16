@@ -34,9 +34,9 @@ export function OnboardingPath({ className }: { className?: string }) {
             {ONBOARDING_STEPS.map((step, index) => (
               <li
                 key={step.id}
-                className="relative flex flex-1 flex-col rounded-[1.25rem] border-[3px] border-void bg-cream px-4 py-4 shadow-pixel-sm sm:rounded-none sm:first:rounded-l-[1.25rem] sm:last:rounded-r-[1.25rem]"
+                className="relative flex flex-1 flex-col pixel-corners border-[3px] border-void bg-cream px-4 py-4 shadow-pixel-sm sm:rounded-none sm:first:rounded-l-sm sm:last:rounded-r-sm"
               >
-                <span className="font-pixel text-sm font-bold text-gold-deep">
+                <span className="font-pixel text-xs font-semibold text-gold-deep">
                   0{step.index}
                 </span>
                 {step.id === "deposit" ? (

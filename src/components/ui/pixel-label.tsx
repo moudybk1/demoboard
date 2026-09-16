@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Uppercase cartoon label for form fields and chrome captions.
+ * Uppercase pixel label for form fields and chrome captions.
  */
 export function PixelLabel({
   className,
@@ -10,7 +10,7 @@ export function PixelLabel({
   return (
     <span
       className={cn(
-        "font-pixel text-xs font-bold uppercase tracking-wide text-muted",
+        "font-pixel text-xs font-semibold uppercase leading-none text-muted",
         className,
       )}
       {...props}
@@ -19,7 +19,7 @@ export function PixelLabel({
 }
 
 /**
- * Display heading in Fredoka · keep lines short on small screens.
+ * Pixel display heading in Pixelify Sans.
  */
 export function PixelHeading({
   as: Tag = "h2",
@@ -40,7 +40,7 @@ export function PixelHeading({
   return (
     <Tag
       className={cn(
-        "font-pixel font-bold uppercase tracking-tight text-parchment",
+        "font-pixel font-bold tracking-tight text-parchment",
         sizes[size],
         className,
       )}

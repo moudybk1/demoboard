@@ -62,7 +62,7 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
         role="status"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="font-pixel text-[9px] uppercase tracking-wide text-parchment">
+          <p className="font-pixel text-xs uppercase tracking-wide text-parchment">
             {loading
               ? "Checking wallet…"
               : connected
@@ -73,7 +73,7 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
           </p>
           <p
             className={cn(
-              "font-pixel text-[8px] uppercase",
+              "font-pixel text-xs uppercase",
               tone === "ok" && "text-success",
               tone === "warn" && "text-gold",
               tone === "bad" && "text-danger",
@@ -129,7 +129,7 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
         {isConnected ? (
           <Link
             href="/account"
-            className="px-3 py-2 font-pixel text-[8px] uppercase text-muted hover:text-gold"
+            className="px-3 py-2 font-pixel text-xs uppercase text-muted hover:text-gold"
           >
             Account
           </Link>

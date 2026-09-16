@@ -157,7 +157,7 @@ function Metric({
   return (
     <div className="flex items-center gap-1.5">
       {icon}
-      <span className="font-pixel text-[7px] uppercase text-faint">{label}</span>
+      <span className="font-pixel text-[11px] uppercase text-faint">{label}</span>
       <BoardAmount
         value={value}
         size={emphasize ? "sm" : "xs"}

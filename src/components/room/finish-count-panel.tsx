@@ -27,7 +27,7 @@ export function FinishCountPanel({
     <PixelPanel className={cn("flex flex-col", className)}>
       <PixelPanelHeader>
         <PixelPanelTitle>Finish line</PixelPanelTitle>
-        <span className="flex items-center gap-1 font-pixel text-[8px] uppercase text-faint">
+        <span className="flex items-center gap-1 font-pixel text-xs uppercase text-faint">
           <Flag className="size-3" aria-hidden />
           First to 4
         </span>
@@ -52,7 +52,7 @@ export function FinishCountPanel({
                   />
                   <span
                     className={cn(
-                      "truncate font-pixel text-[9px]",
+                      "truncate font-pixel text-xs",
                       color.text,
                     )}
                   >

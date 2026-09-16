@@ -15,7 +15,7 @@ export default function PrizeRulesPage() {
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <nav className="mb-8 font-pixel text-[9px] uppercase tracking-wide text-faint">
+        <nav className="mb-8 font-pixel text-xs uppercase tracking-wide text-faint">
           <Link href="/" className="hover:text-gold">
             Welcome
           </Link>

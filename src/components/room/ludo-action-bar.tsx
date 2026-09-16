@@ -42,7 +42,7 @@ export function LudoActionBar({
     >
       <div className="flex items-center justify-between gap-3 sm:justify-start">
         <DieTray value={value} rolling={rolling} />
-        <p className="font-pixel text-[9px] uppercase text-muted sm:hidden">
+        <p className="font-pixel text-xs uppercase text-muted sm:hidden">
           {yourTurn ? (
             <span className="text-gold">Your turn</span>
           ) : (
@@ -51,7 +51,7 @@ export function LudoActionBar({
         </p>
       </div>
 
-      <p className="hidden font-pixel text-[9px] uppercase text-muted sm:block">
+      <p className="hidden font-pixel text-xs uppercase text-muted sm:block">
         {yourTurn ? (
           <span className="text-gold">Your turn</span>
         ) : (

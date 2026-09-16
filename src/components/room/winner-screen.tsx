@@ -120,13 +120,13 @@ export function WinnerScreen({ winner }: { winner: WinnerSummary }) {
               <Trophy className="size-7" />
             </span>
 
-            <p className="font-pixel text-[9px] uppercase tracking-widest text-gold">
+            <p className="font-pixel text-xs uppercase tracking-widest text-gold">
               Winner
             </p>
             <h2
               id="winner-title"
               className={cn(
-                "font-pixel text-base text-shadow-pixel",
+                "font-pixel text-xl font-bold text-shadow-pixel sm:text-2xl",
                 color.text,
               )}
             >

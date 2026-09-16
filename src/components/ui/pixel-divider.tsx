@@ -15,18 +15,18 @@ export function PixelDivider({
         role="separator"
         {...props}
       >
-        <span className="h-1 flex-1 rounded-full bg-void/20" />
-        <span className="font-pixel text-xs font-bold uppercase text-faint">
+        <span className="h-1 flex-1 bg-void/20" />
+        <span className="font-pixel text-xs font-semibold uppercase text-faint">
           {label}
         </span>
-        <span className="h-1 flex-1 rounded-full bg-void/20" />
+        <span className="h-1 flex-1 bg-void/20" />
       </div>
     );
   }
 
   return (
     <div
-      className={cn("h-1 w-full rounded-full bg-void/20", className)}
+      className={cn("h-1 w-full bg-void/20", className)}
       role="separator"
       {...props}
     />

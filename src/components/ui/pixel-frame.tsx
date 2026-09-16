@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Outer toy frame for boards / stages · thick chocolate rim + jelly shadow.
+ * Outer pixel frame for boards / stages · thick chocolate rim + offset shadow.
  */
 export function PixelFrame({
   className,

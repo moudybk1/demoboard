@@ -104,13 +104,13 @@ function SignInModal({
         aria-modal="true"
         aria-labelledby="sign-in-title"
         className={cn(
-          "relative z-10 w-full max-w-md rounded-[1.75rem] border-[4px] border-void bg-surface shadow-pixel-lg",
+          "relative z-10 w-full max-w-md pixel-corners-lg border-[4px] border-void bg-surface shadow-pixel-lg",
           "max-h-[min(88dvh,40rem)] overflow-y-auto",
         )}
       >
         <div className="flex items-start justify-between gap-3 border-b-[3px] border-void px-4 py-4 sm:px-5">
           <div>
-            <p className="font-pixel text-xs font-bold uppercase tracking-wide text-gold-deep">
+            <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
               {ROBINHOOD_CHAIN_LABEL}
             </p>
             <h2

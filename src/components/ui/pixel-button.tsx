@@ -7,14 +7,14 @@ import { playSfx } from "@/lib/audio/audio-manager";
 import { cn } from "@/lib/utils";
 
 const pixelButton = cva(
-  // Jelly key: the button sits on a thick chocolate lip and squishes into it.
+  // Pixel key: chocolate outline, 4px offset shadow, presses into the grid.
   [
     "pixel-corners inline-flex select-none items-center justify-center gap-2 border-[3px]",
-    "font-pixel font-bold uppercase tracking-wide",
+    "font-pixel font-semibold uppercase",
     "transition-[transform,box-shadow,background-color] duration-100",
-    "active:translate-y-[6px] active:shadow-none",
+    "active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep",
-    "disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:active:translate-y-0",
+    "disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0",
   ],
   {
     variants: {
@@ -32,9 +32,9 @@ const pixelButton = cva(
           "border-transparent bg-transparent text-muted shadow-none hover:text-parchment active:translate-y-0",
       },
       size: {
-        sm: "px-3.5 py-2 text-xs",
-        md: "px-5 py-2.5 text-sm",
-        lg: "px-7 py-3.5 text-base",
+        sm: "px-3.5 py-2 text-xs leading-none",
+        md: "px-5 py-2.5 text-sm leading-none",
+        lg: "px-6 py-3.5 text-base leading-tight",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },

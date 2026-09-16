@@ -56,7 +56,7 @@ export function PixelPanelTitle({
   return (
     <h2
       className={cn(
-        "font-pixel text-sm font-bold uppercase tracking-wide text-parchment",
+        "font-pixel text-sm font-semibold uppercase leading-none text-parchment",
         className,
       )}
       {...props}

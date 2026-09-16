@@ -20,7 +20,7 @@ export default function SettingsPage() {
         meta={
           <>
             <HeroStat label="Scope" value="This device" />
-            <HeroStat label="Look" value="Cartoon" />
+            <HeroStat label="Look" value="Pixel cartoon" />
           </>
         }
         actions={
@@ -29,8 +29,8 @@ export default function SettingsPage() {
           </PixelButtonLink>
         }
         stage={
-          <div className="rounded-[1.25rem] border-[3px] border-void bg-cream p-4 sm:p-5">
-            <p className="font-pixel text-xs font-bold uppercase tracking-wide text-gold-deep">
+          <div className="pixel-corners border-[3px] border-void bg-cream p-4 sm:p-5">
+            <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
               Tips
             </p>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">

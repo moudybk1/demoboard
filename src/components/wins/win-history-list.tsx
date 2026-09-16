@@ -103,7 +103,7 @@ function WinCard({ win }: { win: MockWinResult }) {
                 size="sm"
                 tone={yours ? "gold" : "muted"}
               />
-              <p className="mt-1 font-pixel text-[8px] uppercase text-faint">
+              <p className="mt-1 font-pixel text-xs uppercase text-faint">
                 Net
               </p>
             </div>

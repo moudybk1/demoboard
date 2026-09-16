@@ -13,11 +13,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BOARD | Play classic board games, win real tokens",
   description:
-    "Monopoly and Ludo reimagined as a cartoon tabletop. Four players per room, one winner, paid out in BOARD tokens on Robinhood Chain.",
+    "Monopoly and Ludo on a cartoon pixel tabletop. Four players per room, one winner, paid out in BOARD tokens on Robinhood Chain.",
 };
 
 /**
- * Root shell. Typography is Fredoka everywhere (loaded in globals.css).
+ * Typography: Pixelify Sans everywhere (loaded in globals.css).
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const headerStore = await headers();

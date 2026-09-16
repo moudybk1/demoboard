@@ -61,15 +61,15 @@ export default function LobbyPage() {
                   key={game.type}
                   className={
                     monopoly
-                      ? "rounded-[1.25rem] border-[3px] border-void bg-monopoly/20 p-4"
-                      : "rounded-[1.25rem] border-[3px] border-void bg-ludo/20 p-4"
+                      ? "pixel-corners border-[3px] border-void bg-monopoly/20 p-4"
+                      : "pixel-corners border-[3px] border-void bg-ludo/20 p-4"
                   }
                 >
                   <p
                     className={
                       monopoly
-                        ? "font-pixel text-sm font-bold uppercase text-monopoly"
-                        : "font-pixel text-sm font-bold uppercase text-ludo"
+                        ? "font-pixel text-xs font-semibold uppercase text-monopoly"
+                        : "font-pixel text-xs font-semibold uppercase text-ludo"
                     }
                   >
                     {game.name}
@@ -77,7 +77,7 @@ export default function LobbyPage() {
                   <p className="mt-2 text-xs leading-relaxed text-muted">
                     {game.tagline}
                   </p>
-                  <p className="mt-3 font-pixel text-xs font-bold uppercase text-faint">
+                  <p className="mt-3 font-pixel text-xs font-semibold uppercase text-faint">
                     {game.openRooms} open ·{" "}
                     {formatBoardCompact(game.activePlayers)} live
                   </p>

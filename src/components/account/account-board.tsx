@@ -49,7 +49,7 @@ export function AccountBoard() {
             <p className="font-pixel text-[10px] uppercase tracking-wide text-parchment">
               Sign in with wallet
             </p>
-            <p className="mt-2 font-pixel text-[8px] uppercase text-faint">
+            <p className="mt-2 font-pixel text-xs uppercase text-faint">
               Robinhood Chain
             </p>
             <div className="mt-5">
@@ -89,7 +89,7 @@ export function AccountBoard() {
               {initials}
             </span>
             <div className="min-w-0">
-              <p className="font-pixel text-[9px] uppercase text-gold">
+              <p className="font-pixel text-xs uppercase text-gold">
                 Verified wallet
               </p>
               <p className="mt-2 break-all font-mono text-[10px] text-parchment">
@@ -111,7 +111,7 @@ export function AccountBoard() {
       <PixelPanel tone="raised" className="overflow-hidden" data-reveal>
         <PixelPanelHeader>
           <PixelPanelTitle>Profile</PixelPanelTitle>
-          <span className="font-pixel text-[8px] uppercase text-faint">
+          <span className="font-pixel text-xs uppercase text-faint">
             Wallet identity
           </span>
         </PixelPanelHeader>

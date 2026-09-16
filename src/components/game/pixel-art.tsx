@@ -28,6 +28,7 @@ export function PixelArt({
       viewBox={`0 0 ${width} ${height}`}
       className={cn("block h-auto w-full", className)}
       shapeRendering="crispEdges"
+      data-pixel
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}

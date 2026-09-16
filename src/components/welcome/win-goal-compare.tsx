@@ -7,7 +7,7 @@ export function WinGoalCompare({ className }: { className?: string }) {
       <header className="mb-8 max-w-2xl">
         <h2
           id="win-goal-title"
-          className="font-pixel text-sm text-parchment text-shadow-pixel sm:text-base"
+          className="font-pixel text-sm font-bold text-parchment text-shadow-pixel sm:text-base"
         >
           {WIN_GOAL_INTRO.title}
         </h2>
@@ -52,7 +52,7 @@ function WinGoalPanel({ game }: { game: WinGoalCard }) {
           </h3>
           <span
             className={cn(
-              "border-2 px-2 py-1 font-pixel text-[8px] uppercase tracking-wide text-parchment",
+              "border-2 px-2 py-1 font-pixel text-xs uppercase tracking-wide text-parchment",
               isMonopoly
                 ? "border-monopoly/40 bg-monopoly/15"
                 : "border-ludo/40 bg-ludo/15",
@@ -64,7 +64,7 @@ function WinGoalPanel({ game }: { game: WinGoalCard }) {
 
         <p className="mt-4 text-sm leading-relaxed text-muted">{game.winGoal}</p>
 
-        <p className="mt-6 font-pixel text-[8px] uppercase tracking-[0.18em] text-faint">
+        <p className="mt-6 font-pixel text-xs uppercase tracking-[0.18em] text-faint">
           Path to the crown
         </p>
         <ul className="mt-3 space-y-2.5">
@@ -75,7 +75,7 @@ function WinGoalPanel({ game }: { game: WinGoalCard }) {
             >
               <span
                 className={cn(
-                  "mt-0.5 grid size-5 shrink-0 place-items-center border font-pixel text-[8px]",
+                  "mt-0.5 grid size-5 shrink-0 place-items-center border font-pixel text-xs",
                   isMonopoly
                     ? "border-monopoly/50 text-monopoly"
                     : "border-ludo/50 text-ludo",

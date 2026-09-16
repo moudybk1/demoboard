@@ -38,13 +38,13 @@ export function ProfileAvatarForm() {
             {username.slice(0, 2).toUpperCase() || "??"}
           </span>
           <div>
-            <p className="font-pixel text-sm text-parchment">{username || "…"}</p>
+            <p className="font-pixel text-sm font-bold text-parchment">{username || "…"}</p>
             <p className="mt-1 text-xs text-muted">{selected.label}</p>
           </div>
         </div>
 
         <label className="block">
-          <span className="font-pixel text-[9px] uppercase text-muted">
+          <span className="font-pixel text-xs uppercase text-muted">
             Display name
           </span>
           <input
@@ -58,7 +58,7 @@ export function ProfileAvatarForm() {
         </label>
 
         <fieldset>
-          <legend className="font-pixel text-[9px] uppercase text-muted">
+          <legend className="font-pixel text-xs uppercase text-muted">
             Choose avatar
           </legend>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
@@ -96,7 +96,7 @@ export function ProfileAvatarForm() {
             Save profile
           </PixelButton>
           {saved ? (
-            <p className="font-pixel text-[9px] uppercase text-success">
+            <p className="font-pixel text-xs uppercase text-success">
               Saved (mock)
             </p>
           ) : null}

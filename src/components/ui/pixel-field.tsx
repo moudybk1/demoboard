@@ -31,7 +31,7 @@ export function PixelField({
           error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined
         }
         className={cn(
-          "mt-2 w-full rounded-[1.15rem] border-[3px] bg-cream px-3 py-3 text-base text-parchment outline-none",
+          "mt-2 w-full pixel-corners border-[3px] bg-cream px-3 py-3 font-pixel text-base text-parchment outline-none",
           "transition-[border-color,box-shadow] duration-100",
           "placeholder:text-faint",
           "focus:border-gold-deep focus-visible:pixel-focus",

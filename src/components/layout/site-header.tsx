@@ -29,13 +29,13 @@ export function SiteHeader({ className }: { className?: string }) {
       )}
     >
       <div className="board-container">
-        <div className="relative flex h-14 items-center rounded-[1.5rem] border-[3px] border-void bg-surface px-3 shadow-pixel sm:h-16 sm:px-4">
+        <div className="relative flex h-16 items-center pixel-corners border-[3px] border-void bg-surface px-3 shadow-pixel sm:h-[4.25rem] sm:px-4">
           <Link
             href="/"
             aria-label="BOARD home"
             className="relative z-10 flex min-w-0 shrink items-center py-1"
           >
-            <BoardLogo className="text-sm tracking-tight sm:text-lg" />
+            <BoardLogo />
           </Link>
 
           <nav
@@ -46,7 +46,7 @@ export function SiteHeader({ className }: { className?: string }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-3.5 py-1.5 font-pixel text-sm font-bold uppercase tracking-wide text-muted transition-colors hover:bg-gold hover:text-void"
+                className="pixel-corners px-3 py-1.5 font-pixel text-sm font-semibold uppercase leading-none text-muted transition-colors hover:bg-gold hover:text-void"
               >
                 {link.label}
               </Link>
@@ -84,7 +84,7 @@ export function SiteHeader({ className }: { className?: string }) {
           <Link
             key={link.href}
             href={link.href}
-            className="shrink-0 rounded-full border-[3px] border-void bg-surface px-3.5 py-1.5 font-pixel text-xs font-bold uppercase tracking-wide text-muted shadow-pixel-sm hover:bg-gold hover:text-void"
+            className="shrink-0 pixel-corners border-[3px] border-void bg-surface px-3 py-1.5 font-pixel text-sm font-semibold uppercase leading-none text-muted shadow-pixel-sm hover:bg-gold hover:text-void"
           >
             {link.label}
           </Link>

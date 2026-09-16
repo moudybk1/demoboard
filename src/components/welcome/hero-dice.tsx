@@ -274,7 +274,7 @@ export function HeroDice({ className }: { className?: string }) {
           </p>
         )}
         {tag && (
-          <p className="mt-2 font-pixel text-[10px] uppercase tracking-wider text-parchment sm:text-xs">
+          <p className="mt-2 font-pixel text-xs font-semibold uppercase tracking-wider text-parchment sm:text-[10px]">
             {tag}
           </p>
         )}
@@ -300,7 +300,7 @@ function HeroDieFace({
       />
       <div
         data-die={which}
-        className="relative grid size-32 grid-cols-3 grid-rows-3 gap-2 rounded-[1.6rem] border-[5px] border-void bg-cream p-2.5 shadow-pixel-lg sm:size-40 sm:gap-2.5 sm:border-[6px] sm:p-3 lg:size-52 lg:gap-3 lg:border-[7px] lg:p-3.5"
+        className="relative grid size-32 grid-cols-3 grid-rows-3 gap-2 pixel-corners border-[5px] border-void bg-cream p-2.5 shadow-pixel-lg sm:size-40 sm:gap-2.5 sm:border-[6px] sm:p-3 lg:size-52 lg:gap-3 lg:border-[7px] lg:p-3.5"
         style={{ transformOrigin: "50% 85%" }}
       >
         <span className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-white/40" />
@@ -309,8 +309,7 @@ function HeroDieFace({
           <span
             key={cell}
             className={cn(
-              "rounded-full",
-              pips.includes(cell) ? "bg-void" : "bg-transparent",
+              pips.includes(cell) ? "bg-void pixel-corners" : "bg-transparent",
             )}
           />
         ))}

@@ -23,7 +23,7 @@ export function MusicToggle({ className }: { className?: string }) {
       aria-label={muted ? "Unmute music" : "Mute music"}
       aria-pressed={muted}
       className={cn(
-        "grid size-8 place-items-center rounded-full border-[3px] border-void bg-cream text-muted shadow-pixel-sm transition-colors hover:bg-gold hover:text-void sm:size-9",
+        "grid size-8 place-items-center pixel-corners border-[3px] border-void bg-cream text-muted shadow-pixel-sm transition-colors hover:bg-gold hover:text-void sm:size-9",
         className,
       )}
       onClick={() => {

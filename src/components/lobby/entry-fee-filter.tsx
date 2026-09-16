@@ -26,7 +26,7 @@ export function EntryFeeFilter({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1 font-pixel text-xs font-bold uppercase text-faint">
+      <span className="mr-1 font-pixel text-xs font-semibold uppercase leading-none text-faint">
         Entry fee
       </span>
 
@@ -58,7 +58,7 @@ export function EntryFeeFilter({
                     showTicker={false}
                     compact
                   />
-                  <span className="text-[8px] opacity-60">({count})</span>
+                  <span className="text-xs opacity-60">({count})</span>
                 </>
               }
             />
@@ -68,7 +68,7 @@ export function EntryFeeFilter({
 
       <label
         className={cn(
-          "rounded-full ml-1 flex cursor-pointer items-center gap-2 border-[3px] px-3 py-1.5 transition-colors",
+          "pixel-corners ml-1 flex cursor-pointer items-center gap-2 border-[3px] px-3 py-1.5 transition-colors",
           affordableOnly
             ? "border-void bg-gold text-void"
             : "border-void bg-surface text-muted hover:bg-gold hover:text-void",
@@ -81,7 +81,7 @@ export function EntryFeeFilter({
           className="size-3 accent-gold"
         />
         <Wallet className="size-3" aria-hidden />
-        <span className="font-pixel text-xs font-bold uppercase">
+        <span className="font-pixel text-xs font-semibold uppercase leading-none">
           Within balance
         </span>
       </label>
@@ -106,7 +106,7 @@ function FilterChip({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "rounded-full flex items-center gap-1.5 border-[3px] px-3 py-1.5 font-pixel text-xs font-bold uppercase",
+        "pixel-corners flex items-center gap-1.5 border-[3px] px-3 py-1.5 font-pixel text-xs font-semibold uppercase leading-none",
         "transition-[background-color,border-color,transform] duration-100",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep",
         active
