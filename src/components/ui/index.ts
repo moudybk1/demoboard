@@ -4,6 +4,12 @@
 export { BoardAmount } from "./board-amount";
 export { PixelBadge } from "./pixel-badge";
 export { PixelButton, PixelButtonLink, pixelButton } from "./pixel-button";
+export {
+  PixelCard,
+  type PixelCardSize,
+  type PixelCardStroke,
+  type PixelCardTone,
+} from "./pixel-card";
 export { PixelDivider } from "./pixel-divider";
 export { PixelField } from "./pixel-field";
 export { PixelFrame } from "./pixel-frame";

@@ -32,7 +32,8 @@ export function LegalDocument({
 
       <PixelPanel
         role="note"
-        className="border-danger/50 bg-danger/10 px-5 py-4"
+        stroke="danger"
+        className="bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-surface))] px-5 py-4"
       >
         <p className="font-pixel text-xs uppercase tracking-wider text-danger">
           Draft, not in force

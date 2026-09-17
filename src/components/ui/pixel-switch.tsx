@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Chunky pixel toggle — replaces native checkboxes in settings.
+ * Chunky pixel toggle. Replaces native checkboxes in settings.
  */
 export function PixelSwitch({
   checked,

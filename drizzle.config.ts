@@ -5,7 +5,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    // Local / CI placeholder — real credentials come from DATABASE_URL.
+    // Local / CI placeholder. Real credentials come from DATABASE_URL.
     url: process.env.DATABASE_URL ?? "postgres://board:board@localhost:5432/board",
   },
   strict: true,

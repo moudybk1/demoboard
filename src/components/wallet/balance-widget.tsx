@@ -3,6 +3,7 @@
 import { Wallet } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { usePlatformWallet } from "@/hooks/use-platform-wallet";
 import { MOCK_WALLET_BALANCE } from "@/lib/mock/wallet";
 import type { WalletBalance } from "@/lib/types";
@@ -50,11 +51,11 @@ export function BalanceWidget({
   }
 
   return (
-    <div
-      className={cn(
-        "pixel-corners border-[3px] border-void bg-cream p-4 shadow-pixel-sm",
-        className,
-      )}
+    <PixelCard
+      size="sm"
+      tone="cream"
+      className={className}
+      faceClassName="p-4"
     >
       <p className="font-pixel text-xs font-bold uppercase tracking-wide text-faint">
         BOARD balance
@@ -66,6 +67,6 @@ export function BalanceWidget({
         Available to join rooms · locked{" "}
         <BoardAmount value={resolved.locked} size="xs" tone="muted" />
       </p>
-    </div>
+    </PixelCard>
   );
 }

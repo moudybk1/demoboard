@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { playSfx } from "@/lib/audio/audio-manager";
+import { playSfx, unlockAudio } from "@/lib/audio/audio-manager";
 import { cn } from "@/lib/utils";
 
 const pixelButton = cva(
@@ -12,6 +12,7 @@ const pixelButton = cva(
     "pixel-corners inline-flex select-none items-center justify-center gap-2 border-[3px]",
     "font-pixel font-semibold uppercase",
     "transition-[transform,box-shadow,background-color] duration-100",
+    "hover:-translate-y-px",
     "active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep",
     "disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0",
@@ -48,14 +49,19 @@ export function PixelButton({
   variant,
   size,
   onClick,
+  sfx = true,
   ...props
-}: React.ComponentProps<"button"> & PixelButtonVariants) {
+}: React.ComponentProps<"button"> & PixelButtonVariants & { sfx?: boolean }) {
   return (
     <button
       {...props}
+      data-click-sfx=""
       className={cn(pixelButton({ variant, size }), className)}
       onClick={(event) => {
-        if (!props.disabled) playSfx("ui_click");
+        if (!props.disabled && sfx) {
+          void unlockAudio();
+          playSfx("ui_click");
+        }
         onClick?.(event);
       }}
     />
@@ -72,8 +78,10 @@ export function PixelButtonLink({
   return (
     <Link
       {...props}
+      data-click-sfx=""
       className={cn(pixelButton({ variant, size }), className)}
       onClick={(event) => {
+        void unlockAudio();
         playSfx("ui_click");
         onClick?.(event);
       }}

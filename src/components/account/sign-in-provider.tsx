@@ -11,9 +11,8 @@ import {
 
 import { WalletConnectPanel } from "@/components/account/wallet-connect-panel";
 import { PixelButton } from "@/components/ui/pixel-button";
-import { playSfx } from "@/lib/audio/audio-manager";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { ROBINHOOD_CHAIN_LABEL } from "@/lib/wallet/chains";
-import { cn } from "@/lib/utils";
 
 type SignInContextValue = {
   open: boolean;
@@ -40,7 +39,6 @@ export function SignInProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   const openSignIn = useCallback(() => {
-    playSfx("ui_click");
     setOpen(true);
   }, []);
 
@@ -99,14 +97,13 @@ function SignInModal({
         onClick={onClose}
       />
 
-      <div
+      <PixelCard
         role="dialog"
         aria-modal="true"
         aria-labelledby="sign-in-title"
-        className={cn(
-          "relative z-10 w-full max-w-md pixel-corners-lg border-[4px] border-void bg-surface shadow-pixel-lg",
-          "max-h-[min(88dvh,40rem)] overflow-y-auto",
-        )}
+        size="lg"
+        className="relative z-10 w-full max-w-md"
+        faceClassName="max-h-[min(88dvh,40rem)] overflow-y-auto"
       >
         <div className="flex items-start justify-between gap-3 border-b-[3px] border-void px-4 py-4 sm:px-5">
           <div>
@@ -134,7 +131,7 @@ function SignInModal({
         <div className="p-4 sm:p-5">
           <WalletConnectPanel compact onSignedIn={onClose} />
         </div>
-      </div>
+      </PixelCard>
     </div>
   );
 }

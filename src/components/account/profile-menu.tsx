@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { useDisconnect } from "wagmi";
 
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import { usePlatformWallet } from "@/hooks/use-platform-wallet";
 import { clearBoardSession } from "@/lib/auth/session";
-import { playSfx } from "@/lib/audio/audio-manager";
 import {
   formatAge,
   formatBoard,
@@ -102,7 +102,6 @@ export function ProfileMenu({ className }: { className?: string }) {
 
   async function signOut() {
     setSigningOut(true);
-    playSfx("ui_click");
     try {
       await fetch("/api/auth/logout", {
         method: "POST",
@@ -135,7 +134,6 @@ export function ProfileMenu({ className }: { className?: string }) {
         aria-haspopup="menu"
         title={authLoading ? "Account" : label}
         onClick={() => {
-          playSfx("ui_click");
           setOpen((v) => !v);
         }}
         className="inline-flex max-w-[10.5rem] items-center justify-center pixel-corners border-[3px] border-void bg-gold px-3 py-2 font-pixel text-xs font-semibold uppercase leading-none text-void shadow-pixel-sm transition-[transform,box-shadow,background-color] duration-100 hover:bg-[#ffe566] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none sm:text-[10px]"
@@ -146,16 +144,18 @@ export function ProfileMenu({ className }: { className?: string }) {
       </button>
 
       {open ? (
-        <div
+        <PixelCard
           role="menu"
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-[55] w-[min(18.5rem,calc(100vw-1.5rem))] pixel-corners-lg border-[3px] border-void bg-surface shadow-pixel-lg"
+          size="lg"
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-[55] w-[min(18.5rem,calc(100vw-1.5rem))]"
+          faceClassName="overflow-hidden"
         >
           <div className="border-b-2 border-edge px-3 py-3">
             <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
               Profile
             </p>
             <p className="mt-2 break-all font-pixel text-sm font-bold text-parchment">
-              {address ? shortenAddress(address, 6) : "—"}
+              {address ? shortenAddress(address, 6) : "no wallet"}
             </p>
             {user?.username ? (
               <p className="mt-1 font-pixel text-xs uppercase text-faint">
@@ -236,7 +236,6 @@ export function ProfileMenu({ className }: { className?: string }) {
               role="menuitem"
               className="pixel-corners inline-flex items-center justify-center border-[3px] border-void bg-cream px-3 py-2 font-pixel text-xs font-semibold uppercase leading-none text-parchment shadow-pixel-sm hover:bg-gold"
               onClick={() => {
-                playSfx("ui_click");
                 setOpen(false);
               }}
             >
@@ -253,7 +252,7 @@ export function ProfileMenu({ className }: { className?: string }) {
               {signingOut ? "Signing out…" : "Sign out"}
             </PixelButton>
           </div>
-        </div>
+        </PixelCard>
       ) : null}
     </div>
   );

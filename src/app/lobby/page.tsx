@@ -7,6 +7,7 @@ import { ProductShell } from "@/components/layout/product-shell";
 import { SampleDataNotice } from "@/components/layout/sample-data-notice";
 import { LobbyHeroActions } from "@/components/lobby/lobby-hero-actions";
 import { RoomEconomyHighlight } from "@/components/ui/room-economy-highlight";
+import { PixelCard } from "@/components/ui/pixel-card";
 import {
   ENTRY_FEE_TIERS,
   GAME_OPTIONS,
@@ -15,15 +16,23 @@ import {
   MOCK_ROOMS,
 } from "@/lib/mock/lobby";
 import { PLAY_IS_LIVE } from "@/lib/platform-status";
+import { parsePreviewGame } from "@/lib/preview-game";
 import { formatBoardCompact } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Lobby | BOARD",
   description:
-    "Pick Monopoly or Ludo, browse open rooms by entry fee, and join a four-player table.",
+    "Pick Monopoly or Ludo, browse open rooms by entry fee, and join a four player table.",
 };
 
-export default function LobbyPage() {
+type LobbyPageProps = {
+  searchParams: Promise<{ game?: string | string[] }>;
+};
+
+export default async function LobbyPage({ searchParams }: LobbyPageProps) {
+  const params = await searchParams;
+  const raw = Array.isArray(params.game) ? params.game[0] : params.game;
+  const defaultGame = parsePreviewGame(raw) ?? undefined;
   const balance = MOCK_BALANCE;
   const openRooms = MOCK_ROOMS.filter((room) => room.status === "waiting");
   const playingNow = GAME_OPTIONS.reduce(
@@ -57,13 +66,11 @@ export default function LobbyPage() {
             {GAME_OPTIONS.map((game) => {
               const monopoly = game.type === "monopoly";
               return (
-                <div
+                <PixelCard
                   key={game.type}
-                  className={
-                    monopoly
-                      ? "pixel-corners border-[3px] border-void bg-monopoly/20 p-4"
-                      : "pixel-corners border-[3px] border-void bg-ludo/20 p-4"
-                  }
+                  size="sm"
+                  tone={monopoly ? "monopoly" : "ludo"}
+                  faceClassName="p-4"
                 >
                   <p
                     className={
@@ -81,7 +88,7 @@ export default function LobbyPage() {
                     {game.openRooms} open ·{" "}
                     {formatBoardCompact(game.activePlayers)} live
                   </p>
-                </div>
+                </PixelCard>
               );
             })}
           </div>
@@ -110,7 +117,7 @@ export default function LobbyPage() {
           feeTiers={ENTRY_FEE_TIERS}
           balance={balance.available}
           now={MOCK_NOW}
-          defaultGame={GAME_OPTIONS[0].type}
+          defaultGame={defaultGame}
         />
       </div>
     </ProductShell>

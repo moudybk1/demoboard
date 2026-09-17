@@ -1,12 +1,33 @@
 import { cn } from "@/lib/utils";
 
+type BoardLogoProps = React.ComponentProps<"span"> & {
+  /** `mark` is the compact icon + name. `banner` is the Pixels-style wordmark. */
+  variant?: "mark" | "banner";
+};
+
 /**
  * Wordmark: pixel mark + Pixelify BOARD.
  */
 export function BoardLogo({
   className,
+  variant = "mark",
   ...props
-}: React.ComponentProps<"span">) {
+}: BoardLogoProps) {
+  if (variant === "banner") {
+    return (
+      <span
+        className={cn(
+          "inline-block font-pixel text-[1.65rem] font-bold leading-none tracking-wide text-gold sm:text-5xl lg:text-[3.35rem]",
+          className,
+        )}
+        style={{ textShadow: "4px 4px 0 #c45a00, 7px 7px 0 #1a0c06" }}
+        {...props}
+      >
+        BOARD
+      </span>
+    );
+  }
+
   return (
     <span
       className={cn(

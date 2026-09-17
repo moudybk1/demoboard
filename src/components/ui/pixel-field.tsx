@@ -46,7 +46,7 @@ export function PixelField({
         <span
           id={`${fieldId}-error`}
           role="alert"
-          className="mt-1 block font-pixel text-xs text-danger"
+          className="mt-1 block text-sm text-danger"
         >
           {error}
         </span>

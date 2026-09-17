@@ -231,8 +231,8 @@ export function WalletConnectPanel({
         {!signedInHere && !isConnected ? (
           <>
             <p className="text-sm leading-relaxed text-muted">
-              Choose a wallet on {ROBINHOOD_CHAIN_LABEL}. Sign once — no gas —
-              and your BOARD profile is this address.
+              Choose a wallet on {ROBINHOOD_CHAIN_LABEL}. Sign once, with no
+              gas, and your BOARD profile is this address.
             </p>
             <ul className="space-y-2">
               {walletRows.map(({ option, connector }) => {
@@ -376,7 +376,7 @@ export function WalletConnectPanel({
         {authenticated && wallet && !signedInHere && address ? (
           <p className="text-xs text-muted">
             Signed in as {shortenAddress(wallet.address)}. Connected extension
-            differs — sign in again to switch profiles.
+            differs. Sign in again to switch profiles.
           </p>
         ) : null}
       </div>

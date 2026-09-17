@@ -28,12 +28,12 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "Deposits and withdrawals",
     covers:
-      "Custody of deposited BOARD, how long a withdrawal may take, what happens if an on-chain send fails, and whether balances can be frozen.",
+      "Custody of deposited BOARD, how long a withdrawal may take, what happens if an on chain send fails, and whether balances can be frozen.",
   },
   {
     heading: "Abandoned and disputed matches",
     covers:
-      "What happens to the pot when players leave mid-match, when a match cannot be settled, and how a disputed result is resolved.",
+      "What happens to the pot when players leave mid match, when a match cannot be settled, and how a disputed result is resolved.",
   },
   {
     heading: "Account suspension",

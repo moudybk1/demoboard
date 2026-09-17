@@ -1,7 +1,8 @@
+import { PixelCard } from "@/components/ui/pixel-card";
 import { cn } from "@/lib/utils";
 
 type PageHeroProps = {
-  /** Optional — taste skill: avoid eyebrows on every section. */
+  /** Optional. Taste skill: avoid eyebrows on every section. */
   eyebrow?: string;
   title: string;
   support: string;
@@ -12,7 +13,7 @@ type PageHeroProps = {
 };
 
 /**
- * Product page hero — sticker header on the felt table.
+ * Product page hero. Sticker header on the felt table.
  */
 export function PageHero({
   eyebrow,
@@ -24,12 +25,13 @@ export function PageHero({
   className,
 }: PageHeroProps) {
   return (
-    <header
+    <PixelCard
+      as="header"
       data-reveal
-      className={cn(
-        "relative isolate overflow-hidden pixel-corners-lg border-[4px] border-void bg-cream shadow-pixel-lg",
-        className,
-      )}
+      size="lg"
+      tone="cream"
+      className={className}
+      faceClassName="relative isolate overflow-hidden"
     >
       <div
         aria-hidden
@@ -80,7 +82,7 @@ export function PageHero({
           </div>
         ) : null}
       </div>
-    </header>
+    </PixelCard>
   );
 }
 
@@ -94,7 +96,11 @@ export function HeroStat({
   pulse?: boolean;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 pixel-corners border-[3px] border-void bg-surface px-3 py-1.5 shadow-pixel-sm">
+    <PixelCard
+      size="sm"
+      className="inline-block"
+      faceClassName="inline-flex items-center gap-2 px-3 py-1.5"
+    >
       {pulse ? (
         <i
           className="size-2 shrink-0 bg-success animate-pulse-glow"
@@ -107,6 +113,6 @@ export function HeroStat({
       <span className="font-pixel text-sm font-bold text-parchment">
         {value}
       </span>
-    </span>
+    </PixelCard>
   );
 }

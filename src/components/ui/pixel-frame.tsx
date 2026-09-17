@@ -1,3 +1,4 @@
+import { PixelCard } from "@/components/ui/pixel-card";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,14 +10,13 @@ export function PixelFrame({
   ...props
 }: React.ComponentProps<"div">) {
   return (
-    <div
-      className={cn(
-        "pixel-corners border-[4px] border-void bg-cream shadow-pixel-lg",
-        className,
-      )}
+    <PixelCard
+      tone="cream"
+      size="lg"
+      faceClassName={cn("overflow-hidden", className)}
       {...props}
     >
       {children}
-    </div>
+    </PixelCard>
   );
 }

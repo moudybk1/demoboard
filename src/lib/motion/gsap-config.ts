@@ -21,6 +21,14 @@ export function configureBoardMotion() {
     force3D: true,
   });
 
+  try {
+    if (window.localStorage.getItem("board.display.reducedMotion") === "1") {
+      document.documentElement.dataset.reducedMotion = "true";
+    }
+  } catch {
+    // ignore blocked storage
+  }
+
   // Pause the global ticker while the tab is hidden so stacked room
   // animations do not pile up catch-up work when the user returns.
   const onVisibility = () => {
@@ -33,5 +41,13 @@ export function configureBoardMotion() {
 /** Prefer skipping heavy loops when the tab is hidden. */
 export function prefersReducedMotion() {
   if (typeof window === "undefined") return true;
+  if (document.documentElement.dataset.reducedMotion === "true") return true;
+  try {
+    if (window.localStorage.getItem("board.display.reducedMotion") === "1") {
+      return true;
+    }
+  } catch {
+    // ignore blocked storage
+  }
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

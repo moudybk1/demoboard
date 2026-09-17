@@ -12,9 +12,9 @@ import {
 } from "@/lib/wallet/chains";
 
 export const metadata: Metadata = {
-  title: "BOARD | Cartoon pixel Monopoly & Ludo with real pots",
+  title: "BOARD | Closed demo · cartoon pixel Monopoly & Ludo",
   description:
-    "Roll, buy, capture, cash out. Four-player Monopoly and Ludo on a cartoon pixel tabletop, paid in BOARD on Robinhood Chain.",
+    "Roll, buy, capture. Four player Monopoly and Ludo on a cartoon pixel tabletop. This closed demo shows the tables; live BOARD staking is next.",
 };
 
 export default function Home() {
@@ -24,16 +24,19 @@ export default function Home() {
   return (
     <div className="board-atmosphere flex min-h-full flex-col">
       <SiteHeader />
-      <main className="flex flex-1 flex-col">
+      <main className="flex flex-1 flex-col overflow-x-hidden">
         <WelcomeHero
           tokenAddress={tokenAddress}
           tokenExplorerUrl={tokenExplorerUrl}
         />
         <WelcomeHighlights />
         <OnboardingPath />
-        <TokenRoadmapSection />
+        <TokenRoadmapSection
+          tokenAddress={tokenAddress}
+          tokenExplorerUrl={tokenExplorerUrl}
+        />
       </main>
-      <SiteFooter />
+      <SiteFooter seam />
     </div>
   );
 }

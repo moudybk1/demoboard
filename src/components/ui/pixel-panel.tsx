@@ -1,32 +1,32 @@
+import { PixelCard, type PixelCardStroke, type PixelCardTone } from "@/components/ui/pixel-card";
 import { cn } from "@/lib/utils";
 
-const toneClasses = {
-  default: "border-void bg-surface",
-  raised: "border-void bg-surface-raised",
-  gold: "border-void bg-gold/35",
-  monopoly: "border-void bg-monopoly/15",
-  ludo: "border-void bg-ludo/15",
-} as const;
+const toneMap = {
+  default: "surface",
+  raised: "raised",
+  gold: "goldWash",
+  monopoly: "monopoly",
+  ludo: "ludo",
+} as const satisfies Record<string, PixelCardTone>;
 
-export type PanelTone = keyof typeof toneClasses;
+export type PanelTone = keyof typeof toneMap;
 
 export function PixelPanel({
   tone = "default",
+  stroke,
   className,
   children,
   ...props
-}: React.ComponentProps<"div"> & { tone?: PanelTone }) {
+}: React.ComponentProps<"div"> & { tone?: PanelTone; stroke?: PixelCardStroke }) {
   return (
-    <div
-      className={cn(
-        "pixel-corners border-[3px] shadow-pixel",
-        toneClasses[tone],
-        className,
-      )}
+    <PixelCard
+      tone={toneMap[tone]}
+      stroke={stroke}
+      faceClassName={className}
       {...props}
     >
       {children}
-    </div>
+    </PixelCard>
   );
 }
 

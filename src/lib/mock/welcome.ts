@@ -16,32 +16,51 @@ export type WelcomeHighlight = {
 
 export const WELCOME_HERO = {
   brand: "BOARD",
-  eyebrow: "Robinhood Chain",
-  headline: "Win the pot.",
+  eyebrow: "Closed demo",
+  headline: "Try the tables.",
   support:
-    "Four-player Monopoly and Ludo. Last standing keeps 98%. Load BOARD, take a seat, cash out.",
-  proof: "Real pots. On-chain payout. No IOUs.",
+    "Four-player Monopoly and Ludo on a cartoon pixel board. Closed preview. Staking is not live yet.",
+  proof: "No real BOARD is deposited or paid out here.",
   ctas: [
-    { label: "Play now", href: "/lobby", variant: "primary" },
-    { label: "Sign in", href: "/account", variant: "secondary" },
+    { label: "Enter demo", href: "/demo", variant: "primary" },
+    { label: "How to play", href: "/how-to", variant: "secondary" },
   ] as WelcomeCta[],
 };
 
+export const WELCOME_GAMES = [
+  {
+    id: "monopoly" as const,
+    title: "Monopoly",
+    punch: "Build your property empire",
+    meta: "Four players · Strategy and trading",
+    cta: "Enter Monopoly demo",
+    closeup: "Buying a street and collecting rent",
+  },
+  {
+    id: "ludo" as const,
+    title: "Ludo",
+    punch: "Race home. Send rivals back.",
+    meta: "Four players · Racing and captures",
+    cta: "Enter Ludo demo",
+    closeup: "Capturing a pawn and sending it home",
+  },
+] as const;
+
 export const WELCOME_HIGHLIGHTS: WelcomeHighlight[] = [
   {
-    id: "rooms",
-    title: "Pooled pots",
-    body: "Entry fees fill one room pot. The last player standing keeps 98%.",
+    id: "wallet",
+    title: "Do I need a wallet?",
+    body: "Not for this closed demo. You enter with an invitation code and play with sample balances.",
   },
   {
-    id: "pixel",
-    title: "Alive boards",
-    body: "Pawns hop tile by tile. Dice tumble. Captures slap. No dead UI.",
+    id: "includes",
+    title: "What does the demo include?",
+    body: "Four-seat Monopoly and Ludo tables, sample pots, and the turn controls. No real tokens move.",
   },
   {
-    id: "chain",
-    title: "On-chain payout",
-    body: "Deposit, sit, withdraw. A 2% prize fee funds treasury and burn.",
+    id: "code",
+    title: "How do I get in?",
+    body: "Use the access code from the project link. Public pages stay open if you do not have one yet.",
   },
 ];
 
@@ -50,6 +69,13 @@ export const WELCOME_LIVE_PULSE = {
   playersOnline: 2_226,
   potToday: 184_500,
 };
+
+/** Honest facts for the public closed-demo landing. Not live occupancy. */
+export const DEMO_FACTS = [
+  { label: "Games", value: "2" },
+  { label: "Seats", value: "4" },
+  { label: "Fee", value: "2%" },
+] as const;
 
 export type OnboardingStepStatus = "done" | "current" | "upcoming";
 
@@ -67,29 +93,29 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "deposit",
     index: 1,
-    title: "Connect wallet",
-    body: "Sign in once with your chain wallet.",
+    title: "Enter your code",
+    body: "Invitation code from the project link.",
     status: "upcoming",
+    href: "/demo",
   },
   {
     id: "lobby",
     index: 2,
     title: "Pick a table",
-    body: "Monopoly or Ludo. Match the stake.",
+    body: "Monopoly or Ludo. Sample pots only.",
     status: "upcoming",
-    href: "/lobby",
+    href: "/demo",
   },
   {
     id: "win",
     index: 3,
-    title: "Take the pot",
-    body: "Last standing cashes out.",
+    title: "Join a sample table",
+    body: "Four seats. Nothing cashes out.",
     status: "upcoming",
-    href: "/lobby",
+    href: "/demo",
   },
 ];
 
 export const ONBOARDING_ACTIONS: WelcomeCta[] = [
-  { label: "Enter lobby", href: "/lobby", variant: "primary" },
-  { label: "Sign in", href: "/account", variant: "secondary" },
+  { label: "Enter closed demo", href: "/demo", variant: "primary" },
 ];

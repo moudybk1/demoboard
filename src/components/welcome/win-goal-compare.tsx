@@ -1,4 +1,5 @@
 import { WIN_GOAL_INTRO, WIN_GOALS, type WinGoalCard } from "@/lib/mock/win-goals";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { cn } from "@/lib/utils";
 
 export function WinGoalCompare({ className }: { className?: string }) {
@@ -29,11 +30,13 @@ function WinGoalPanel({ game }: { game: WinGoalCard }) {
   const isMonopoly = game.accent === "monopoly";
 
   return (
-    <article
-      className={cn(
-        "group relative flex flex-col overflow-hidden border-2 bg-surface/50 shadow-pixel transition-[transform,box-shadow] duration-[var(--duration-fast)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:shadow-pixel-lg",
-        isMonopoly ? "border-monopoly/55" : "border-ludo/55",
-      )}
+    <PixelCard
+      as="article"
+      size="lg"
+      tone="surface"
+      stroke={isMonopoly ? "monopoly" : "ludo"}
+      className="h-full transition-transform duration-[var(--duration-fast)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5"
+      faceClassName="flex h-full flex-col overflow-hidden"
     >
       <div
         aria-hidden
@@ -89,6 +92,6 @@ function WinGoalPanel({ game }: { game: WinGoalCard }) {
           ))}
         </ul>
       </div>
-    </article>
+    </PixelCard>
   );
 }

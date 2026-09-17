@@ -13,7 +13,7 @@ export type FeeExample = {
 };
 
 export const PRIZE_RULES_INTRO = {
-  title: "Prize & fee rules",
+  title: "Prizes and fees",
   support:
     "Every room pools the same entry fee from four players. One winner takes the pot after a flat platform fee.",
 };
@@ -27,7 +27,7 @@ export const PRIZE_RULES = [
   {
     id: "winner",
     title: "One winner",
-    body: "Only the room winner is paid. There are no runner-up splits. Monopoly and Ludo both settle to a single crown.",
+    body: "Only the room winner is paid. There are no runner up splits. Monopoly and Ludo both settle to a single crown.",
   },
   {
     id: "fee",

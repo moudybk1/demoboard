@@ -13,4 +13,4 @@ export const SAMPLE_DATA_LABEL = "Sample data";
 
 /** One sentence explaining why a screen shows sample figures. */
 export const SAMPLE_DATA_NOTE =
-  "Tables, players, and balances on this page are sample data. Staking is not live yet, so nothing here charges or pays out.";
+  "Closed demo: tables, players, and balances on this page are sample data. Staking is not live, so nothing here charges or pays out.";

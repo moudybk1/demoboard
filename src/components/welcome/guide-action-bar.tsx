@@ -1,6 +1,3 @@
-"use client";
-
-import { SignInButton } from "@/components/account/sign-in-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { cn } from "@/lib/utils";
 
@@ -9,10 +6,16 @@ import { cn } from "@/lib/utils";
  */
 export function GuideActionBar({
   className,
-  hint = "Sign in with your wallet, then pick a room in the lobby.",
+  hint = "Closed demo. Enter with the project access code, then try a sample table. No real BOARD is staked.",
+  hintClassName,
+  secondaryHref = "/rules",
+  secondaryLabel = "Prizes and fees",
 }: {
   className?: string;
   hint?: string;
+  hintClassName?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
 }) {
   return (
     <div
@@ -22,24 +25,30 @@ export function GuideActionBar({
       )}
     >
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-        <SignInButton
+        <PixelButtonLink
+          href="/demo"
           size="lg"
           variant="primary"
           className="w-full justify-center sm:w-auto"
         >
-          Sign in
-        </SignInButton>
+          Enter demo
+        </PixelButtonLink>
         <PixelButtonLink
-          href="/lobby"
+          href={secondaryHref}
           size="lg"
           variant="secondary"
           className="w-full justify-center sm:w-auto"
         >
-          Enter lobby
+          {secondaryLabel}
         </PixelButtonLink>
       </div>
       {hint ? (
-        <p className="w-full text-xs leading-relaxed text-faint sm:ml-1 sm:max-w-sm">
+        <p
+          className={cn(
+            "w-full text-xs leading-relaxed text-faint sm:ml-1 sm:max-w-sm",
+            hintClassName,
+          )}
+        >
           {hint}
         </p>
       ) : null}

@@ -5,7 +5,6 @@ import { Music2, Volume2 } from "lucide-react";
 
 import {
   audioManager,
-  playSfx,
   unlockAudio,
 } from "@/lib/audio/audio-manager";
 import { PixelLabel } from "@/components/ui/pixel-label";
@@ -36,7 +35,6 @@ export function AudioVolumeControls({ className }: { className?: string }) {
           void unlockAudio();
           const next = audioManager.toggleMute();
           setSfxMuted(next);
-          if (!next) playSfx("ui_click");
         }}
         onVolume={(value) => {
           void unlockAudio();

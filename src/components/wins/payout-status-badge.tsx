@@ -1,4 +1,5 @@
 import type { WinPayoutStatus } from "@/lib/mock/wins";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { cn } from "@/lib/utils";
 
 const COPY: Record<
@@ -58,14 +59,21 @@ export function PayoutStatusBanner({
 }) {
   const copy = COPY[status];
   return (
-    <div
+    <PixelCard
       role="status"
-      className={cn(
-        "pixel-corners border-2 px-4 py-3",
-        status === "paid" && "border-success/40 bg-success/5",
-        status === "pending" && "border-gold/40 bg-gold/5",
-        status === "failed" && "border-danger/40 bg-danger/5",
-        className,
+      size="sm"
+      stroke={
+        status === "paid" ? "void" : status === "failed" ? "danger" : "gold"
+      }
+      className={className}
+      faceClassName={cn(
+        "px-4 py-3",
+        status === "paid" &&
+          "bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))]",
+        status === "pending" &&
+          "bg-[color-mix(in_srgb,var(--color-gold)_12%,var(--color-surface))]",
+        status === "failed" &&
+          "bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-surface))]",
       )}
     >
       <p
@@ -79,6 +87,6 @@ export function PayoutStatusBanner({
         Payout · {copy.label}
       </p>
       <p className="mt-2 text-sm leading-relaxed text-muted">{copy.body}</p>
-    </div>
+    </PixelCard>
   );
 }

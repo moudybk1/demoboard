@@ -1,6 +1,9 @@
+import { ClosedDemoStrip } from "@/components/demo/closed-demo-strip";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PageReveal } from "@/components/layout/page-reveal";
+import { PixelCard } from "@/components/ui/pixel-card";
+import { PLAY_IS_LIVE } from "@/lib/platform-status";
 import { cn } from "@/lib/utils";
 
 type ProductShellProps = {
@@ -38,18 +41,22 @@ export function ProductShell({
           width === "wide" && "max-w-[80rem]",
         )}
       >
-        <div
-          className={cn(
-            "felt-stage relative isolate overflow-hidden p-3 sm:p-5 lg:p-6",
+        <PixelCard
+          size="lg"
+          tone="felt"
+          className="w-full"
+          faceClassName={cn(
+            "relative isolate overflow-hidden p-3 sm:p-5 lg:p-6",
             "before:pointer-events-none before:absolute before:inset-0 before:z-0 before:content-['']",
             ACCENT[accent],
             className,
           )}
         >
           <PageReveal className="relative z-[1] space-y-7 sm:space-y-9">
+            {PLAY_IS_LIVE ? null : <ClosedDemoStrip />}
             {children}
           </PageReveal>
-        </div>
+        </PixelCard>
       </main>
       <SiteFooter />
     </div>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { MOCK_TRANSACTIONS, type MockTx } from "@/lib/mock/wallet";
 import { cn, formatAge } from "@/lib/utils";
 
@@ -36,9 +37,12 @@ export function TransactionHistory({ className }: { className?: string }) {
   }, [filter]);
 
   return (
-    <section
+    <PixelCard
+      as="section"
       aria-labelledby="tx-history-title"
-      className={cn("border-2 border-edge bg-void/40 shadow-pixel", className)}
+      tone="ink"
+      className={className}
+      faceClassName="overflow-hidden"
     >
       <div className="flex flex-col gap-3 border-b-2 border-edge bg-surface-raised/60 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
         <div>
@@ -84,7 +88,7 @@ export function TransactionHistory({ className }: { className?: string }) {
           ))}
         </ul>
       )}
-    </section>
+    </PixelCard>
   );
 }
 

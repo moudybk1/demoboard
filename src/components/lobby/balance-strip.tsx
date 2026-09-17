@@ -1,18 +1,19 @@
 import { Link2, Lock } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelBadge } from "@/components/ui/pixel-badge";
 import { PixelLabel } from "@/components/ui/pixel-label";
 import { PLAY_IS_LIVE, SAMPLE_DATA_LABEL } from "@/lib/platform-status";
 import type { WalletBalance } from "@/lib/types";
-import { cn, formatBoard } from "@/lib/utils";
+import { formatBoard } from "@/lib/utils";
 
 function shortAddress(address: string) {
   if (!address || address.length < 10) return "...";
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-/** Balance vault strip — stakes at a glance before joining a room. */
+/** Balance vault strip. Stakes at a glance before joining a room. */
 export function BalanceStrip({
   balance,
   cheapestEntryFee,
@@ -30,11 +31,12 @@ export function BalanceStrip({
     balance.available < cheapestEntryFee;
 
   return (
-    <section
-      className={cn(
-        "relative overflow-hidden pixel-corners-lg border-[3px] border-void bg-gold shadow-pixel",
-        className,
-      )}
+    <PixelCard
+      as="section"
+      size="lg"
+      tone="gold"
+      className={className}
+      faceClassName="relative overflow-hidden"
     >
       <div
         aria-hidden
@@ -96,6 +98,6 @@ export function BalanceStrip({
           {formatBoard(cheapestEntryFee)} BOARD).
         </p>
       ) : null}
-    </section>
+    </PixelCard>
   );
 }

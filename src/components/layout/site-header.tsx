@@ -1,95 +1,247 @@
 "use client";
 
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { ProfileMenu } from "@/components/account/profile-menu";
 import { SignInButton } from "@/components/account/sign-in-button";
 import { AudioControlsPopover } from "@/components/audio/audio-controls-popover";
-import { AudioMuteToggle } from "@/components/audio/audio-mute-toggle";
-import { MusicToggle } from "@/components/audio/music-toggle";
+import { DemoLeaveButton } from "@/components/demo/demo-leave-button";
 import { BoardLogo } from "@/components/layout/board-logo";
+import { LinksMenu } from "@/components/layout/links-menu";
+import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { BalanceWidget } from "@/components/wallet/balance-widget";
 import { useAuthMe } from "@/hooks/use-auth-me";
+import { useDemoAccess } from "@/hooks/use-demo-access";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
+const PUBLIC_LINKS = [
+  { href: "/how-to", label: "How to play" },
+  { href: "/rules", label: "Prizes & fees" },
+] as const;
+
+const DEMO_LINKS = [
   { href: "/lobby", label: "Lobby" },
-  { href: "/how-to", label: "Guide" },
+  { href: "/how-to", label: "How to play" },
   { href: "/settings", label: "Settings" },
 ] as const;
 
+const NAV_CHIP =
+  "inline-flex shrink-0 items-center rounded-full px-3 py-2 font-pixel text-xs font-semibold uppercase leading-none tracking-[0.12em] text-parchment transition-[transform,colors] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-gold hover:text-void active:translate-y-px";
+
 export function SiteHeader({ className }: { className?: string }) {
+  const pathname = usePathname();
   const { authenticated, loading } = useAuthMe();
+  const { ready, unlocked } = useDemoAccess();
+  const navLinks = unlocked ? DEMO_LINKS : PUBLIC_LINKS;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const panelId = useId();
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-[40] px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4",
-        className,
-      )}
-    >
-      <div className="board-container">
-        <div className="relative flex h-16 items-center pixel-corners border-[3px] border-void bg-surface px-3 shadow-pixel sm:h-[4.25rem] sm:px-4">
-          <Link
-            href="/"
-            aria-label="BOARD home"
-            className="relative z-10 flex min-w-0 shrink items-center py-1"
-          >
-            <BoardLogo />
-          </Link>
-
-          <nav
-            aria-label="Primary desktop"
-            className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 lg:flex"
-          >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="pixel-corners px-3 py-1.5 font-pixel text-sm font-semibold uppercase leading-none text-muted transition-colors hover:bg-gold hover:text-void"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="relative z-10 ml-auto flex items-center gap-2 sm:gap-3">
-            <AudioControlsPopover className="hidden sm:block" />
-            <MusicToggle />
-            <AudioMuteToggle />
-            {authenticated ? (
-              <BalanceWidget compact live className="hidden sm:inline-flex" />
-            ) : null}
-
-            {authenticated ? (
-              <ProfileMenu />
-            ) : (
-              <SignInButton
-                variant="primary"
-                size="sm"
-                className="px-3 text-xs sm:text-sm"
-              >
-                {loading ? "…" : "Sign in"}
-              </SignInButton>
+    <>
+      <header
+        className={cn(
+          "pointer-events-none fixed inset-x-0 top-0 z-[40] pt-[env(safe-area-inset-top)]",
+          className,
+        )}
+      >
+        <div className="pointer-events-auto mx-3 mt-3 sm:mx-5 sm:mt-4 lg:mx-auto lg:max-w-[64rem] lg:px-6 xl:max-w-[68rem]">
+          <div
+            className={cn(
+              "border-[3px] border-void bg-cream shadow-pixel transition-[border-radius] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              menuOpen ? "rounded-[1.75rem]" : "rounded-full",
             )}
+          >
+            <div
+              className={cn(menuOpen ? "rounded-[1.6rem]" : "rounded-full")}
+            >
+              <div className="flex h-14 items-center gap-1.5 px-2 sm:h-[3.75rem] sm:gap-2 sm:px-2.5">
+                <Link
+                  href="/"
+                  aria-label="BOARD home"
+                  className="shrink-0 rounded-full px-1 py-1"
+                >
+                  <BoardLogo
+                    variant="mark"
+                    className="text-base text-parchment sm:text-lg"
+                  />
+                </Link>
+
+                <nav
+                  aria-label="Primary"
+                  className="hidden min-w-0 flex-1 items-center gap-0.5 lg:flex"
+                >
+                  {navLinks.map((link) => (
+                    <NavChip
+                      key={link.href}
+                      href={link.href}
+                      label={link.label}
+                      active={isActivePath(pathname, link.href)}
+                    />
+                  ))}
+                  <LinksMenu label="Community" triggerClassName={NAV_CHIP} />
+                </nav>
+
+                <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+                  <AudioControlsPopover />
+                  {unlocked && authenticated ? (
+                    <BalanceWidget
+                      compact
+                      live
+                      className="hidden lg:inline-flex"
+                    />
+                  ) : null}
+
+                  {unlocked ? (
+                    authenticated ? (
+                      <ProfileMenu />
+                    ) : (
+                      <SignInButton
+                        variant="ghost"
+                        size="sm"
+                        className="hidden rounded-full px-3 text-xs text-parchment hover:bg-gold hover:text-void sm:inline-flex"
+                      >
+                        {loading ? "…" : "Sign in"}
+                      </SignInButton>
+                    )
+                  ) : null}
+
+                  {unlocked ? (
+                    <DemoLeaveButton className="hidden rounded-full px-3 text-xs text-parchment hover:bg-gold hover:text-void lg:inline-flex" />
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className="grid size-9 shrink-0 place-items-center rounded-full border-[3px] border-void bg-cream text-parchment transition-colors duration-200 hover:bg-gold lg:hidden"
+                    aria-expanded={menuOpen}
+                    aria-controls={panelId}
+                    aria-haspopup="true"
+                    data-nav-menu-toggle
+                    onClick={() => {
+                      setMenuOpen((value) => !value);
+                    }}
+                  >
+                    <span className="sr-only">
+                      {menuOpen ? "Close menu" : "Open menu"}
+                    </span>
+                    <span aria-hidden className="relative block size-3.5">
+                      <span
+                        className={cn(
+                          "absolute left-0 block h-[3px] w-3.5 bg-current transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          menuOpen ? "top-[5px] rotate-45" : "top-[2px]",
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "absolute left-0 block h-[3px] w-3.5 bg-current transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          menuOpen ? "top-[5px] -rotate-45" : "top-[9px]",
+                        )}
+                      />
+                    </span>
+                  </button>
+
+                  {ready ? (
+                    unlocked ? (
+                      <PixelButtonLink
+                        href="/lobby"
+                        variant="primary"
+                        size="sm"
+                        className="rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4"
+                      >
+                        Play
+                      </PixelButtonLink>
+                    ) : (
+                      <PixelButtonLink
+                        href="/demo"
+                        variant="primary"
+                        size="sm"
+                        className="rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4"
+                      >
+                        Enter demo
+                      </PixelButtonLink>
+                    )
+                  ) : (
+                    <span className="inline-block h-9 w-24" aria-hidden />
+                  )}
+                </div>
+              </div>
+
+              {menuOpen ? (
+                <nav
+                  id={panelId}
+                  aria-label="Primary"
+                  className="flex flex-col gap-1 border-t-[3px] border-void px-3 py-3 lg:hidden"
+                >
+                  {navLinks.map((link) => (
+                    <NavChip
+                      key={link.href}
+                      href={link.href}
+                      label={link.label}
+                      active={isActivePath(pathname, link.href)}
+                      className="w-full justify-start px-3 py-3"
+                    />
+                  ))}
+                  <LinksMenu
+                    label="Community"
+                    variant="inline"
+                    className="w-full"
+                    triggerClassName={cn(NAV_CHIP, "w-full justify-start px-3 py-3")}
+                  />
+                  {unlocked ? (
+                    <div className="mt-2 px-1 pt-2">
+                      <DemoLeaveButton className="rounded-full px-3 text-xs text-parchment hover:bg-gold hover:text-void" />
+                    </div>
+                  ) : null}
+                </nav>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
-
-      <nav
-        aria-label="Primary"
-        className="mt-2 flex justify-center gap-1.5 overflow-x-auto px-1 pb-1 lg:hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="shrink-0 pixel-corners border-[3px] border-void bg-surface px-3 py-1.5 font-pixel text-sm font-semibold uppercase leading-none text-muted shadow-pixel-sm hover:bg-gold hover:text-void"
-          >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
-    </header>
+      </header>
+      <div
+        aria-hidden
+        className="h-[4.75rem] shrink-0 pt-[env(safe-area-inset-top)] sm:h-[5.25rem]"
+      />
+    </>
   );
+}
+
+function NavChip({
+  href,
+  label,
+  active,
+  className,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(NAV_CHIP, active && "bg-void text-gold hover:bg-void hover:text-gold", className)}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

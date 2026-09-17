@@ -4,7 +4,7 @@ import { SignInButton } from "@/components/account/sign-in-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { useAuthMe } from "@/hooks/use-auth-me";
 
-/** Lobby hero CTAs — sign-in modal when logged out. */
+/** Lobby hero CTAs. Sign-in modal when logged out. */
 export function LobbyHeroActions() {
   const { authenticated } = useAuthMe();
 

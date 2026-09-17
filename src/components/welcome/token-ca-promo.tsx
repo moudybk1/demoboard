@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { PixelButton } from "@/components/ui/pixel-button";
-import { playSfx } from "@/lib/audio/audio-manager";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { shortenAddress } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ type TokenCaPromoProps = {
 };
 
 /**
- * BOARD ERC-20 contract address promo — copy + explorer.
+ * BOARD ERC-20 contract address promo. Copy plus explorer.
  */
 export function TokenCaPromo({
   address,
@@ -32,11 +32,10 @@ export function TokenCaPromo({
     if (!address) return;
     try {
       await navigator.clipboard.writeText(address);
-      playSfx("ui_click");
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Clipboard can fail without permission — leave UI unchanged.
+      // Clipboard can fail without permission. Leave UI unchanged.
     }
   }
 
@@ -89,7 +88,6 @@ export function TokenCaPromo({
                     "hover:bg-surface-hover active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
                   )}
-                  onClick={() => playSfx("ui_click")}
                 >
                   Explorer
                 </a>
@@ -98,7 +96,7 @@ export function TokenCaPromo({
           </>
         ) : (
           <p className="mt-2 font-pixel text-xs leading-relaxed text-muted sm:text-xs">
-            CA soon - verify here before you trade.
+            CA soon. Verify here before you trade.
           </p>
         )}
       </aside>
@@ -106,12 +104,13 @@ export function TokenCaPromo({
   }
 
   return (
-    <aside
+    <PixelCard
+      as="aside"
       aria-labelledby="token-ca-title"
-      className={cn(
-        "border-2 border-gold/50 bg-gold/5 p-5 shadow-pixel sm:p-6",
-        className,
-      )}
+      tone="goldWash"
+      stroke="gold"
+      className={className}
+      faceClassName="p-5 sm:p-6"
     >
       <p className="font-pixel text-xs uppercase tracking-[0.2em] text-gold">
         Official contract
@@ -164,7 +163,6 @@ export function TokenCaPromo({
                   "hover:bg-surface-hover active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
                 )}
-                onClick={() => playSfx("ui_click")}
               >
                 View on explorer
               </a>
@@ -182,6 +180,6 @@ export function TokenCaPromo({
           </p>
         </div>
       )}
-    </aside>
+    </PixelCard>
   );
 }

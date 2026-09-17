@@ -11,7 +11,7 @@ import { MOCK_BALANCE } from "@/lib/mock/lobby";
 export const metadata: Metadata = {
   title: "Game room | BOARD",
   description:
-    "Four-player Monopoly or Ludo. One winner takes the pot, minus a 2% fee.",
+    "Four player Monopoly or Ludo. One winner takes the pot after a 2% fee.",
 };
 
 export default async function RoomPage(props: PageProps<"/room/[roomId]">) {

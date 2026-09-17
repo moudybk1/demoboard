@@ -16,7 +16,7 @@ type SignInButtonProps = {
   "aria-label"?: string;
 };
 
-/** Always opens the in-page wallet picker — never navigates away. */
+/** Always opens the in-page wallet picker. Never navigates away. */
 export function SignInButton({
   children = "Sign in",
   className,

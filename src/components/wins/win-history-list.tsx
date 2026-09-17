@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PayoutStatusBadge } from "@/components/wins/payout-status-badge";
 import {
   MOCK_WIN_HISTORY,
@@ -14,7 +15,7 @@ import { cn, formatAge } from "@/lib/utils";
 const NOW = Date.parse("2026-09-13T12:00:00.000Z");
 
 /**
- * Win history as a felt trophy board — not a flat spreadsheet list.
+ * Win history as a felt trophy board, not a flat spreadsheet list.
  */
 export function WinHistoryList({
   wins = MOCK_WIN_HISTORY,
@@ -29,14 +30,13 @@ export function WinHistoryList({
 
   if (sorted.length === 0) {
     return (
-      <div
-        className={cn(
-          "border-2 border-edge bg-void/50 px-5 py-10 text-center text-sm text-muted",
-          className,
-        )}
+      <PixelCard
+        tone="ink"
+        className={className}
+        faceClassName="px-5 py-10 text-center text-sm text-muted"
       >
         No wins yet. Sit a table in the lobby to start a run.
-      </div>
+      </PixelCard>
     );
   }
 
@@ -56,21 +56,18 @@ export function WinHistoryList({
 
 function WinCard({ win }: { win: MockWinResult }) {
   const yours = win.winner.isYou;
-  const accent =
-    win.gameType === "monopoly"
-      ? "border-monopoly/45 hover:border-monopoly/70"
-      : "border-ludo/45 hover:border-ludo/70";
   const bar =
     win.gameType === "monopoly" ? "bg-monopoly" : "bg-ludo";
 
   return (
-    <li>
-      <Link
+    <li className="h-full">
+      <PixelCard
+        as={Link}
         href="/result"
-        className={cn(
-          "group flex h-full flex-col overflow-hidden border-2 bg-void/55 shadow-pixel transition-[transform,box-shadow,border-color] duration-[var(--duration-fast)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:shadow-pixel-lg",
-          accent,
-        )}
+        stroke={win.gameType === "monopoly" ? "monopoly" : "ludo"}
+        tone="ink"
+        className="block h-full transition-transform duration-[var(--duration-fast)] ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5"
+        faceClassName="flex h-full flex-col overflow-hidden"
       >
         <div aria-hidden className={cn("h-1 w-full", bar)} />
         <div className="flex flex-1 flex-col gap-3 p-4">
@@ -109,7 +106,7 @@ function WinCard({ win }: { win: MockWinResult }) {
             </div>
           </div>
         </div>
-      </Link>
+      </PixelCard>
     </li>
   );
 }

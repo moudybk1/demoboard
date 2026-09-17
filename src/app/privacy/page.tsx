@@ -23,7 +23,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "What is public by design",
     covers:
-      "On-chain deposits, withdrawals, and burn proofs are public and permanent. A wallet address links a player's chain activity to their BOARD history, and that cannot be undone later.",
+      "On chain deposits, withdrawals, and burn proofs are public and permanent. A wallet address links a player's chain activity to their BOARD history, and that cannot be undone later.",
   },
   {
     heading: "How long it is kept",

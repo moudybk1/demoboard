@@ -1,17 +1,19 @@
-"use client";
-
-import { SignInButton } from "@/components/account/sign-in-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
+import { HOW_TO_CTAS } from "@/lib/mock/how-to";
 
 export function HowToHeroActions() {
   return (
     <>
-      <SignInButton variant="primary" size="md">
-        Sign in
-      </SignInButton>
-      <PixelButtonLink href="/lobby" variant="secondary" size="md">
-        Enter lobby
-      </PixelButtonLink>
+      {HOW_TO_CTAS.map((cta) => (
+        <PixelButtonLink
+          key={cta.href}
+          href={cta.href}
+          variant={cta.variant}
+          size="md"
+        >
+          {cta.label}
+        </PixelButtonLink>
+      ))}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { Flame, Landmark } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { cn } from "@/lib/utils";
 
 export type PrizeSplitValues = {
@@ -24,12 +25,12 @@ export function PrizeSplit({
   compact?: boolean;
 }) {
   return (
-    <dl
-      className={cn(
-        "pixel-corners space-y-2 border-2 border-edge bg-void/40 p-4",
-        compact ? "text-[11px]" : "text-sm",
-        className,
-      )}
+    <PixelCard
+      as="dl"
+      size="sm"
+      tone="ink"
+      className={className}
+      faceClassName={cn("space-y-2 p-4", compact ? "text-[11px]" : "text-sm")}
     >
       <SplitRow label="Gross pot" value={values.grossPot} compact={compact} />
       <SplitRow
@@ -52,7 +53,7 @@ export function PrizeSplit({
         emphasize
         compact={compact}
       />
-    </dl>
+    </PixelCard>
   );
 }
 

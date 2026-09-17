@@ -106,7 +106,7 @@ export async function payMatchReward(
       burnAmount: "0",
       netPayout: netPayout.toFixed(2),
       status: "pending",
-      note: "Credited off-chain; awaiting on-chain confirmation",
+      note: "Credited off chain. Awaiting on chain confirmation",
       paidAt: null,
       createdAt: now,
     })

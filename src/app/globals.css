@@ -1,8 +1,11 @@
-/* Pixelify Sans: pixel letterforms that stay readable at UI sizes. */
+/* Pixelify Sans: titles, buttons, scores. Outfit: body copy. */
 @import "@fontsource/pixelify-sans/400.css";
 @import "@fontsource/pixelify-sans/500.css";
 @import "@fontsource/pixelify-sans/600.css";
 @import "@fontsource/pixelify-sans/700.css";
+@import "@fontsource/outfit/400.css";
+@import "@fontsource/outfit/500.css";
+@import "@fontsource/outfit/600.css";
 @import "tailwindcss";
 
 /* ==========================================================================
@@ -24,10 +27,11 @@
   --color-edge: #2d170c;
   --color-edge-bright: #6b3a14;
 
-  /* Type on cream */
+  /* Type on cream · muted/faint stay above 4.5:1 on cream */
   --color-parchment: #2d170c;
-  --color-muted: #7a4e2a;
-  --color-faint: #8d5a32;
+  --color-muted: #5c3418;
+  --color-faint: #6a3c1c;
+  --color-link: #8a3200;
 
   /* Candy accents · lemon primary, sky Monopoly, bubblegum Ludo */
   --color-gold: #ffd23a;
@@ -39,7 +43,7 @@
   --color-felt: #2ecf7a;
 
   --font-pixel: "Pixelify Sans", "Trebuchet MS", sans-serif;
-  --font-sans: "Pixelify Sans", "Trebuchet MS", sans-serif;
+  --font-sans: "Outfit", "Trebuchet MS", sans-serif;
   --font-mono: "Pixelify Sans", ui-monospace, monospace;
   --font-mark: "Pixelify Sans", "Trebuchet MS", sans-serif;
 
@@ -86,6 +90,7 @@
   --animate-pixel-pop: pixel-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-slide-up: slide-up 360ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
   --animate-wiggle: wiggle 700ms steps(4, end) infinite;
+  --animate-pawn-bounce: pawn-bounce 700ms ease-in-out infinite;
 }
 
 @keyframes float {
@@ -168,6 +173,16 @@
   }
 }
 
+@keyframes pawn-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
 /* --------------------------------------------------------------------------
    Base
    -------------------------------------------------------------------------- */
@@ -176,6 +191,7 @@
     background-color: #7ed6ff;
     color-scheme: light;
     overscroll-behavior-y: none;
+    scroll-padding-top: 5.5rem;
   }
 
   /*
@@ -188,11 +204,11 @@
     isolation: isolate;
     min-height: 100dvh;
     color: var(--color-parchment);
-    font-family: var(--font-pixel);
+    font-family: var(--font-sans);
     font-size: 17px;
     font-weight: 500;
-    line-height: 1.55;
-    letter-spacing: 0.03em;
+    line-height: 1.65;
+    letter-spacing: 0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #7ed6ff;
@@ -212,12 +228,12 @@
       repeating-linear-gradient(
         0deg,
         transparent 0 3px,
-        rgba(45, 23, 12, 0.05) 3px 4px
+        rgba(45, 23, 12, 0.028) 3px 4px
       ),
       repeating-linear-gradient(
         90deg,
         transparent 0 3px,
-        rgba(45, 23, 12, 0.04) 3px 4px
+        rgba(45, 23, 12, 0.022) 3px 4px
       ),
       url("/pixel-playground.svg");
     background-repeat: repeat, repeat, no-repeat;
@@ -233,7 +249,7 @@
     content: "";
     position: fixed;
     inset: 0;
-    z-index: 81;
+    z-index: 0;
     pointer-events: none;
     opacity: 0.55;
     image-rendering: pixelated;
@@ -256,11 +272,16 @@
 
   .font-pixel,
   .font-mark,
-  .font-sans,
   .font-mono {
     font-family: var(--font-pixel);
     letter-spacing: 0.04em;
     line-height: 1.45;
+  }
+
+  .font-sans {
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
+    line-height: 1.65;
   }
 
   ::selection {
@@ -310,10 +331,101 @@
   border-radius: 8px;
 }
 
+/*
+  Stepped 8-bit card corners. Nested clip-path (shell + face) makes the
+  chocolate stroke follow the notches; drop-shadow replaces box-shadow.
+*/
+:root {
+  --pixel-notch: polygon(
+    0 8px,
+    4px 8px,
+    4px 4px,
+    8px 4px,
+    8px 0,
+    calc(100% - 8px) 0,
+    calc(100% - 8px) 4px,
+    calc(100% - 4px) 4px,
+    calc(100% - 4px) 8px,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 8px) calc(100% - 4px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    8px calc(100% - 4px),
+    4px calc(100% - 4px),
+    4px calc(100% - 8px),
+    0 calc(100% - 8px)
+  );
+
+  --pixel-notch-sm: polygon(
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
+  );
+}
+
+@utility pixel-notch {
+  clip-path: var(--pixel-notch);
+}
+
+@utility pixel-notch-sm {
+  clip-path: var(--pixel-notch-sm);
+}
+
+@utility pixel-card-shadow {
+  filter: drop-shadow(4px 4px 0 var(--color-void));
+}
+
+@utility pixel-card-shadow-sm {
+  filter: drop-shadow(2px 2px 0 var(--color-void));
+}
+
+@utility pixel-card-shadow-lg {
+  filter: drop-shadow(6px 6px 0 var(--color-void));
+}
+
+@utility felt-face {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 7px,
+      rgba(45, 23, 12, 0.045) 7px 8px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 7px,
+      rgba(255, 255, 255, 0.05) 7px 8px
+    ),
+    linear-gradient(180deg, #3ee08a 0%, #22c36e 100%);
+}
+
 @utility font-mark {
   font-family: var(--font-pixel);
   letter-spacing: 0.04em;
   line-height: 1.45;
+}
+
+@utility font-sans {
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+  line-height: 1.65;
+}
+
+@utility text-link {
+  color: var(--color-link);
+  font-weight: 600;
+  text-underline-offset: 4px;
 }
 
 @utility scanlines {
@@ -324,6 +436,7 @@
     inset: 0;
     pointer-events: none;
     border-radius: inherit;
+    clip-path: inherit;
     opacity: 0.45;
     image-rendering: pixelated;
     background-image: url("/pixel-confetti.svg");
@@ -345,6 +458,7 @@
 @utility board-atmosphere {
   position: relative;
   isolation: isolate;
+  z-index: 10;
   &::before {
     content: "";
     position: absolute;
@@ -368,22 +482,20 @@
 @utility felt-stage {
   position: relative;
   border: 4px solid var(--color-void);
-  border-radius: 8px;
+  clip-path: var(--pixel-notch);
   background:
     repeating-linear-gradient(
       90deg,
       transparent 0 7px,
-      rgba(45, 23, 12, 0.08) 7px 8px
+      rgba(45, 23, 12, 0.045) 7px 8px
     ),
     repeating-linear-gradient(
       0deg,
       transparent 0 7px,
-      rgba(255, 255, 255, 0.08) 7px 8px
+      rgba(255, 255, 255, 0.05) 7px 8px
     ),
     linear-gradient(180deg, #3ee08a 0%, #22c36e 100%);
-  box-shadow:
-    6px 6px 0 0 var(--color-void),
-    inset 0 0 0 8px color-mix(in srgb, var(--color-void) 16%, transparent);
+  filter: drop-shadow(6px 6px 0 var(--color-void));
 }
 
 @utility board-container {

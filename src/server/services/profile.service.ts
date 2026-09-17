@@ -53,7 +53,7 @@ function mapProfile(row: typeof users.$inferSelect): ProfileView {
 function normalizeUsername(username: string): string {
   const name = username.trim();
   if (name.length < 3 || name.length > 24) {
-    throw new ProfileError("Username must be 3-24 characters.");
+    throw new ProfileError("Username must be 3 to 24 characters.");
   }
   if (!/^[a-zA-Z0-9_]+$/.test(name)) {
     throw new ProfileError("Username may only use letters, numbers, and _.");

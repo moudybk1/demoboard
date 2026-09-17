@@ -2,6 +2,7 @@ import { Coins, Flame, Landmark, Trophy, Wallet } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelLabel } from "@/components/ui/pixel-label";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { PRIZE_FEE_RATE, netPrize, prizePool } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -36,11 +37,11 @@ export function RoomEconomyHighlight({
 
   if (variant === "strip") {
     return (
-      <div
-        className={cn(
-          "pixel-corners flex flex-wrap items-center gap-x-3 gap-y-2 border-[3px] border-void bg-cream px-3 py-2",
-          className,
-        )}
+      <PixelCard
+        size="sm"
+        tone="cream"
+        className={className}
+        faceClassName="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
       >
         <Metric
           icon={<Coins className="size-3 text-muted" aria-hidden />}
@@ -72,7 +73,7 @@ export function RoomEconomyHighlight({
             tone={canAfford ? "default" : "danger"}
           />
         )}
-      </div>
+      </PixelCard>
     );
   }
 
@@ -180,12 +181,12 @@ function EconomyCell({
   tone: "default" | "gold" | "danger" | "muted";
 }) {
   return (
-    <div className="pixel-corners border-[3px] border-void bg-cream px-3 py-2.5">
+    <PixelCard size="sm" tone="cream" faceClassName="px-3 py-2.5">
       <p className="flex items-center gap-1.5 font-pixel text-xs font-bold uppercase text-faint">
         {icon}
         {label}
       </p>
       <BoardAmount value={value} size="md" tone={tone} className="mt-1.5" />
-    </div>
+    </PixelCard>
   );
 }

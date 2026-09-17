@@ -6,6 +6,7 @@ import { Dice5, Monitor, Volume2 } from "lucide-react";
 import { AudioVolumeControls } from "@/components/audio/audio-volume-controls";
 import { audioManager, playSfx, unlockAudio } from "@/lib/audio/audio-manager";
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelSwitch } from "@/components/ui/pixel-switch";
 import {
   PixelPanel,
@@ -78,10 +79,10 @@ export function SettingsBoard({ className }: { className?: string }) {
             checked={scanlines}
             onChange={setScanlines}
           />
-          <p className="pixel-corners border-[3px] border-void bg-cream px-3 py-3 text-sm leading-relaxed text-muted">
-            Every line uses Pixelify Sans — a pixel face sized so labels,
-            buttons, and body copy stay easy to read.
-          </p>
+          <PixelCard size="sm" tone="cream" faceClassName="px-3 py-3 text-sm leading-relaxed text-muted">
+            Titles, buttons, and scores stay in Pixelify Sans. Explanations
+            use Outfit so longer copy is easier to read.
+          </PixelCard>
         </div>
       </PixelPanel>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   EntryFeeFilter,
@@ -10,6 +10,7 @@ import { GamePicker } from "@/components/lobby/game-picker";
 import { RoomList } from "@/components/lobby/room-list";
 import { PixelHeading } from "@/components/ui/pixel-label";
 import type { GameOption } from "@/lib/mock/lobby";
+import { rememberPreviewGame, readPreviewGame } from "@/lib/preview-game";
 import type { GameType, Room } from "@/lib/types";
 
 /**
@@ -30,11 +31,23 @@ export function LobbyBoard({
   feeTiers: readonly number[];
   balance: number;
   now: number;
-  defaultGame: GameType;
+  defaultGame?: GameType;
 }) {
-  const [selectedGame, setSelectedGame] = useState<GameType>(defaultGame);
+  const [selectedGame, setSelectedGame] = useState<GameType>(
+    defaultGame ?? "monopoly",
+  );
   const [feeFilter, setFeeFilter] = useState<EntryFeeFilterValue>(null);
   const [affordableOnly, setAffordableOnly] = useState(false);
+
+  useEffect(() => {
+    if (defaultGame) {
+      rememberPreviewGame(defaultGame);
+      setSelectedGame(defaultGame);
+      return;
+    }
+    const stored = readPreviewGame();
+    if (stored) setSelectedGame(stored);
+  }, [defaultGame]);
 
   const gameRooms = useMemo(
     () => rooms.filter((room) => room.gameType === selectedGame),
@@ -78,6 +91,7 @@ export function LobbyBoard({
           selected={selectedGame}
           onSelect={(game) => {
             setSelectedGame(game);
+            rememberPreviewGame(game);
             setFeeFilter(null);
           }}
         />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PixelTerrain } from "@/components/welcome/pixel-terrain";
 import { PLAY_IS_LIVE } from "@/lib/platform-status";
 import { cn } from "@/lib/utils";
 
@@ -12,19 +13,31 @@ const LEGAL_LINKS = [
  * Site footer. One row, not four template columns: the product has two legal
  * pages and a status line, so that is what it links to.
  */
-export function SiteFooter({ className }: { className?: string }) {
+export function SiteFooter({
+  className,
+  seam = false,
+}: {
+  className?: string;
+  /** Pixel hill join for the landing biomes. Inner pages keep a flat rule. */
+  seam?: boolean;
+}) {
   return (
     <footer
       className={cn(
-        "border-t-[3px] border-void bg-ink/70 pb-[env(safe-area-inset-bottom)]",
+        "relative pb-[env(safe-area-inset-bottom)]",
+        seam ? "z-20 -mt-16 sm:-mt-20" : "border-t-[3px] border-void bg-ink/70",
         className,
       )}
     >
-      <div className="board-container flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+      {seam ? (
+        <PixelTerrain placed="stack" variant="skyline" className="text-ink" />
+      ) : null}
+      <div className={cn(seam && "-mt-px bg-ink")}>
+        <div className="board-container relative z-[1] flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-pixel text-xs font-semibold uppercase tracking-wider text-faint">
           {PLAY_IS_LIVE
             ? "BOARD · Robinhood Chain"
-            : "BOARD · preview build, staking not live"}
+            : "BOARD · closed demo, staking not live"}
         </p>
 
         <nav aria-label="Legal" className="flex items-center gap-4">
@@ -38,6 +51,7 @@ export function SiteFooter({ className }: { className?: string }) {
             </Link>
           ))}
         </nav>
+        </div>
       </div>
     </footer>
   );

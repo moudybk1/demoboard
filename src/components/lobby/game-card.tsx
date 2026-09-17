@@ -2,12 +2,13 @@
 
 import { Check, Radio, Users } from "lucide-react";
 
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelBadge } from "@/components/ui/pixel-badge";
 import type { GameOption } from "@/lib/mock/lobby";
 import { cn, formatBoard } from "@/lib/utils";
 
 /**
- * Toy cabinet picker card — selecting swaps the room list in place.
+ * Toy cabinet picker card. Selecting swaps the room list in place.
  */
 export function GameCard({
   game,
@@ -27,7 +28,8 @@ export function GameCard({
   const isMonopoly = game.type === "monopoly";
 
   return (
-    <button
+    <PixelCard
+      as="button"
       ref={ref}
       type="button"
       role="radio"
@@ -35,17 +37,16 @@ export function GameCard({
       tabIndex={tabbable ? 0 : -1}
       onClick={onSelect}
       onKeyDown={onKeyDown}
+      size="lg"
+      tone={
+        selected ? (isMonopoly ? "monopoly" : "ludo") : "surface"
+      }
       className={cn(
-        "group relative flex min-h-[12.5rem] flex-col overflow-hidden pixel-corners-lg border-[4px] p-0 text-left",
-        "transition-[transform,box-shadow,border-color,background-color] duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        "group w-full text-left transition-transform duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-deep",
-        selected
-          ? "-translate-y-1 border-void shadow-pixel-lg"
-          : "border-void opacity-90 shadow-pixel hover:-translate-y-1 hover:opacity-100",
-        selected && isMonopoly && "bg-monopoly/20",
-        selected && !isMonopoly && "bg-ludo/20",
-        !selected && "bg-surface",
+        selected ? "-translate-y-1" : "opacity-90 hover:-translate-y-1 hover:opacity-100",
       )}
+      faceClassName="flex min-h-[12.5rem] flex-col overflow-hidden"
     >
       <div
         aria-hidden
@@ -117,6 +118,6 @@ export function GameCard({
           </span>
         </div>
       </div>
-    </button>
+    </PixelCard>
   );
 }

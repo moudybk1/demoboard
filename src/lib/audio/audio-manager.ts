@@ -26,62 +26,65 @@ type SfxRecipe = {
 };
 
 const SFX: Record<SfxId, SfxRecipe[]> = {
-  ui_click: [{ type: "square", freq: 680, duration: 0.04, gain: 0.08 }],
-  ui_hover: [{ type: "triangle", freq: 520, duration: 0.03, gain: 0.04 }],
+  ui_click: [
+    { type: "square", freq: 880, duration: 0.05, gain: 0.28 },
+    { type: "square", freq: 420, duration: 0.08, gain: 0.18, delay: 0.012 },
+  ],
+  ui_hover: [{ type: "triangle", freq: 520, duration: 0.04, gain: 0.12 }],
   dice_roll: [
-    { type: "square", freq: 180, freqEnd: 90, duration: 0.08, gain: 0.1 },
+    { type: "square", freq: 180, freqEnd: 90, duration: 0.1, gain: 0.28 },
     {
       type: "square",
       freq: 220,
       freqEnd: 110,
-      duration: 0.07,
-      gain: 0.08,
+      duration: 0.09,
+      gain: 0.22,
       delay: 0.05,
     },
     {
       type: "square",
       freq: 260,
       freqEnd: 130,
-      duration: 0.06,
-      gain: 0.07,
+      duration: 0.08,
+      gain: 0.2,
       delay: 0.1,
     },
   ],
   pawn_step: [
-    { type: "triangle", freq: 240, freqEnd: 180, duration: 0.06, gain: 0.07 },
+    { type: "triangle", freq: 240, freqEnd: 180, duration: 0.07, gain: 0.2 },
   ],
   buy: [
-    { type: "square", freq: 440, duration: 0.06, gain: 0.08 },
-    { type: "square", freq: 660, duration: 0.08, gain: 0.07, delay: 0.05 },
+    { type: "square", freq: 440, duration: 0.07, gain: 0.22 },
+    { type: "square", freq: 660, duration: 0.09, gain: 0.2, delay: 0.05 },
   ],
   rent: [
-    { type: "sawtooth", freq: 320, freqEnd: 160, duration: 0.14, gain: 0.06 },
+    { type: "sawtooth", freq: 320, freqEnd: 160, duration: 0.16, gain: 0.18 },
   ],
   capture: [
-    { type: "square", freq: 160, duration: 0.05, gain: 0.1 },
+    { type: "square", freq: 160, duration: 0.06, gain: 0.26 },
     {
       type: "square",
       freq: 120,
       freqEnd: 60,
-      duration: 0.12,
-      gain: 0.09,
+      duration: 0.14,
+      gain: 0.24,
       delay: 0.04,
     },
   ],
   win: [
-    { type: "square", freq: 523, duration: 0.1, gain: 0.09 },
-    { type: "square", freq: 659, duration: 0.1, gain: 0.09, delay: 0.1 },
-    { type: "square", freq: 784, duration: 0.18, gain: 0.1, delay: 0.2 },
+    { type: "square", freq: 523, duration: 0.12, gain: 0.24 },
+    { type: "square", freq: 659, duration: 0.12, gain: 0.24, delay: 0.1 },
+    { type: "square", freq: 784, duration: 0.2, gain: 0.26, delay: 0.2 },
   ],
   lose: [
-    { type: "triangle", freq: 300, freqEnd: 120, duration: 0.28, gain: 0.07 },
+    { type: "triangle", freq: 300, freqEnd: 120, duration: 0.3, gain: 0.2 },
   ],
   deposit: [
-    { type: "sine", freq: 480, duration: 0.08, gain: 0.07 },
-    { type: "sine", freq: 720, duration: 0.1, gain: 0.06, delay: 0.07 },
+    { type: "sine", freq: 480, duration: 0.09, gain: 0.2 },
+    { type: "sine", freq: 720, duration: 0.12, gain: 0.18, delay: 0.07 },
   ],
   error: [
-    { type: "square", freq: 140, freqEnd: 90, duration: 0.16, gain: 0.08 },
+    { type: "square", freq: 140, freqEnd: 90, duration: 0.18, gain: 0.22 },
   ],
 };
 
@@ -102,9 +105,9 @@ class AudioManager {
   private musicBus: GainNode | null = null;
   private unlocked = false;
   private muted = false;
-  private volume = 0.7;
+  private volume = 1;
   private musicMuted = false;
-  private musicVolume = 0.35;
+  private musicVolume = 0.55;
   private musicAutoplay = true;
   private musicPlaying = false;
   private musicTimer: number | null = null;
@@ -243,21 +246,24 @@ class AudioManager {
   }
 
   play(id: SfxId) {
-    if (this.muted || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
+    if (this.muted || this.volume <= 0) return;
+
     const ctx = this.ensureContext();
     if (!ctx || !this.sfxBus) return;
 
+    const spawn = () => {
+      this.unlocked = true;
+      this.spawn(id);
+      if (this.musicAutoplay && !this.musicMuted) this.startMusic();
+    };
+
     if (ctx.state === "suspended") {
-      void ctx.resume().then(() => {
-        this.unlocked = true;
-        this.spawn(id);
-        if (this.musicAutoplay && !this.musicMuted) this.startMusic();
-      });
+      void ctx.resume().then(spawn);
       return;
     }
 
-    this.unlocked = true;
-    this.spawn(id);
+    spawn();
   }
 
   private persist(key: string, value: string) {
@@ -290,7 +296,7 @@ class AudioManager {
 
   private applyGain() {
     if (this.sfxBus) {
-      this.sfxBus.gain.value = this.muted ? 0 : this.volume;
+      this.sfxBus.gain.value = this.muted ? 0 : this.volume * 1.35;
     }
     if (this.musicBus) {
       this.musicBus.gain.value = this.musicMuted ? 0 : this.musicVolume;
@@ -316,7 +322,7 @@ class AudioManager {
     osc.type = "triangle";
     osc.frequency.setValueAtTime(freq, ctx.currentTime);
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.045, ctx.currentTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.11, ctx.currentTime + 0.03);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
     osc.connect(gain);
     gain.connect(bus);

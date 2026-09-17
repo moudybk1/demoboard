@@ -8,6 +8,7 @@ import { HeroStat, PageHero } from "@/components/layout/page-hero";
 import { BalanceWidget } from "@/components/wallet/balance-widget";
 import { NetworkStatusBanner } from "@/components/wallet/network-status-banner";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
+import { PixelCard } from "@/components/ui/pixel-card";
 import {
   PixelPanel,
   PixelPanelHeader,
@@ -45,7 +46,7 @@ export function AccountBoard() {
           }
         />
         <div data-reveal>
-          <div className="border-2 border-edge-bright bg-surface-raised p-5 shadow-pixel">
+          <PixelCard tone="raised" faceClassName="p-5">
             <p className="font-pixel text-[10px] uppercase tracking-wide text-parchment">
               Sign in with wallet
             </p>
@@ -55,7 +56,7 @@ export function AccountBoard() {
             <div className="mt-5">
               <WalletConnectPanel onSignedIn={() => void refresh()} />
             </div>
-          </div>
+          </PixelCard>
         </div>
       </div>
     );
@@ -72,7 +73,7 @@ export function AccountBoard() {
         meta={
           <>
             <HeroStat label="Chain" value={wallet.chain} pulse />
-            <HeroStat label="Handle" value={user?.username ?? "—"} />
+            <HeroStat label="Handle" value={user?.username ?? "none"} />
           </>
         }
         actions={
@@ -81,7 +82,12 @@ export function AccountBoard() {
           </PixelButtonLink>
         }
         stage={
-          <div className="flex items-center gap-4 border-2 border-gold/45 bg-void/80 p-4 shadow-pixel-gold pixel-inset">
+          <PixelCard
+            size="sm"
+            tone="ink"
+            stroke="gold"
+            faceClassName="flex items-center gap-4 p-4"
+          >
             <span
               aria-hidden
               className="grid size-14 place-items-center border-2 border-gold-deep bg-gold font-pixel text-sm text-void"
@@ -96,7 +102,7 @@ export function AccountBoard() {
                 {wallet.address}
               </p>
             </div>
-          </div>
+          </PixelCard>
         }
       />
 

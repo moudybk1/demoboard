@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelCard } from "@/components/ui/pixel-card";
 import {
   MOCK_NETWORK,
   MOCK_WALLET_BALANCE,
@@ -103,7 +104,7 @@ export function WithdrawForm({ className }: { className?: string }) {
         <p className="font-pixel text-xs uppercase tracking-widest text-gold">
           Confirm withdraw
         </p>
-        <dl className="space-y-3 border-2 border-edge bg-void/50 p-4">
+        <PixelCard as="dl" size="sm" tone="ink" faceClassName="space-y-3 p-4">
           <div className="flex justify-between gap-2 text-sm">
             <dt className="font-pixel text-xs uppercase text-faint">Amount</dt>
             <dd className="font-pixel text-gold">
@@ -122,7 +123,7 @@ export function WithdrawForm({ className }: { className?: string }) {
             <dt className="font-pixel text-xs uppercase text-faint">To</dt>
             <dd className="text-parchment">{MOCK_NETWORK.walletLabel}</dd>
           </div>
-        </dl>
+        </PixelCard>
         <div className="flex flex-col gap-3 sm:flex-row">
           <PixelButton
             type="button"

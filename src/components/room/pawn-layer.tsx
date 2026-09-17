@@ -26,7 +26,7 @@ export const PAWN_STEP_DURATION = 0.24;
  * Pawns on the Monopoly board. Pass `movingSeat` + `movePath` (tile indices)
  * to hop a piece cell-by-cell; static seats stay parked on `pawn.tile`.
  *
- * Position is owned by GSAP only — never put left/top/transform in React
+ * Position is owned by GSAP only. Never put left/top/transform in React
  * style, or every re-render fights the hop timeline.
  */
 export function PawnLayer({

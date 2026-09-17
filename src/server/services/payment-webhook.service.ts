@@ -139,8 +139,8 @@ async function confirmRewardPayout(
         paidAt: nextStatus === "paid" ? (row.paidAt ?? now) : row.paidAt,
         note:
           nextStatus === "failed"
-            ? "Rejected by on-chain payment webhook"
-            : (row.note ?? "Confirmed on-chain"),
+            ? "Rejected by on chain payment webhook"
+            : (row.note ?? "Confirmed on chain"),
       })
       .where(eq(rewardPayouts.id, row.id))
       .returning();
@@ -194,7 +194,7 @@ async function confirmRewardPayout(
         .update(transactions)
         .set({
           status: "failed",
-          note: "Rejected by on-chain payment webhook",
+          note: "Rejected by on chain payment webhook",
           updatedAt: now,
         })
         .where(

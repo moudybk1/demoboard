@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { playSfx } from "@/lib/audio/audio-manager";
 import {
   DEPOSIT_PRESETS,
@@ -107,7 +108,7 @@ export function DepositForm({ className }: { className?: string }) {
           </p>
         </div>
 
-        <dl className="space-y-3 border-2 border-edge bg-void/50 p-4">
+        <PixelCard as="dl" size="sm" tone="ink" faceClassName="space-y-3 p-4">
           <SummaryRow label="From wallet" value={MOCK_NETWORK.walletLabel} />
           <SummaryRow label="Network" value={MOCK_NETWORK.chain} />
           <SummaryRow
@@ -119,7 +120,7 @@ export function DepositForm({ className }: { className?: string }) {
             label="Available after"
             value={`${formatBoard(nextAvailable ?? 0)} BOARD`}
           />
-        </dl>
+        </PixelCard>
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <PixelButton

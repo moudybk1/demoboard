@@ -1,6 +1,7 @@
 import { Coins, Trophy, TriangleAlert, Users } from "lucide-react";
 
 import { SeatDots } from "@/components/lobby/seat-dots";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelBadge } from "@/components/ui/pixel-badge";
 import { PixelButton, PixelButtonLink } from "@/components/ui/pixel-button";
 import { BoardAmount } from "@/components/ui/board-amount";
@@ -34,14 +35,17 @@ export function RoomCard({
     room.gameType === "monopoly" ? "bg-monopoly" : "bg-ludo";
 
   return (
-    <article
+    <PixelCard
+      as="article"
+      size="lg"
+      tone="raised"
+      stroke={open && !affordable ? "danger" : "void"}
       className={cn(
-        "group relative flex flex-col overflow-hidden pixel-corners-lg border-[3px] bg-surface-raised shadow-pixel transition-[transform,border-color,box-shadow] duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-        joinable && "hover:-translate-y-1 hover:shadow-pixel-lg",
-        open && !affordable && "border-danger",
-        !open && "border-void opacity-70",
-        open && affordable && "border-void",
+        "h-full transition-transform duration-[var(--duration-fast)] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        joinable && "hover:-translate-y-1",
+        !open && "opacity-70",
       )}
+      faceClassName="flex h-full flex-col overflow-hidden"
     >
       <div
         aria-hidden
@@ -68,7 +72,7 @@ export function RoomCard({
         </div>
 
         <dl className="grid grid-cols-2 gap-2.5">
-          <div className="pixel-corners border-[3px] border-void bg-cream px-2.5 py-2.5">
+          <PixelCard size="sm" tone="cream" faceClassName="px-2.5 py-2.5">
             <dt className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-faint">
               <Coins className="size-3" aria-hidden />
               Entry
@@ -80,8 +84,8 @@ export function RoomCard({
                 showTicker={false}
               />
             </dd>
-          </div>
-          <div className="pixel-corners border-[3px] border-void bg-gold px-2.5 py-2.5">
+          </PixelCard>
+          <PixelCard size="sm" tone="gold" faceClassName="px-2.5 py-2.5">
             <dt className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-void">
               <Trophy className="size-3" aria-hidden />
               You win
@@ -93,7 +97,7 @@ export function RoomCard({
                 showTicker={false}
               />
             </dd>
-          </div>
+          </PixelCard>
         </dl>
 
         <p className="font-pixel text-xs font-semibold uppercase leading-relaxed text-faint">
@@ -144,10 +148,12 @@ export function RoomCard({
         </div>
 
         {PLAY_IS_LIVE && open && !affordable ? (
-          <div
+          <PixelCard
             id={shortfallId}
             role="status"
-            className="flex flex-wrap items-center gap-x-2 gap-y-1 pixel-corners border-[3px] border-danger bg-danger/10 px-3 py-2"
+            size="sm"
+            stroke="danger"
+            faceClassName="flex flex-wrap items-center gap-x-2 gap-y-1 bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-surface))] px-3 py-2"
           >
             <TriangleAlert
               className="size-3 shrink-0 text-danger"
@@ -163,7 +169,7 @@ export function RoomCard({
               />{" "}
               more BOARD.
             </span>
-          </div>
+          </PixelCard>
         ) : null}
 
         {PLAY_IS_LIVE && joinable && free > 0 ? (
@@ -172,6 +178,6 @@ export function RoomCard({
           </p>
         ) : null}
       </div>
-    </article>
+    </PixelCard>
   );
 }

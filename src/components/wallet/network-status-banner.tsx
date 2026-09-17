@@ -5,6 +5,7 @@ import { useAccount, useSwitchChain } from "wagmi";
 
 import { useSignIn } from "@/components/account/sign-in-provider";
 import { PixelButton } from "@/components/ui/pixel-button";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { usePlatformWallet } from "@/hooks/use-platform-wallet";
 import {
   getBoardChainId,
@@ -52,12 +53,16 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div
-        className={cn(
-          "pixel-corners border-2 px-4 py-3",
-          tone === "ok" && "border-success/40 bg-success/5",
-          tone === "warn" && "border-gold/50 bg-gold/5",
-          tone === "bad" && "border-danger/50 bg-danger/5",
+      <PixelCard
+        size="sm"
+        stroke={tone === "ok" ? "void" : tone === "bad" ? "danger" : "gold"}
+        tone={tone === "ok" ? "surface" : tone === "bad" ? "surface" : "goldWash"}
+        faceClassName={cn(
+          "px-4 py-3",
+          tone === "ok" &&
+            "bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))]",
+          tone === "bad" &&
+            "bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-surface))]",
         )}
         role="status"
       >
@@ -98,7 +103,7 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
             Ready to deposit or withdraw on {ROBINHOOD_CHAIN_LABEL}.
           </p>
         )}
-      </div>
+      </PixelCard>
 
       <div className="flex flex-wrap gap-2">
         {!isConnected ? (

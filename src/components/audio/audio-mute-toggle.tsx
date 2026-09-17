@@ -22,8 +22,9 @@ export function AudioMuteToggle({ className }: { className?: string }) {
       aria-label={muted ? "Unmute sound effects" : "Mute sound effects"}
       aria-pressed={muted}
       className={cn(
-        "grid size-8 place-items-center pixel-corners border-[3px] border-void bg-cream text-muted shadow-pixel-sm transition-colors hover:bg-gold hover:text-void sm:size-9",
+        "grid size-8 place-items-center pixel-corners border-[3px] border-void shadow-pixel-sm transition-[transform,background-color,color] duration-150 hover:brightness-105 active:translate-y-px sm:size-9",
         className,
+        muted ? "bg-void text-cream" : "bg-cream text-void",
       )}
       onClick={() => {
         void unlockAudio();

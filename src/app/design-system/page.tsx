@@ -3,6 +3,7 @@ import {
   BoardAmount,
   PixelBadge,
   PixelButton,
+  PixelCard,
   PixelDivider,
   PixelField,
   PixelFrame,
@@ -17,7 +18,7 @@ import { boardColors } from "@/lib/design-system";
 export const metadata = {
   title: "Design system | BOARD",
   description:
-    "Global cartoon-pixel design tokens and UI primitives for the BOARD gaming platform.",
+    "Global cartoon pixel design tokens and UI primitives for the BOARD gaming platform.",
 };
 
 const SWATCHES = [
@@ -50,7 +51,7 @@ export default function DesignSystemPage() {
           <p className="text-sm leading-relaxed text-muted sm:text-base">
             Cream tiles, chocolate outlines, pixel buttons, and Pixelify
             Sans on every line. Use these primitives everywhere so BOARD
-            feels like a 16-bit toy you can actually read.
+            feels like a 16 bit toy you can actually read.
           </p>
         </header>
 
@@ -60,9 +61,10 @@ export default function DesignSystemPage() {
           </PixelHeading>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6">
             {SWATCHES.map(([name, hex]) => (
-              <div
+              <PixelCard
                 key={name}
-                className="pixel-corners border-2 border-edge bg-surface p-2 shadow-pixel-sm"
+                size="sm"
+                faceClassName="p-2"
               >
                 <div
                   className="aspect-[4/3] border-2 border-edge"
@@ -73,7 +75,7 @@ export default function DesignSystemPage() {
                   {name}
                 </p>
                 <p className="font-mono text-[10px] text-faint">{hex}</p>
-              </div>
+              </PixelCard>
             ))}
           </div>
         </section>
@@ -173,8 +175,8 @@ export default function DesignSystemPage() {
                 Toy board lives here
               </PixelHeading>
               <p className="max-w-md text-sm text-muted">
-                Use PixelFrame for Monopoly / Ludo stages. Thick chocolate
-                rim, pixel shadow, optional confetti.
+                Use PixelFrame for Monopoly / Ludo stages. Stepped pixel
+                corners, chocolate rim, offset shadow, optional confetti.
               </p>
             </div>
           </PixelFrame>

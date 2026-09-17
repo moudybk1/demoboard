@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ProductShell } from "@/components/layout/product-shell";
 import { HeroStat, PageHero } from "@/components/layout/page-hero";
 import { SettingsBoard } from "@/components/settings/settings-board";
+import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export default function SettingsPage() {
     <ProductShell accent="mint">
       <PageHero
         title="Settings"
-        support="Motion, confetti dots, SFX, and music - saved on this device."
+        support="Motion, confetti dots, SFX, and music. Saved on this device."
         meta={
           <>
             <HeroStat label="Scope" value="This device" />
@@ -29,7 +30,7 @@ export default function SettingsPage() {
           </PixelButtonLink>
         }
         stage={
-          <div className="pixel-corners border-[3px] border-void bg-cream p-4 sm:p-5">
+          <PixelCard tone="cream" faceClassName="p-4 sm:p-5">
             <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
               Tips
             </p>
@@ -44,7 +45,7 @@ export default function SettingsPage() {
                 .
               </li>
             </ul>
-          </div>
+          </PixelCard>
         }
       />
 
