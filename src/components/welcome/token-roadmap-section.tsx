@@ -1,11 +1,13 @@
 import { PixelCard } from "@/components/ui/pixel-card";
-import { PixelTerrain } from "@/components/welcome/pixel-terrain";
 import { TokenCaPromo } from "@/components/welcome/token-ca-promo";
-import { PLAY_IS_LIVE } from "@/lib/platform-status";
-import { ROADMAP, TOKEN_INFO, type RoadmapItem } from "@/lib/mock/token-roadmap";
+import { TOKEN_ECONOMY, type EconomyLane } from "@/lib/mock/token-roadmap";
 import { ROBINHOOD_CHAIN_LABEL } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
+/**
+ * Token economy: gameplay + DEX fee cards on the hero sky atmosphere.
+ * Optional CA promo when set.
+ */
 export function TokenRoadmapSection({
   className,
   tokenAddress,
@@ -17,110 +19,96 @@ export function TokenRoadmapSection({
 }) {
   return (
     <section
-      aria-labelledby="token-roadmap-title"
-      className={cn("relative z-20 -mt-16 overflow-visible sm:-mt-20", className)}
+      id="token"
+      aria-labelledby="token-economy-title"
+      className={cn(
+        "relative z-20 scroll-mt-28 overflow-visible border-t-[3px] border-void bg-transparent pb-16 pt-12 sm:pb-20 sm:pt-14",
+        className,
+      )}
     >
-      <PixelTerrain placed="stack" variant="ridge" className="text-surface" />
-
-      <div className="-mt-px bg-surface pb-16 pt-6 sm:pb-20 sm:pt-8">
-        <div className="board-container relative">
-          <div className="relative lg:min-h-[22rem]">
-          <PixelCard
-            size="lg"
-            tone="cream"
-            className="lg:absolute lg:left-0 lg:top-4 lg:z-10 lg:max-w-sm lg:-rotate-1"
-            faceClassName="p-6 sm:p-8"
+      <div className="board-container relative">
+        <header className="max-w-2xl">
+          <p className="font-pixel text-xs font-semibold uppercase tracking-[0.14em] text-gold-deep">
+            {TOKEN_ECONOMY.eyebrow}
+          </p>
+          <h2
+            id="token-economy-title"
+            className="mt-3 font-pixel text-[clamp(1.6rem,2.8vw,2.35rem)] font-bold leading-snug tracking-tight text-parchment"
           >
-            <h2
-              id="token-roadmap-title"
-              className="font-pixel text-2xl font-bold leading-snug text-parchment sm:text-3xl"
-            >
-              {TOKEN_INFO.symbol} on {TOKEN_INFO.chain}
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted">
-              {TOKEN_INFO.role}
-            </p>
-            <p className="mt-3 text-base leading-relaxed text-muted">
-              {TOKEN_INFO.feeNote}
-            </p>
+            {TOKEN_ECONOMY.title}
+          </h2>
+          <p className="mt-4 max-w-[48ch] text-base leading-relaxed text-muted">
+            {TOKEN_ECONOMY.lead}
+          </p>
+        </header>
 
-            {tokenAddress !== undefined ? (
-              <TokenCaPromo
-                className="mt-6"
-                compact
-                address={tokenAddress}
-                explorerUrl={tokenExplorerUrl ?? null}
-                chainLabel={ROBINHOOD_CHAIN_LABEL}
-              />
-            ) : null}
-
-            <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 text-sm font-bold uppercase tracking-wide">
-              <div>
-                <dt className="text-faint">Symbol</dt>
-                <dd className="mt-1 text-lg text-gold-deep">{TOKEN_INFO.symbol}</dd>
-              </div>
-              <div>
-                <dt className="text-faint">Network</dt>
-                <dd className="mt-1 text-lg text-parchment">{TOKEN_INFO.chain}</dd>
-              </div>
-            </dl>
-          </PixelCard>
-
-          <ol className="mt-8 space-y-4 lg:ml-[min(42%,24rem)] lg:mt-0 lg:pt-16">
-            {ROADMAP.map((item, index) => (
-              <RoadmapRow
-                key={item.id}
-                item={item}
-                shift={index === 1 ? "lg:translate-x-6" : index === 2 ? "lg:-translate-x-2" : ""}
-              />
-            ))}
-          </ol>
-          </div>
+        <div className="mt-10 grid gap-5 sm:gap-6 lg:mt-12 lg:grid-cols-2">
+          {TOKEN_ECONOMY.lanes.map((lane) => (
+            <EconomyLaneCard key={lane.id} lane={lane} />
+          ))}
         </div>
+
+        <p className="mt-10 max-w-[44ch] font-pixel text-sm font-semibold leading-snug text-parchment sm:mt-12 sm:text-base">
+          {TOKEN_ECONOMY.closing}
+        </p>
+
+        {tokenAddress !== undefined ? (
+          <TokenCaPromo
+            className="mt-8"
+            compact
+            address={tokenAddress}
+            explorerUrl={tokenExplorerUrl ?? null}
+            chainLabel={ROBINHOOD_CHAIN_LABEL}
+          />
+        ) : null}
       </div>
     </section>
   );
 }
 
-function RoadmapRow({
-  item,
-  shift,
-}: {
-  item: RoadmapItem;
-  shift: string;
-}) {
-  const statusLabel =
-    item.status === "live"
-      ? PLAY_IS_LIVE
-        ? "Live"
-        : "Demo"
-      : item.status === "next"
-        ? "Next"
-        : "Later";
-  const statusClass =
-    item.status === "live"
-      ? PLAY_IS_LIVE
-        ? "text-success"
-        : "text-gold-deep"
-      : item.status === "next"
-        ? "text-gold-deep"
-        : "text-faint";
+function EconomyLaneCard({ lane }: { lane: EconomyLane }) {
+  const accent = lane.id === "gameplay" ? "monopoly" : "gold";
 
   return (
     <PixelCard
-      as="li"
-      size="sm"
+      as="article"
+      size="lg"
       tone="cream"
-      className={shift}
-      faceClassName="px-4 py-4 sm:px-5"
+      stroke={accent === "monopoly" ? "monopoly" : "gold"}
+      className="h-full"
+      faceClassName="flex h-full flex-col overflow-hidden"
     >
-      <span className={cn("text-sm font-bold uppercase", statusClass)}>
-        {statusLabel}
-      </span>
-      <h3 className="mt-1 text-base font-bold text-parchment sm:text-lg">
-        {item.title}
-      </h3>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">{item.body}</p>
+      <div
+        aria-hidden
+        className={cn(
+          "h-2 w-full",
+          accent === "monopoly" ? "bg-monopoly" : "bg-gold-deep",
+        )}
+      />
+      <div className="flex flex-1 flex-col px-5 py-5 sm:px-6 sm:py-6">
+        <h3 className="font-pixel text-base font-bold uppercase tracking-wider text-parchment sm:text-lg">
+          {lane.title}
+        </h3>
+        <p className="mt-3 max-w-[36ch] text-sm leading-relaxed text-muted sm:text-base">
+          {lane.body}
+        </p>
+
+        <ul className="mt-5 space-y-2.5">
+          {lane.splits.map((split) => (
+            <li
+              key={split.label}
+              className="flex items-center justify-between gap-3 border-[3px] border-void bg-surface px-3.5 py-3"
+            >
+              <span className="font-pixel text-xs font-semibold uppercase tracking-wider text-parchment sm:text-sm">
+                {split.label}
+              </span>
+              <span className="font-sans text-xl font-bold tabular-nums leading-none tracking-tight text-gold-deep sm:text-2xl">
+                {split.percent}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </PixelCard>
   );
 }

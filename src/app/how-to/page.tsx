@@ -5,26 +5,29 @@ import { HeroStat, PageHero } from "@/components/layout/page-hero";
 import { HowToSteps } from "@/components/welcome/how-to-steps";
 import { HowToHeroActions } from "@/components/welcome/how-to-hero-actions";
 import { PixelCard } from "@/components/ui/pixel-card";
-import { WinGoalCompare } from "@/components/welcome/win-goal-compare";
-import { HOW_TO_INTRO, HOW_TO_STEPS } from "@/lib/mock/how-to";
+import {
+  HOW_TO_INTRO,
+  HOW_TO_STEPS,
+} from "@/lib/mock/how-to";
 
 export const metadata: Metadata = {
   title: "How to play | BOARD",
   description:
-    "Closed demo guide: enter with an invitation code, pick a table, and learn the turn controls.",
+    "Five steps. Four players. One winner. Choose your game, enter a room, and start the rivalry.",
 };
 
 export default function HowToPage() {
   return (
-    <ProductShell accent="monopoly">
+    <ProductShell accent="monopoly" strip={false}>
       <PageHero
         title={HOW_TO_INTRO.title}
+        punch={HOW_TO_INTRO.punch}
         support={HOW_TO_INTRO.support}
         meta={
           <>
-            <HeroStat label="Steps" value={String(HOW_TO_STEPS.length)} />
-            <HeroStat label="Seats" value="4" />
-            <HeroStat label="Live stake" value="Off" />
+            <HeroStat label="Steps" value="5" />
+            <HeroStat label="Players" value="4" />
+            <HeroStat label="Winner" value="1" />
           </>
         }
         actions={<HowToHeroActions />}
@@ -41,7 +44,7 @@ export default function HowToPage() {
                   {step.number}
                 </span>
                 <span className="font-pixel text-[11px] uppercase leading-relaxed text-cream">
-                  {step.title}
+                  {step.label}
                 </span>
               </PixelCard>
             ))}
@@ -51,10 +54,6 @@ export default function HowToPage() {
 
       <div data-reveal>
         <HowToSteps />
-      </div>
-
-      <div data-reveal>
-        <WinGoalCompare />
       </div>
     </ProductShell>
   );

@@ -13,6 +13,9 @@ type ProductShellProps = {
   className?: string;
   /** Wider default; use narrow for denser forms. */
   width?: "default" | "wide";
+  /** Override or hide the top notice strip. */
+  strip?: React.ReactNode | false;
+  stripLabel?: string;
 };
 
 const ACCENT: Record<NonNullable<ProductShellProps["accent"]>, string> = {
@@ -31,6 +34,8 @@ export function ProductShell({
   accent = "mint",
   className,
   width = "default",
+  strip,
+  stripLabel,
 }: ProductShellProps) {
   return (
     <div className="board-atmosphere flex min-h-full flex-col">
@@ -53,7 +58,15 @@ export function ProductShell({
           )}
         >
           <PageReveal className="relative z-[1] space-y-7 sm:space-y-9">
-            {PLAY_IS_LIVE ? null : <ClosedDemoStrip />}
+            {strip === false ? null : (
+              <>
+                {PLAY_IS_LIVE ? null : <ClosedDemoStrip />}
+                {strip ??
+                  (stripLabel ? (
+                    <ClosedDemoStrip label={stripLabel} />
+                  ) : null)}
+              </>
+            )}
             {children}
           </PageReveal>
         </PixelCard>

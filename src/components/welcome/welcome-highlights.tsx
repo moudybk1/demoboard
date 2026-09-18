@@ -1,87 +1,60 @@
 import Link from "next/link";
 
-import { PixelArt } from "@/components/game/pixel-art";
 import { GameChoice } from "@/components/welcome/game-choice";
-import { PixelTerrain } from "@/components/welcome/pixel-terrain";
-import { pawnSprite } from "@/lib/game/pawn-sprite";
-import { WELCOME_HIGHLIGHTS } from "@/lib/mock/welcome";
 import { cn } from "@/lib/utils";
 
 /**
- * Game pick + quieter supporting facts. Terrain sits in flow so the
- * heading never hides under the hill seam.
+ * Game pick on the hero sky — rivalry header + tabletop felt stage for the cards.
  */
 export function WelcomeHighlights({ className }: { className?: string }) {
   return (
     <section
       aria-labelledby="welcome-modes"
+      id="games"
       className={cn(
-        "relative z-10 overflow-visible bg-cream pb-32 sm:pb-40",
+        "relative z-10 scroll-mt-28 overflow-visible bg-transparent pb-14 sm:pb-16",
         className,
       )}
     >
-      <PixelTerrain
-        placed="stack"
-        variant="skyline"
-        className="text-cream"
-      />
-
-      <div className="board-container relative z-10 pt-8 sm:pt-10">
-        <div className="mb-10 max-w-xl sm:mb-12">
+      <div className="board-container relative z-10 pt-10 sm:pt-14">
+        <header className="mb-8 max-w-3xl sm:mb-10">
+          <p className="font-pixel text-xs font-semibold uppercase tracking-[0.14em] text-gold-deep">
+            Pick a board
+          </p>
           <h2
             id="welcome-modes"
-            className="font-pixel text-3xl font-bold leading-snug text-parchment sm:text-4xl"
+            className="mt-3 font-pixel text-[clamp(1.85rem,3.6vw,3rem)] font-bold leading-[1.12] tracking-tight text-parchment"
           >
-            Two tables. Same pot fight.
+            Choose your childhood favorite.
           </h2>
-          <p className="mt-3 max-w-[46ch] text-base leading-relaxed text-muted sm:text-[17px]">
-            Four seats, one survivor. Pick a table, then enter the closed demo
-            to take a chair.
+          <p className="mt-4 max-w-[48ch] text-base leading-relaxed text-muted sm:text-[1.0625rem]">
+            The games you remember, now with something to fight for. Pick your
+            board, challenge three rivals, and be the last one standing.
           </p>
-        </div>
+          <p className="mt-4 text-sm text-muted">
+            New here?{" "}
+            <Link href="/faq" className="text-link underline hover:text-parchment">
+              FAQ
+            </Link>
+            {" · "}
+            <Link href="/how-to" className="text-link underline hover:text-parchment">
+              How to play
+            </Link>
+            {" · "}
+            <Link href="/rules" className="text-link underline hover:text-parchment">
+              Prizes and fees
+            </Link>
+          </p>
+        </header>
 
-        <GameChoice />
-
-        <div className="relative z-20 mt-14 max-w-xl sm:mt-16">
-          <h3 className="font-pixel text-xl font-bold text-parchment sm:text-2xl">
-            Demo FAQ
-          </h3>
-          <dl className="mt-6 space-y-6">
-            {WELCOME_HIGHLIGHTS.map((item) => (
-              <div key={item.id}>
-                <dt className="font-pixel text-sm font-semibold uppercase leading-snug text-parchment">
-                  {item.title}
-                </dt>
-                <dd className="mt-2 max-w-[46ch] text-sm leading-relaxed text-muted sm:text-base">
-                  {item.body}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        <p className="relative z-20 mt-10 text-sm text-muted sm:mt-12">
-          New here?{" "}
-          <Link href="/how-to" className="text-link underline hover:text-parchment">
-            How to play
-          </Link>
-          {" · "}
-          <Link href="/rules" className="text-link underline hover:text-parchment">
-            Prizes and fees
-          </Link>
-        </p>
-      </div>
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-32 sm:h-40">
-        <PixelTerrain edge="bottom" variant="dunes" className="text-felt" />
-        <div className="absolute bottom-[4.6rem] left-[12%] w-9 sm:bottom-[6.2rem] sm:w-11">
-          <PixelArt sprite={pawnSprite(1)} />
-        </div>
-        <div className="absolute bottom-[5.4rem] left-[48%] w-9 sm:bottom-[7.2rem] sm:w-11">
-          <PixelArt sprite={pawnSprite(2)} />
-        </div>
-        <div className="absolute bottom-[4.4rem] right-[14%] w-9 sm:bottom-[6rem] sm:w-11">
-          <PixelArt sprite={pawnSprite(4)} />
+        <div className="relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-4 -bottom-3 top-16 rounded-[2px] border-[3px] border-void bg-felt opacity-90 shadow-pixel sm:inset-x-8 sm:top-20"
+          />
+          <div className="relative z-[1]">
+            <GameChoice />
+          </div>
         </div>
       </div>
     </section>

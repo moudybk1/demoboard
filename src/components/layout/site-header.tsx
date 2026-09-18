@@ -9,6 +9,7 @@ import { SignInButton } from "@/components/account/sign-in-button";
 import { AudioControlsPopover } from "@/components/audio/audio-controls-popover";
 import { DemoLeaveButton } from "@/components/demo/demo-leave-button";
 import { BoardLogo } from "@/components/layout/board-logo";
+import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { LinksMenu } from "@/components/layout/links-menu";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { BalanceWidget } from "@/components/wallet/balance-widget";
@@ -17,6 +18,7 @@ import { useDemoAccess } from "@/hooks/use-demo-access";
 import { cn } from "@/lib/utils";
 
 const PUBLIC_LINKS = [
+  { href: "/faq", label: "FAQ" },
   { href: "/how-to", label: "How to play" },
   { href: "/rules", label: "Prizes & fees" },
 ] as const;
@@ -165,14 +167,10 @@ export function SiteHeader({ className }: { className?: string }) {
                         Play
                       </PixelButtonLink>
                     ) : (
-                      <PixelButtonLink
-                        href="/demo"
-                        variant="primary"
+                      <ConnectWalletButton
                         size="sm"
                         className="rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4"
-                      >
-                        Enter demo
-                      </PixelButtonLink>
+                      />
                     )
                   ) : (
                     <span className="inline-block h-9 w-24" aria-hidden />

@@ -1,4 +1,4 @@
-import { Flame, Landmark } from "lucide-react";
+import { Flame, Landmark, RefreshCw } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelCard } from "@/components/ui/pixel-card";
@@ -8,12 +8,13 @@ export type PrizeSplitValues = {
   grossPot: number;
   feePercent: number;
   treasuryAmount: number;
+  buybackAmount: number;
   burnAmount: number;
   netPayout: number;
 };
 
 /**
- * Shared breakdown of gross pot → treasury fee / burn → net winner payout.
+ * Shared breakdown of gross pot → development / buyback / burn → net winner.
  */
 export function PrizeSplit({
   values,
@@ -34,9 +35,19 @@ export function PrizeSplit({
     >
       <SplitRow label="Gross pot" value={values.grossPot} compact={compact} />
       <SplitRow
-        label={`Fee (${values.feePercent}%) → treasury`}
+        label={`Fee (${values.feePercent}%) → development`}
         value={values.treasuryAmount}
-        icon={<Landmark className={compact ? "size-3" : "size-3.5"} aria-hidden />}
+        icon={
+          <Landmark className={compact ? "size-3" : "size-3.5"} aria-hidden />
+        }
+        compact={compact}
+      />
+      <SplitRow
+        label="Buyback"
+        value={values.buybackAmount}
+        icon={
+          <RefreshCw className={compact ? "size-3" : "size-3.5"} aria-hidden />
+        }
         compact={compact}
       />
       <SplitRow

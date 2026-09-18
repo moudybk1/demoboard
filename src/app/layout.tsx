@@ -4,6 +4,7 @@ import { cookieToInitialState } from "wagmi";
 
 import { AudioUnlock } from "@/components/audio/audio-unlock";
 import { AppBootLoader } from "@/components/layout/app-boot-loader";
+import { SkyActors } from "@/components/layout/sky-actors";
 import { SignInProvider } from "@/components/account/sign-in-provider";
 import { WalletProviders } from "@/components/wallet/wallet-providers";
 import { wagmiConfig } from "@/lib/wallet/wagmi-config";
@@ -28,6 +29,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full">
       <body className="flex min-h-full flex-col">
+        <div className="board-clouds" aria-hidden />
+        <SkyActors />
         <AppBootLoader />
         <WalletProviders initialState={initialState}>
           <SignInProvider>

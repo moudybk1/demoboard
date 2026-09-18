@@ -40,8 +40,9 @@ export const rewardPayoutStatusEnum = pgEnum("reward_payout_status", [
   "failed",
 ]);
 
-/** Fee ledger row kind · treasury credit vs burn. */
+/** Fee ledger row kind · development treasury, buyback, or burn. */
 export const feeLedgerKindEnum = pgEnum("fee_ledger_kind", [
   "treasury",
+  "buyback",
   "burn",
 ]);

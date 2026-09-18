@@ -17,9 +17,9 @@
   --color-void: #2d170c;
   --color-ink: #fff4c4;
 
-  /* Cream sticker surfaces */
-  --color-surface: #fffaf1;
-  --color-surface-raised: #fff6de;
+  /* Warm editorial reading surface; tabletop green reserved for boards */
+  --color-surface: #f4f0e6;
+  --color-surface-raised: #fff8ec;
   --color-surface-hover: #ffe8a8;
   --color-cream: #fff8e4;
 
@@ -57,7 +57,7 @@
   --spacing-px-10: 40px;
   --spacing-px-12: 48px;
 
-  --container-board: 72rem;
+  --container-board: 78rem;
   --container-narrow: 40rem;
 
   --text-pixel-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem);
@@ -100,6 +100,111 @@
   }
   50% {
     transform: translateY(-8px);
+  }
+}
+
+@keyframes cloud-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 18px, 0);
+  }
+}
+
+@keyframes sun-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Walk left → jail, hop in, vanish, loop */
+@keyframes pawn-to-jail {
+  0% {
+    left: -8%;
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  4% {
+    opacity: 1;
+  }
+  72% {
+    left: 72%;
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  80% {
+    left: 78%;
+    opacity: 1;
+    transform: translate3d(0, -10px, 0) scale(0.92);
+  }
+  88% {
+    left: 80%;
+    opacity: 0.35;
+    transform: translate3d(0, 4px, 0) scale(0.55);
+  }
+  94%,
+  100% {
+    left: 80%;
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.2);
+  }
+}
+
+@keyframes pawn-walk-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes footer-pawn-walk {
+  0% {
+    left: -6%;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  78% {
+    left: 72%;
+    opacity: 1;
+  }
+  88% {
+    left: 80%;
+    opacity: 0.55;
+    transform: scale(0.75);
+  }
+  96%,
+  100% {
+    left: 84%;
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+@keyframes footer-pawn-click-jump {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  28% {
+    transform: translateY(-52px) scale(1.14) rotate(-12deg);
+  }
+  48% {
+    transform: translateY(-28px) scale(1.06) rotate(10deg);
+  }
+  68% {
+    transform: translateY(-44px) scale(1.1) rotate(-6deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
   }
 }
 
@@ -183,21 +288,36 @@
   }
 }
 
+.seat-idle {
+  animation: pawn-bounce 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-idle {
+    animation: none !important;
+  }
+}
+
+html[data-reduced-motion="true"] .seat-idle {
+  animation: none !important;
+}
+
 /* --------------------------------------------------------------------------
    Base
    -------------------------------------------------------------------------- */
 @layer base {
   html {
-    background-color: #7ed6ff;
+    background-color: #c8e8f7;
     color-scheme: light;
     overscroll-behavior-y: none;
     scroll-padding-top: 5.5rem;
   }
 
   /*
-    Cartoon pixel playground:
-    - Hard-edged sky, sun, clouds, and felt hills
-    - 4px grid overlay so UI chrome sits on a sprite sheet
+    Contemporary board-game studio:
+    - Soft sky atmosphere (not competing candy frames)
+    - Cream reading surfaces in content sections
+    - 4px grid kept subtle so type stays crisp
   */
   body {
     position: relative;
@@ -211,29 +331,29 @@
     letter-spacing: 0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #7ed6ff;
+    background-color: #c8e8f7;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Pixel sky/hills + 4px grid. Isolated so type and icons stay crisp. */
+  /* Soft sky + light grid. Isolated so type and icons stay crisp. */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-color: #7ed6ff;
+    background-color: #c8e8f7;
     background-image:
       repeating-linear-gradient(
         0deg,
         transparent 0 3px,
-        rgba(45, 23, 12, 0.028) 3px 4px
+        rgba(45, 23, 12, 0.018) 3px 4px
       ),
       repeating-linear-gradient(
         90deg,
         transparent 0 3px,
-        rgba(45, 23, 12, 0.022) 3px 4px
+        rgba(45, 23, 12, 0.014) 3px 4px
       ),
       url("/pixel-playground.svg");
     background-repeat: repeat, repeat, no-repeat;
@@ -242,6 +362,7 @@
     background-attachment: fixed;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    opacity: 0.88;
   }
 
   /* Optional confetti squares (settings "scanlines" toggle) */
@@ -251,7 +372,7 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.55;
+    opacity: 0.22;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     background-image: url("/pixel-confetti.svg");
@@ -261,6 +382,92 @@
 
   html[data-scanlines="off"] body::after {
     display: none;
+  }
+
+  /* Pixel clouds drift gently up/down over the static playground sky */
+  .board-clouds {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("/pixel-clouds.svg");
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    opacity: 0.92;
+    will-change: transform;
+    animation: cloud-drift 14s ease-in-out infinite;
+  }
+
+  .board-sky-actors {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .board-sun {
+    position: absolute;
+    top: clamp(1.25rem, 4vw, 3rem);
+    right: clamp(1.25rem, 6vw, 5rem);
+    width: clamp(4rem, 9vw, 6.5rem);
+    aspect-ratio: 1;
+    z-index: 2;
+    filter: drop-shadow(0 0 12px rgba(255, 210, 58, 0.55));
+  }
+
+  .board-sun-face {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 50%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+    user-select: none;
+    animation: sun-spin 12s linear infinite;
+  }
+
+  .board-sun::before {
+    content: none;
+  }
+
+  .board-jail {
+    position: absolute;
+    right: clamp(4%, 6vw, 10%);
+    bottom: clamp(4.5rem, 14vh, 9rem);
+    width: clamp(4.5rem, 9vw, 6.5rem);
+    aspect-ratio: 1;
+    background-image: url("/pixel-jail.svg");
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    filter: drop-shadow(3px 3px 0 rgba(45, 23, 12, 0.35));
+  }
+
+  .board-pawn-parade {
+    position: absolute;
+    inset: 0;
+  }
+
+  .board-sky-pawn {
+    position: absolute;
+    bottom: clamp(5.2rem, 15vh, 9.5rem);
+    width: clamp(1.6rem, 3.2vw, 2.35rem);
+    opacity: 0;
+    animation: pawn-to-jail 22s linear infinite;
+  }
+
+  .board-sky-pawn-body {
+    display: block;
+    width: 100%;
+    animation: pawn-walk-bob 0.45s ease-in-out infinite;
+    filter: drop-shadow(2px 2px 0 rgba(45, 23, 12, 0.45));
   }
 
   img[data-pixel],
@@ -282,6 +489,17 @@
     font-family: var(--font-sans);
     letter-spacing: 0.01em;
     line-height: 1.65;
+  }
+
+  /* Content headers always use the pixel display face */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-pixel);
+    letter-spacing: 0.04em;
+    line-height: 1.35;
+    font-weight: 700;
   }
 
   ::selection {
@@ -315,6 +533,21 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+
+    .board-sun,
+    .board-sun-face {
+      animation: none !important;
+    }
+
+    .board-clouds {
+      animation: none !important;
+    }
+
+    .board-sky-pawn,
+    .board-sky-pawn-body {
+      animation: none !important;
+      opacity: 0 !important;
     }
   }
 }
@@ -502,8 +735,8 @@
   margin-inline: auto;
   width: 100%;
   max-width: var(--container-board);
-  padding-left: max(0.75rem, env(safe-area-inset-left));
-  padding-right: max(0.75rem, env(safe-area-inset-right));
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 @utility board-container-narrow {
@@ -535,4 +768,155 @@
 
 @utility text-pixel-fluid-lg {
   font-size: var(--text-pixel-lg);
+}
+
+/* Unlayered so sky motion wins over base resets */
+.board-sky-actors {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.board-sun {
+  position: absolute;
+  top: clamp(1.25rem, 4vw, 3rem);
+  right: clamp(1.25rem, 6vw, 5rem);
+  width: clamp(4rem, 9vw, 6.5rem);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 12px rgba(255, 210, 58, 0.55));
+}
+
+.board-sun-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation-name: sun-spin;
+  animation-duration: 12s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* Beat the catch-all animation-duration nuke inside @layer base */
+html:not([data-reduced-motion="true"]) .board-sun-face {
+  animation-name: sun-spin !important;
+  animation-duration: 12s !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-sun-face,
+  html:not([data-reduced-motion="true"]) .board-sun-face {
+    animation: none !important;
+  }
+}
+
+html[data-reduced-motion="true"] .board-sun-face {
+  animation: none !important;
+}
+
+/* Footer flat-rule parade — sits ABOVE the border line */
+.footer-parade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(100% - 3px);
+  z-index: 30;
+  height: 6.5rem;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.footer-parade-jail {
+  position: absolute;
+  right: clamp(0.75rem, 4vw, 2.75rem);
+  bottom: 0.15rem;
+  z-index: 2;
+  display: flex;
+  width: clamp(4rem, 8vw, 5.5rem);
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  filter: drop-shadow(3px 3px 0 rgba(45, 23, 12, 0.55));
+  pointer-events: none;
+}
+
+.footer-parade-jail svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.footer-parade-jail-label {
+  border: 2px solid var(--color-void);
+  background: var(--color-gold);
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-pixel);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--color-void);
+}
+
+.footer-parade-pawn {
+  position: absolute;
+  bottom: 0.15rem;
+  z-index: 3;
+  width: clamp(1.7rem, 3.2vw, 2.35rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0;
+  animation: footer-pawn-walk 18s linear infinite;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.45));
+}
+
+.footer-parade-pawn:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.footer-parade-pawn-body {
+  display: block;
+  width: 100%;
+  animation: pawn-walk-bob 0.4s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+.footer-parade-pawn-body.is-jumping {
+  animation: footer-pawn-click-jump 0.72s cubic-bezier(0.28, 1.45, 0.42, 1) 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-parade-pawn,
+  .footer-parade-pawn-body {
+    animation: none !important;
+  }
+
+  .footer-parade-pawn {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+html[data-reduced-motion="true"] .footer-parade-pawn,
+html[data-reduced-motion="true"] .footer-parade-pawn-body {
+  animation: none !important;
+}
+
+html[data-reduced-motion="true"] .footer-parade-pawn {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

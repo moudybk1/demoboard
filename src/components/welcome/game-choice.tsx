@@ -13,74 +13,98 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Independent game cards. Each one is a direct path into that table's demo.
+ * Rivalry game pick: staggered Monopoly / Ludo cards with a center VS mark.
  */
 export function GameChoice({ className }: { className?: string }) {
   const { unlocked } = useDemoAccess();
 
   return (
-    <div className={cn("grid gap-5 lg:grid-cols-2 lg:gap-6", className)}>
-      {WELCOME_GAMES.map((game) => {
+    <div
+      className={cn(
+        "relative grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch lg:gap-4",
+        className,
+      )}
+    >
+      {WELCOME_GAMES.map((game, index) => {
         const href = unlocked
           ? lobbyPathForGame(game.id)
           : demoPathForGame(game.id);
         const Demo = game.id === "monopoly" ? MonopolyDemo : LudoDemo;
+        const isMonopoly = game.id === "monopoly";
 
         return (
-          <PixelCard
-            key={game.id}
-            size="lg"
-            tone={game.id === "monopoly" ? "monopoly" : "ludo"}
-            stroke={game.id === "monopoly" ? "monopoly" : "ludo"}
-            className="transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1 focus-within:-translate-y-1"
-            faceClassName="flex h-full flex-col overflow-hidden"
-          >
-            <div
-              aria-hidden
+          <div key={game.id} className="contents">
+            {index === 1 ? (
+              <div
+                aria-hidden
+                className="relative z-[2] hidden items-center justify-center lg:flex"
+              >
+                <span className="grid size-14 place-items-center border-[3px] border-void bg-gold font-pixel text-lg font-bold text-void shadow-pixel rotate-[-6deg]">
+                  VS
+                </span>
+              </div>
+            ) : null}
+
+            <PixelCard
+              size="lg"
+              tone={isMonopoly ? "monopoly" : "ludo"}
+              stroke={isMonopoly ? "monopoly" : "ludo"}
               className={cn(
-                "h-2 w-full",
-                game.id === "monopoly" ? "bg-monopoly" : "bg-ludo",
+                "transition-[transform,filter] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1.5 hover:brightness-[1.02] focus-within:-translate-y-1.5",
+                index === 0 && "lg:-rotate-1 lg:translate-y-2",
+                index === 1 && "lg:rotate-1 lg:-translate-y-2",
               )}
-            />
-            <div className="pointer-events-none relative mx-auto mt-4 w-full max-w-[18rem] px-4">
-              <Demo />
-            </div>
-            <div className="flex flex-1 flex-col px-5 pb-2 pt-4">
-              <h3
+              faceClassName="flex h-full flex-col overflow-hidden"
+            >
+              <div
+                aria-hidden
                 className={cn(
-                  "font-pixel text-xl font-bold sm:text-2xl",
-                  game.id === "monopoly" ? "text-monopoly" : "text-ludo",
+                  "flex items-center justify-between px-4 py-2",
+                  isMonopoly ? "bg-monopoly" : "bg-ludo",
                 )}
               >
-                {game.title}
-              </h3>
-              <p className="mt-2 font-pixel text-sm font-semibold leading-snug text-parchment sm:text-base">
-                {game.punch}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {game.closeup}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-muted">
-                {game.meta}
-              </p>
-            </div>
-            <div className="px-5 pb-5">
-              <PixelButtonLink
-                href={href}
-                size="md"
-                variant={game.id === "monopoly" ? "monopoly" : "ludo"}
-                className="w-full justify-center"
-                onClick={() => rememberPreviewGame(game.id)}
-              >
-                {unlocked ? `Play ${game.title}` : game.cta}
-              </PixelButtonLink>
-              {unlocked ? null : (
-                <p className="mt-2 text-center text-xs leading-relaxed text-muted">
-                  Access code required
+                <span className="font-pixel text-[10px] font-semibold uppercase tracking-[0.16em] text-cream">
+                  {isMonopoly ? "Table A" : "Table B"}
+                </span>
+                <span className="font-pixel text-[10px] font-semibold uppercase tracking-[0.16em] text-cream/80">
+                  4 seats
+                </span>
+              </div>
+
+              <div className="pointer-events-none relative mx-auto mt-5 w-full max-w-[20rem] px-4 sm:mt-6">
+                <Demo />
+              </div>
+
+              <div className="flex flex-1 flex-col px-5 pb-2 pt-5">
+                <h3
+                  className={cn(
+                    "font-pixel text-xl font-bold sm:text-2xl",
+                    isMonopoly ? "text-monopoly" : "text-ludo",
+                  )}
+                >
+                  {game.title}
+                </h3>
+                <p className="mt-2 font-pixel text-base font-semibold leading-snug text-parchment sm:text-lg">
+                  {game.punch}
                 </p>
-              )}
-            </div>
-          </PixelCard>
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  {game.closeup}
+                </p>
+              </div>
+
+              <div className="px-5 pb-5 pt-2">
+                <PixelButtonLink
+                  href={href}
+                  size="md"
+                  variant={isMonopoly ? "monopoly" : "ludo"}
+                  className="w-full justify-center"
+                  onClick={() => rememberPreviewGame(game.id)}
+                >
+                  {game.cta}
+                </PixelButtonLink>
+              </div>
+            </PixelCard>
+          </div>
         );
       })}
     </div>

@@ -8,6 +8,9 @@ import {
  * Canonical room-economy knobs for BOARD tables: seats, fee rate, entry tiers,
  * and pot math. Settle services and the guide/rules API should read from here
  * instead of hard-coding 4 / 2% / example numbers in multiple places.
+ *
+ * Protocol fee split matches public marketing:
+ * 30% development · 35% buyback · 35% burn.
  */
 
 export type RoomEconomyConfig = {
@@ -18,9 +21,11 @@ export type RoomEconomyConfig = {
   chain: string;
   tokenSymbol: string;
   entryFeeTiers: readonly number[];
-  /** Where the fee slice goes (treasury + burn). */
+  /** Where the 2% fee slice goes. */
   feeDestination: {
+    /** Development / ops (ledger kind: treasury). */
     treasuryShare: number;
+    buybackShare: number;
     burnShare: number;
   };
 };
@@ -32,7 +37,9 @@ export type RoomEconomyBreakdown = {
   feeRate: number;
   feeAmount: number;
   winnerPayout: number;
+  /** Development share of the protocol fee. */
   treasuryAmount: number;
+  buybackAmount: number;
   burnAmount: number;
 };
 
@@ -45,8 +52,9 @@ const DEFAULT_CONFIG: RoomEconomyConfig = {
   tokenSymbol: "BOARD",
   entryFeeTiers: ENTRY_FEE_TIERS,
   feeDestination: {
-    treasuryShare: 0.5,
-    burnShare: 0.5,
+    treasuryShare: 0.3,
+    buybackShare: 0.35,
+    burnShare: 0.35,
   },
 };
 
@@ -81,7 +89,10 @@ export function calculateRoomEconomy(
   const treasuryAmount = roundBoard(
     feeAmount * config.feeDestination.treasuryShare,
   );
-  const burnAmount = roundBoard(feeAmount - treasuryAmount);
+  const buybackAmount = roundBoard(
+    feeAmount * config.feeDestination.buybackShare,
+  );
+  const burnAmount = roundBoard(feeAmount - treasuryAmount - buybackAmount);
 
   return {
     entryFee,
@@ -91,6 +102,7 @@ export function calculateRoomEconomy(
     feeAmount,
     winnerPayout,
     treasuryAmount,
+    buybackAmount,
     burnAmount,
   };
 }

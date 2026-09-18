@@ -18,6 +18,7 @@ function mapMock(win: typeof MOCK_WIN_RESULT) {
     feePercent: win.feePercent,
     feeAmount: win.feeAmount,
     treasuryAmount: win.treasuryAmount,
+    buybackAmount: win.buybackAmount,
     burnAmount: win.burnAmount,
     netPayout: win.netPayout,
     status: win.payoutStatus,
@@ -65,6 +66,12 @@ export async function listWinHistory(userId: string) {
       feePercent: Number(payout.feePercent),
       feeAmount: Number(payout.feeAmount),
       treasuryAmount: Number(payout.treasuryAmount),
+      buybackAmount: Math.round(
+        (Number(payout.feeAmount) -
+          Number(payout.treasuryAmount) -
+          Number(payout.burnAmount)) *
+          100,
+      ) / 100,
       burnAmount: Number(payout.burnAmount),
       netPayout: Number(payout.netPayout),
       status: payout.status,
@@ -101,6 +108,9 @@ export async function getWinDetail(id: string, viewerUserId?: string) {
   if (!row) return null;
 
   const { payout, username } = row;
+  const feeAmount = Number(payout.feeAmount);
+  const treasuryAmount = Number(payout.treasuryAmount);
+  const burnAmount = Number(payout.burnAmount);
   return {
     win: {
       id: payout.id,
@@ -118,9 +128,11 @@ export async function getWinDetail(id: string, viewerUserId?: string) {
       seats: Number(payout.seats),
       grossPot: Number(payout.grossPot),
       feePercent: Number(payout.feePercent),
-      feeAmount: Number(payout.feeAmount),
-      treasuryAmount: Number(payout.treasuryAmount),
-      burnAmount: Number(payout.burnAmount),
+      feeAmount,
+      treasuryAmount,
+      buybackAmount:
+        Math.round((feeAmount - treasuryAmount - burnAmount) * 100) / 100,
+      burnAmount,
       netPayout: Number(payout.netPayout),
       status: payout.status,
       settledAt: (payout.paidAt ?? payout.createdAt).toISOString(),

@@ -79,6 +79,7 @@ export function getRulesGuide() {
       feeAmount: example.feeAmount,
       winnerPayout: example.winnerPayout,
       treasuryAmount: example.treasuryAmount,
+      buybackAmount: example.buybackAmount,
       burnAmount: example.burnAmount,
     },
     economy: config,

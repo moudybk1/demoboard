@@ -4,7 +4,7 @@ import { BalanceStrip } from "@/components/lobby/balance-strip";
 import { LobbyBoard } from "@/components/lobby/lobby-board";
 import { HeroStat, PageHero } from "@/components/layout/page-hero";
 import { ProductShell } from "@/components/layout/product-shell";
-import { SampleDataNotice } from "@/components/layout/sample-data-notice";
+import { DemoDataNotice } from "@/components/layout/demo-data-notice";
 import { LobbyHeroActions } from "@/components/lobby/lobby-hero-actions";
 import { RoomEconomyHighlight } from "@/components/ui/room-economy-highlight";
 import { PixelCard } from "@/components/ui/pixel-card";
@@ -95,7 +95,7 @@ export default async function LobbyPage({ searchParams }: LobbyPageProps) {
         }
       />
 
-      <SampleDataNotice />
+      <DemoDataNotice />
 
       <div
         data-reveal

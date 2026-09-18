@@ -11,6 +11,7 @@ import {
   users,
 } from "@/server/db/schema";
 import { recordBurnFee } from "@/server/services/burn-fee.service";
+import { recordBuybackFee } from "@/server/services/buyback-fee.service";
 import { calculateRoomEconomy } from "@/server/services/economy.service";
 import { recordTreasuryFee } from "@/server/services/treasury-fee.service";
 
@@ -35,6 +36,7 @@ export type PayMatchRewardResult = {
   grossPot: number;
   feeAmount: number;
   treasuryAmount: number;
+  buybackAmount: number;
   burnAmount: number;
   netPayout: number;
   /** Off-chain credit is done; on-chain proof arrives via payment webhook. */
@@ -117,6 +119,11 @@ export async function payMatchReward(
     matchId: input.matchId,
     feeAmount,
   });
+  const buybackRow = await recordBuybackFee(tx, {
+    rewardPayoutId: payout.id,
+    matchId: input.matchId,
+    feeAmount,
+  });
   const burnRow = await recordBurnFee(tx, {
     rewardPayoutId: payout.id,
     matchId: input.matchId,
@@ -147,6 +154,7 @@ export async function payMatchReward(
     grossPot,
     feeAmount,
     treasuryAmount: treasuryRow.amount,
+    buybackAmount: buybackRow.amount,
     burnAmount: burnRow.amount,
     netPayout,
     status: "pending",

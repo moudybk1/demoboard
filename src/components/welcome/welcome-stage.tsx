@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 import { PixelArt } from "@/components/game/pixel-art";
 import { PixelButton } from "@/components/ui/pixel-button";
-import { PixelCard } from "@/components/ui/pixel-card";
-import { PIP_LAYOUT, randomDie, type DieValue } from "@/lib/game/dice";
+import { PIP_LAYOUT, type DieValue } from "@/lib/game/dice";
 import {
   BOARD_SIZE,
   BOARD_TILES,
@@ -35,37 +34,93 @@ const CORNER_LABEL: Record<string, string> = {
   "go-to-jail": "JAIL",
 };
 
-const SCRIPT = [
-  { seat: 0, steps: 7, label: "Rent collected!" },
-  { seat: 1, steps: 5, label: "Property bought!" },
-  { seat: 2, steps: 8, label: "Passed GO!" },
-  { seat: 3, steps: 4, label: "Rent collected!" },
+type TurnPhase = "ready" | "rolling" | "moving" | "result";
+
+type GuidedBeat = {
+  seat: number;
+  /** Place the active pawn here before the roll so destination math stays true. */
+  startTile: number;
+  dieA: DieValue;
+  dieB: DieValue;
+  /** Plain-language outcome after the hop. Must match dice total and destination. */
+  result: string;
+  /** Demo balance delta shown in the center after the turn. */
+  balanceNote: string;
+};
+
+/**
+ * Predetermined guided turn. Dice total, hop count, destination, and copy
+ * stay in sync against the real 48-tile track. Seat 0 is “you”.
+ */
+const GUIDED: readonly GuidedBeat[] = [
+  {
+    seat: 0,
+    startTile: 0,
+    dieA: 4,
+    dieB: 5,
+    // 0 + 9 → Rome (9)
+    result: "You landed on Rome. Bought it for 120 demo coins.",
+    balanceNote: "You · 1,000 → 880 demo coins",
+  },
+  {
+    seat: 1,
+    startTile: 6,
+    dieA: 2,
+    dieB: 1,
+    // 6 + 3 → Rome (9)
+    result: "Teal landed on your Rome. You collected 120 demo coins in rent.",
+    balanceNote: "You · +120 · Teal paid rent",
+  },
+  {
+    seat: 2,
+    startTile: 44,
+    dieA: 3,
+    dieB: 3,
+    // 44 + 6 → tile 2 (passes GO)
+    result: "Coral passed GO and collected 200 demo coins.",
+    balanceNote: "Coral · +200 demo bonus",
+  },
+  {
+    seat: 3,
+    startTile: 10,
+    dieA: 2,
+    dieB: 1,
+    // 10 + 3 → Paris (13)
+    result: "Red bought Paris. A new street joins the fight.",
+    balanceNote: "Red · −140 demo coins",
+  },
 ] as const;
 
 const PLAYERS = [
-  { seat: 1, name: "P1" },
-  { seat: 2, name: "P2" },
-  { seat: 3, name: "P3" },
-  { seat: 4, name: "P4" },
+  { seat: 1, name: "You", shape: "Pawn" },
+  { seat: 2, name: "Teal", shape: "Helm" },
+  { seat: 3, name: "Coral", shape: "Tower" },
+  { seat: 4, name: "Red", shape: "Star" },
 ] as const;
 
-type KickTurn = (seat?: number) => void;
+type KickTurn = () => void;
+type ReplayTurn = () => void;
 
 /**
- * Compact labeled demo preview: four avatars, a small board, and one
- * readable turn (roll → hop → event bubble), then it settles.
+ * Guided public turn: roll → hop → destination flash → plain-language result.
+ * Center of the board carries the explanation; avatars are turn status only.
  */
 export function WelcomeStage({ className }: { className?: string }) {
   const root = useRef<HTMLDivElement>(null);
   const board = useRef<HTMLDivElement>(null);
   const kickRef = useRef<KickTurn | null>(null);
-  const resumeRef = useRef<(() => void) | null>(null);
+  const replayRef = useRef<ReplayTurn | null>(null);
   const pausedRef = useRef(false);
+  const resumeRef = useRef<(() => void) | null>(null);
   const pauseReady = useRef(false);
   const [paused, setPaused] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [activeSeat, setActiveSeat] = useState(1);
-  const [eventText, setEventText] = useState("Rent collected!");
-  const [dice, setDice] = useState<readonly [DieValue, DieValue]>([4, 3]);
+  const [phase, setPhase] = useState<TurnPhase>("ready");
+  const [centerText, setCenterText] = useState("Your turn. Roll the dice.");
+  const [balanceNote, setBalanceNote] = useState("Demo balances · not real BOARD");
+  const [dice, setDice] = useState<readonly [DieValue, DieValue]>([4, 5]);
+  const [hotTile, setHotTile] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -101,30 +156,81 @@ export function WelcomeStage({ className }: { className?: string }) {
       };
     };
 
-    pawns.forEach((pawn, seat) => {
-      const start = seat * (BOARD_SIZE - 1);
-      const point = centerOf(start);
-      gsap.set(pawn, {
-        left: `${point.x}%`,
-        top: `${point.y}%`,
-        xPercent: -50,
-        yPercent: -50,
+    const resetPawns = () => {
+      pawns.forEach((pawn, seat) => {
+        const start = seat * (BOARD_SIZE - 1);
+        const point = centerOf(start);
+        gsap.set(pawn, {
+          left: `${point.x}%`,
+          top: `${point.y}%`,
+          xPercent: -50,
+          yPercent: -50,
+        });
+        pawn.dataset.tile = String(start);
       });
-      pawn.dataset.tile = String(start);
-    });
+    };
 
-    if (reducedMotion) return;
+    resetPawns();
+
+    if (reducedMotion) {
+      const placePawn = (seat: number, tile: number) => {
+        const pawn = pawns[seat];
+        if (!pawn) return;
+        const point = centerOf(tile);
+        gsap.set(pawn, {
+          left: `${point.x}%`,
+          top: `${point.y}%`,
+          xPercent: -50,
+          yPercent: -50,
+        });
+        pawn.dataset.tile = String(tile % Math.max(tileNodes.length, 1));
+      };
+      kickRef.current = () => {
+        const beat = GUIDED[0];
+        if (!beat) return;
+        const total = beat.dieA + beat.dieB;
+        setDice([beat.dieA, beat.dieB]);
+        setActiveSeat(beat.seat + 1);
+        setPhase("result");
+        setCenterText(`Rolled ${total}. ${beat.result}`);
+        setBalanceNote(beat.balanceNote);
+        const dest =
+          (beat.startTile + total) % Math.max(tileNodes.length, 1);
+        setHotTile(dest);
+        placePawn(beat.seat, dest);
+      };
+      replayRef.current = () => {
+        resetPawns();
+        setBusy(false);
+        setPhase("ready");
+        setHotTile(null);
+        setActiveSeat(1);
+        setCenterText("Your turn. Roll the dice.");
+        setBalanceNote("Demo balances · not real BOARD");
+        setDice([4, 5]);
+      };
+      return;
+    }
 
     const tweens: gsap.core.Animation[] = [];
-    let busy = false;
+    let busyLocal = false;
     let scriptIndex = 0;
     let waitTimer = 0;
     const die = stage.querySelector<HTMLElement>("[data-preview-dice]");
     const bubble = stage.querySelector<HTMLElement>("[data-preview-event]");
 
-    const flashTile = (index: number) => {
+    const setBusyBoth = (value: boolean) => {
+      busyLocal = value;
+      setBusy(value);
+    };
+
+    const flashTile = (index: number, hold = false) => {
       const tile = tileNodes[index % tileNodes.length];
       if (!tile) return;
+      if (hold) {
+        setHotTile(index);
+        return;
+      }
       gsap.fromTo(
         tile,
         { filter: "brightness(1)" },
@@ -138,49 +244,68 @@ export function WelcomeStage({ className }: { className?: string }) {
       );
     };
 
-    const showEvent = (text: string) => {
-      setEventText(text);
+    const showCenter = (text: string, note?: string) => {
+      setCenterText(text);
+      if (note) setBalanceNote(note);
       if (!bubble) return;
       gsap.fromTo(
         bubble,
-        { opacity: 0, y: 8, scale: 0.86 },
+        { opacity: 0, y: 6, scale: 0.92 },
         {
           opacity: 1,
           y: 0,
           scale: 1,
-          duration: 0.28,
-          ease: "back.out(2.1)",
+          duration: 0.22,
+          ease: "power2.out",
         },
       );
     };
 
-    const runHop = (
-      seat: number,
-      steps: number,
-      label: string,
-      done: () => void,
-    ) => {
+    const placePawn = (seat: number, tile: number) => {
       const pawn = pawns[seat];
+      if (!pawn) return;
+      const point = centerOf(tile);
+      gsap.set(pawn, {
+        left: `${point.x}%`,
+        top: `${point.y}%`,
+        xPercent: -50,
+        yPercent: -50,
+      });
+      pawn.dataset.tile = String(tile % Math.max(tileNodes.length, 1));
+    };
+
+    const runHop = (beat: GuidedBeat, done: () => void) => {
+      const pawn = pawns[beat.seat];
+      const steps = beat.dieA + beat.dieB;
       if (!pawn || steps < 1) {
         done();
         return;
       }
 
-      busy = true;
-      setActiveSeat(seat + 1);
+      placePawn(beat.seat, beat.startTile);
+
+      setBusyBoth(true);
+      setActiveSeat(beat.seat + 1);
+      setPhase("rolling");
+      setDice([beat.dieA, beat.dieB]);
+      showCenter(`Rolled ${steps}. Moving ${steps} spaces…`);
+
       const body = pawn.querySelector<HTMLElement>("[data-pawn-body]");
-      const from = Number(pawn.dataset.tile ?? "0");
-      const stepDur = steps >= 8 ? 0.12 : steps >= 5 ? 0.15 : 0.18;
+      const from = beat.startTile % Math.max(tileNodes.length, 1);
+      const dest = (from + steps) % Math.max(tileNodes.length, 1);
+      const stepDur = steps >= 8 ? 0.11 : steps >= 5 ? 0.14 : 0.16;
       const tl = gsap.timeline({
         onComplete: () => {
-          showEvent(label);
+          setPhase("result");
+          flashTile(dest, true);
+          showCenter(beat.result, beat.balanceNote);
           if (body) {
             gsap.fromTo(
               body,
-              { rotate: -8 },
+              { rotate: -6 },
               {
-                rotate: 8,
-                duration: 0.08,
+                rotate: 6,
+                duration: 0.07,
                 yoyo: true,
                 repeat: 3,
                 ease: "power1.inOut",
@@ -188,7 +313,7 @@ export function WelcomeStage({ className }: { className?: string }) {
               },
             );
           }
-          busy = false;
+          setBusyBoth(false);
           done();
         },
       });
@@ -203,7 +328,10 @@ export function WelcomeStage({ className }: { className?: string }) {
             { x: 0, rotation: 0, duration: 0.08 },
           ],
           ease: "power1.inOut",
+          onComplete: () => setPhase("moving"),
         });
+      } else {
+        tl.add(() => setPhase("moving"));
       }
 
       for (let step = 1; step <= steps; step += 1) {
@@ -254,48 +382,67 @@ export function WelcomeStage({ className }: { className?: string }) {
     const scheduleNext = () => {
       window.clearTimeout(waitTimer);
       waitTimer = window.setTimeout(() => {
-        if (pausedRef.current || busy) return;
+        if (pausedRef.current || busyLocal) return;
         playScripted();
-      }, 2200);
+      }, 2800);
     };
 
     const playScripted = () => {
-      if (busy || pausedRef.current) return;
-      const beat = SCRIPT[scriptIndex % SCRIPT.length];
+      if (busyLocal || pausedRef.current) return;
+      const beat = GUIDED[scriptIndex % GUIDED.length];
+      if (!beat) return;
       scriptIndex += 1;
-      const a = Math.min(6, Math.max(1, beat.steps - 3)) as DieValue;
-      const b = Math.min(6, Math.max(1, beat.steps - a)) as DieValue;
-      setDice([a, b]);
-      runHop(beat.seat, beat.steps, beat.label, scheduleNext);
+      setHotTile(null);
+      runHop(beat, scheduleNext);
     };
 
-    const kick: KickTurn = (seat) => {
-      if (busy) return;
+    const kick: KickTurn = () => {
+      if (busyLocal) return;
       window.clearTimeout(waitTimer);
-      const chosen = seat ?? Math.max(0, (activeSeatFromDom() ?? 1) - 1);
-      const total = randomDie() + randomDie();
-      const a = Math.min(6, Math.max(1, total - 1)) as DieValue;
-      const b = Math.min(6, Math.max(1, total - a)) as DieValue;
-      setDice([a, b]);
-      const labels = SCRIPT.map((item) => item.label);
-      const label = labels[chosen % labels.length] ?? "Rent collected!";
-      runHop(chosen, total, label, () => {
+      const beat = GUIDED[scriptIndex % GUIDED.length];
+      if (!beat) return;
+      scriptIndex += 1;
+      setHotTile(null);
+      runHop(beat, () => {
         if (!pausedRef.current) scheduleNext();
       });
     };
 
-    const activeSeatFromDom = () => {
-      const marked = stage.querySelector<HTMLElement>(
-        "[data-hero-avatar][data-active='true']",
-      );
-      return marked ? Number(marked.dataset.heroAvatar) : 1;
+    const replay: ReplayTurn = () => {
+      window.clearTimeout(waitTimer);
+      tweens.forEach((t) => t.kill());
+      tweens.length = 0;
+      pawns.forEach((p) => {
+        gsap.killTweensOf(p);
+        const body = p.querySelector<HTMLElement>("[data-pawn-body]");
+        if (body) gsap.killTweensOf(body);
+      });
+      if (die) gsap.killTweensOf(die);
+      if (bubble) gsap.killTweensOf(bubble);
+      scriptIndex = 0;
+      setBusyBoth(false);
+      setPhase("ready");
+      setHotTile(null);
+      setActiveSeat(1);
+      setDice([4, 5]);
+      showCenter("Your turn. Roll the dice.", "Demo balances · not real BOARD");
+      resetPawns();
+      if (!pausedRef.current) {
+        waitTimer = window.setTimeout(() => {
+          if (!pausedRef.current) playScripted();
+        }, 900);
+      }
     };
 
     kickRef.current = kick;
+    replayRef.current = replay;
     resumeRef.current = () => {
-      if (!pausedRef.current && !busy) scheduleNext();
+      if (!pausedRef.current && !busyLocal) scheduleNext();
     };
-    playScripted();
+    showCenter("Your turn. Roll the dice.", "Demo balances · not real BOARD");
+    waitTimer = window.setTimeout(() => {
+      if (!pausedRef.current) playScripted();
+    }, 700);
 
     const onResize = () => {
       pawns.forEach((pawn) => {
@@ -312,6 +459,7 @@ export function WelcomeStage({ className }: { className?: string }) {
       window.removeEventListener("resize", onResize);
       window.clearTimeout(waitTimer);
       kickRef.current = null;
+      replayRef.current = null;
       resumeRef.current = null;
       tweens.forEach((t) => t.kill());
       pawns.forEach((p) => {
@@ -332,38 +480,47 @@ export function WelcomeStage({ className }: { className?: string }) {
     if (!paused) resumeRef.current?.();
   }, [paused]);
 
+  const onRoll = useCallback(() => {
+    if (busy) return;
+    kickRef.current?.();
+  }, [busy]);
+
+  const onReplay = useCallback(() => {
+    replayRef.current?.();
+  }, []);
+
   return (
-    <div id="demo-preview" ref={root} className={cn("w-full", className)}>
-      <p className="mb-2 font-pixel text-xs font-semibold uppercase tracking-wider text-cream text-shadow-pixel">
-        Demo preview
-      </p>
-      <PixelCard size="md" tone="cream" faceClassName="p-3 sm:p-4">
-        <div className="mb-3 flex items-end justify-center gap-2 sm:gap-3">
+    <div
+      id="try-a-turn"
+      ref={root}
+      className={cn("w-full scroll-mt-28", className)}
+    >
+      <div className="border-[3px] border-void bg-cream p-2.5 shadow-pixel sm:p-3.5">
+        <div
+          className="mb-2.5 flex items-end justify-center gap-1.5 sm:mb-3 sm:gap-2.5"
+          role="list"
+          aria-label="Player turn status"
+        >
           {PLAYERS.map((player) => {
             const active = player.seat === activeSeat;
             return (
-              <button
+              <div
                 key={player.seat}
-                type="button"
+                role="listitem"
                 data-hero-avatar={player.seat}
                 data-active={active ? "true" : "false"}
-                aria-pressed={active}
-                aria-label={`${player.name}${active ? ", rolling" : ""}`}
+                aria-current={active ? "true" : undefined}
                 className={cn(
-                  "flex w-12 flex-col items-center gap-1 rounded-sm border-2 bg-surface px-1 py-1 transition-transform duration-150 sm:w-14",
+                  "flex w-12 flex-col items-center gap-1 rounded-sm border-2 bg-surface px-1 py-1 sm:w-14 sm:py-1.5",
                   active
                     ? "border-gold shadow-pixel-sm"
-                    : "border-transparent opacity-70 hover:opacity-100",
+                    : "border-transparent opacity-65",
                 )}
-                onClick={() => {
-                  setActiveSeat(player.seat);
-                  kickRef.current?.(player.seat - 1);
-                }}
               >
                 <span
                   className={cn(
-                    "block w-8 sm:w-9",
-                    active && !reduced && "animate-pawn-bounce",
+                    "block w-7 sm:w-8",
+                    active && !reduced && phase !== "result" && "animate-pawn-bounce",
                   )}
                 >
                   <PixelArt sprite={pawnSprite(player.seat)} />
@@ -371,17 +528,17 @@ export function WelcomeStage({ className }: { className?: string }) {
                 <span className="font-pixel text-[10px] uppercase leading-none text-parchment">
                   {player.name}
                 </span>
-              </button>
+              </div>
             );
           })}
         </div>
 
         <div
           ref={board}
-          className="relative mx-auto aspect-square w-full max-w-[22rem] sm:max-w-[24rem]"
+          className="relative mx-auto aspect-square w-full max-w-[min(100%,32rem)]"
         >
           <div
-            className="relative grid h-full w-full gap-[2px] border-[3px] border-edge-bright bg-[#020b16] p-[2px] shadow-pixel-sm"
+            className="relative grid h-full w-full gap-[2px] border-[3px] border-edge-bright bg-[#173C32] p-[2px] shadow-pixel-sm"
             style={{
               gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))`,
               gridTemplateRows: `repeat(${BOARD_SIZE}, minmax(0, 1fr))`,
@@ -394,6 +551,7 @@ export function WelcomeStage({ className }: { className?: string }) {
                   key={tile.index}
                   tile={tile}
                   edge={edge}
+                  hot={hotTile === tile.index}
                   style={{ gridRow: row, gridColumn: col }}
                 />
               );
@@ -401,24 +559,30 @@ export function WelcomeStage({ className }: { className?: string }) {
 
             <div
               style={{ gridArea: `2 / 2 / ${BOARD_SIZE} / ${BOARD_SIZE}` }}
-              className="relative overflow-hidden border border-void/80 bg-ink"
+              className="relative overflow-hidden border border-void/80 bg-[#0f2922]"
             >
               <div
                 data-preview-dice
-                className="absolute inset-x-0 top-[12%] z-20 flex items-center justify-center gap-1.5"
+                className="absolute inset-x-0 top-[8%] z-20 flex items-center justify-center gap-1.5"
               >
                 <PreviewDie face={dice[0]} />
                 <PreviewDie face={dice[1]} />
+                <span className="ml-1 font-pixel text-xs font-bold text-cream">
+                  = {dice[0] + dice[1]}
+                </span>
               </div>
 
               <div
                 data-preview-event
                 role="status"
                 aria-live="polite"
-                className="absolute inset-x-2 bottom-[14%] z-30 mx-auto max-w-[90%] border-[3px] border-void bg-gold px-2 py-1.5 text-center shadow-pixel-sm"
+                className="absolute inset-x-2 bottom-[8%] top-[28%] z-30 mx-auto flex max-w-[92%] flex-col items-center justify-center gap-2 px-2 text-center"
               >
-                <p className="font-pixel text-[11px] font-bold uppercase leading-none text-void sm:text-xs">
-                  {eventText}
+                <p className="border-[3px] border-void bg-gold px-2.5 py-2 font-sans text-[13px] font-semibold leading-snug text-void shadow-pixel-sm sm:text-sm">
+                  {centerText}
+                </p>
+                <p className="font-pixel text-[10px] uppercase leading-snug tracking-wide text-cream/90">
+                  {balanceNote}
                 </p>
               </div>
             </div>
@@ -449,14 +613,23 @@ export function WelcomeStage({ className }: { className?: string }) {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2 sm:mt-3">
           <PixelButton
             type="button"
             size="sm"
             variant="primary"
-            onClick={() => kickRef.current?.(activeSeat - 1)}
+            disabled={busy}
+            onClick={onRoll}
           >
-            Try a roll
+            {busy ? "Resolving…" : "Roll the dice"}
+          </PixelButton>
+          <PixelButton
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onReplay}
+          >
+            Replay turn
           </PixelButton>
           <PixelButton
             type="button"
@@ -465,10 +638,10 @@ export function WelcomeStage({ className }: { className?: string }) {
             aria-pressed={paused}
             onClick={() => setPaused((value) => !value)}
           >
-            {paused ? "Play preview" : "Pause preview"}
+            {paused ? "Resume" : "Pause"}
           </PixelButton>
         </div>
-      </PixelCard>
+      </div>
     </div>
   );
 }
@@ -476,7 +649,7 @@ export function WelcomeStage({ className }: { className?: string }) {
 function PreviewDie({ face }: { face: DieValue }) {
   const pips = PIP_LAYOUT[face];
   return (
-    <div className="grid size-7 grid-cols-3 grid-rows-3 gap-[2px] border-[3px] border-void bg-cream p-[3px] shadow-pixel-sm sm:size-8">
+    <div className="grid size-8 grid-cols-3 grid-rows-3 gap-[2px] border-[3px] border-void bg-cream p-[3px] shadow-pixel-sm sm:size-9">
       {Array.from({ length: 9 }, (_, cell) => (
         <span
           key={cell}
@@ -490,10 +663,12 @@ function PreviewDie({ face }: { face: DieValue }) {
 function HeroTile({
   tile,
   edge,
+  hot,
   style,
 }: {
   tile: BoardTile;
   edge: TileEdge;
+  hot?: boolean;
   style: React.CSSProperties;
 }) {
   const group = groupFor(tile);
@@ -508,7 +683,10 @@ function HeroTile({
         ...style,
         backgroundColor: tileTone(tile, corner),
       }}
-      className="relative flex min-h-0 min-w-0 flex-col items-center justify-center overflow-hidden outline outline-1 outline-void"
+      className={cn(
+        "relative flex min-h-0 min-w-0 flex-col items-center justify-center overflow-hidden outline outline-1 outline-void",
+        hot && "z-10 brightness-125 ring-2 ring-gold",
+      )}
     >
       {group && isCountry ? (
         <span

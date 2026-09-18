@@ -12,24 +12,20 @@ type DbTx = PgTransaction<
   ExtractTablesWithRelations<typeof schema>
 >;
 
-export type TreasuryFeeInput = {
+export type BuybackFeeInput = {
   rewardPayoutId: string;
   matchId: string;
-  /** Total 2% fee amount before the treasury/burn split. */
   feeAmount: number;
   txHash?: string;
 };
 
 /**
- * Record the treasury share of the 2% prize fee (default half of the fee).
+ * Record the buyback share of the 2% prize fee (default 35% of the fee).
  */
-export async function recordTreasuryFee(
-  tx: DbTx,
-  input: TreasuryFeeInput,
-) {
+export async function recordBuybackFee(tx: DbTx, input: BuybackFeeInput) {
   const config = getRoomEconomyConfig();
   const amount =
-    Math.round(input.feeAmount * config.feeDestination.treasuryShare * 100) /
+    Math.round(input.feeAmount * config.feeDestination.buybackShare * 100) /
     100;
 
   const [row] = await tx
@@ -37,24 +33,24 @@ export async function recordTreasuryFee(
     .values({
       rewardPayoutId: input.rewardPayoutId,
       matchId: input.matchId,
-      kind: "treasury",
+      kind: "buyback",
       amount: amount.toFixed(2),
       txHash: input.txHash ?? null,
-      note: "2% prize fee → development / treasury",
+      note: "2% prize fee → $BOARD buyback",
     })
     .returning();
 
   return {
     id: row.id,
-    kind: "treasury" as const,
+    kind: "buyback" as const,
     amount,
   };
 }
 
 /** Pure helper for docs / API examples. */
-export function treasuryShareOfFee(feeAmount: number) {
+export function buybackShareOfFee(feeAmount: number) {
   const config = getRoomEconomyConfig();
   return (
-    Math.round(feeAmount * config.feeDestination.treasuryShare * 100) / 100
+    Math.round(feeAmount * config.feeDestination.buybackShare * 100) / 100
   );
 }

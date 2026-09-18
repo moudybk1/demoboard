@@ -5,7 +5,9 @@ type PageHeroProps = {
   /** Optional. Taste skill: avoid eyebrows on every section. */
   eyebrow?: string;
   title: string;
-  support: string;
+  /** Short line under the title, above the support paragraph. */
+  punch?: string;
+  support: React.ReactNode;
   meta?: React.ReactNode;
   stage?: React.ReactNode;
   actions?: React.ReactNode;
@@ -18,6 +20,7 @@ type PageHeroProps = {
 export function PageHero({
   eyebrow,
   title,
+  punch,
   support,
   meta,
   stage,
@@ -65,9 +68,14 @@ export function PageHero({
           >
             {title}
           </h1>
-          <p className="mt-4 max-w-[36rem] text-base leading-relaxed text-muted">
+          {punch ? (
+            <p className="mt-3 max-w-[36rem] font-pixel text-sm font-semibold leading-snug text-gold-deep sm:text-base">
+              {punch}
+            </p>
+          ) : null}
+          <div className="mt-4 max-w-[36rem] text-base leading-relaxed text-muted">
             {support}
-          </p>
+          </div>
           {meta ? (
             <div className="mt-5 flex flex-wrap gap-2">{meta}</div>
           ) : null}

@@ -4,7 +4,7 @@ import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelBadge } from "@/components/ui/pixel-badge";
 import { PixelLabel } from "@/components/ui/pixel-label";
-import { PLAY_IS_LIVE, SAMPLE_DATA_LABEL } from "@/lib/platform-status";
+import { PLAY_IS_LIVE, DEMO_DATA_LABEL } from "@/lib/platform-status";
 import type { WalletBalance } from "@/lib/types";
 import { formatBoard } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ export function BalanceStrip({
   cheapestEntryFee?: number;
   className?: string;
 }) {
-  // A shortfall warning against a sample balance would be inventing a problem,
+  // A shortfall warning against a demo balance would be inventing a problem,
   // so it only appears once staking is live.
   const cannotPlay =
     PLAY_IS_LIVE &&
@@ -48,7 +48,7 @@ export function BalanceStrip({
           {PLAY_IS_LIVE ? (
             <PixelBadge tone="gold">Ready</PixelBadge>
           ) : (
-            <PixelBadge tone="neutral">{SAMPLE_DATA_LABEL}</PixelBadge>
+            <PixelBadge tone="neutral">{DEMO_DATA_LABEL}</PixelBadge>
           )}
         </div>
         <BoardAmount

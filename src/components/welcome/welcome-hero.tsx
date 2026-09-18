@@ -3,30 +3,22 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
-import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
-import { TokenCaPromo } from "@/components/welcome/token-ca-promo";
+import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { WelcomeStage } from "@/components/welcome/welcome-stage";
 import { WELCOME_HERO } from "@/lib/mock/welcome";
 import { prefersReducedMotion } from "@/lib/motion/gsap-config";
-import { ROBINHOOD_CHAIN_LABEL } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
 type WelcomeHeroProps = {
   className?: string;
-  tokenAddress: `0x${string}` | null;
-  tokenExplorerUrl: string | null;
 };
 
 /**
- * Lobby hero: pitch first, compact demo preview second.
- * Mobile stacks copy then board so the CTA is on screen before the table.
+ * Open hero: benefit-led headline, quiet reading surface, tabletop preview.
+ * No nested frames or token-address placeholders in this section.
  */
-export function WelcomeHero({
-  className,
-  tokenAddress,
-  tokenExplorerUrl,
-}: WelcomeHeroProps) {
+export function WelcomeHero({ className }: WelcomeHeroProps) {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -39,8 +31,8 @@ export function WelcomeHero({
     const intro = gsap.timeline();
     if (brand) {
       intro.from(brand, {
-        y: 18,
-        duration: 0.55,
+        y: 14,
+        duration: 0.5,
         ease: "power3.out",
         clearProps: "transform",
       });
@@ -48,13 +40,13 @@ export function WelcomeHero({
     intro.from(
       lines,
       {
-        y: 10,
-        duration: 0.35,
-        stagger: 0.055,
+        y: 8,
+        duration: 0.32,
+        stagger: 0.05,
         ease: "power2.out",
         clearProps: "transform",
       },
-      "-=0.28",
+      "-=0.26",
     );
 
     return () => {
@@ -65,79 +57,62 @@ export function WelcomeHero({
   return (
     <section
       ref={root}
-      className={cn("board-container py-5 sm:py-8", className)}
+      className={cn("board-container py-6 sm:py-10 lg:py-12", className)}
     >
-      <PixelCard
-        size="lg"
-        tone="felt"
-        className="w-full"
-        faceClassName="relative isolate p-4 sm:p-6 lg:p-7"
-      >
-        <div className="relative z-[1] grid grid-cols-1 items-center gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-8">
-          <PixelCard
-            size="md"
-            className="w-full max-w-[28rem] lg:max-w-none"
-            faceClassName="p-5 sm:p-7"
+      <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-10 xl:gap-12">
+        <div className="relative z-[1] max-w-[34rem] lg:max-w-none">
+          <h1
+            data-hero-brand
+            className="max-w-[22ch] font-pixel text-[clamp(2.35rem,5.5vw,4.75rem)] font-bold leading-[1.12] tracking-tight text-parchment"
           >
-            <p
-              data-hero-in
-              className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep"
-            >
-              {WELCOME_HERO.eyebrow}
-            </p>
+            {WELCOME_HERO.headline}
+          </h1>
 
-            <h1
-              data-hero-brand
-              className="mt-3 font-pixel text-[clamp(2.1rem,6vw,3.35rem)] font-bold leading-[1.15] text-parchment"
-            >
-              {WELCOME_HERO.brand}
-            </h1>
+          <p
+            data-hero-in
+            className="mt-5 max-w-[40ch] text-base leading-relaxed text-muted sm:text-[1.125rem] sm:leading-[1.65]"
+          >
+            {WELCOME_HERO.support}
+          </p>
 
-            <p
-              data-hero-in
-              className="mt-4 font-pixel text-lg font-semibold leading-snug text-parchment sm:text-xl"
-            >
-              {WELCOME_HERO.headline}
-            </p>
-
-            <p
-              data-hero-in
-              className="mt-3 max-w-[36ch] text-base leading-relaxed text-muted sm:text-[17px]"
-            >
-              {WELCOME_HERO.support}
-            </p>
-
-            <div
-              data-hero-in
-              className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:items-stretch"
-            >
-              {WELCOME_HERO.ctas.map((cta) => (
+          <div
+            data-hero-in
+            className="mt-7 flex w-full flex-col gap-3 sm:flex-row sm:items-center"
+          >
+            {WELCOME_HERO.ctas.map((cta) =>
+              cta.action === "connect-wallet" ? (
+                <ConnectWalletButton
+                  key={cta.label}
+                  label={cta.label}
+                  size={cta.variant === "primary" ? "lg" : "md"}
+                  variant={cta.variant === "outline" ? "outline" : cta.variant}
+                  className="w-full opacity-95 sm:w-auto"
+                />
+              ) : (
                 <PixelButtonLink
                   key={cta.href}
                   href={cta.href}
-                  size="lg"
-                  variant={cta.variant}
-                  className="w-full flex-1 justify-center"
+                  size={cta.variant === "primary" ? "lg" : "md"}
+                  variant={cta.variant === "outline" ? "outline" : cta.variant}
+                  {...(cta.external
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                  className={cn(
+                    "justify-center",
+                    cta.variant === "primary"
+                      ? "w-full sm:w-auto sm:min-w-[12rem]"
+                      : "w-full opacity-95 sm:w-auto",
+                  )}
                 >
                   {cta.label}
                 </PixelButtonLink>
-              ))}
-            </div>
-
-            <div data-hero-in>
-              <TokenCaPromo
-                className="mt-5"
-                compact
-                address={tokenAddress}
-                explorerUrl={tokenExplorerUrl}
-                chainLabel={ROBINHOOD_CHAIN_LABEL}
-              />
-            </div>
-          </PixelCard>
-
-          <WelcomeStage />
+              ),
+            )}
+          </div>
         </div>
-      </PixelCard>
+
+        <WelcomeStage />
+      </div>
     </section>
   );
 }

@@ -110,6 +110,7 @@ export function WinResultBoard({
                 grossPot: result.grossPot,
                 feePercent: result.feePercent,
                 treasuryAmount: result.treasuryAmount,
+                buybackAmount: result.buybackAmount,
                 burnAmount: result.burnAmount,
                 netPayout: result.netPayout,
               }}

@@ -21,6 +21,7 @@ export type MockWinResult = {
   feePercent: number;
   feeAmount: number;
   treasuryAmount: number;
+  buybackAmount: number;
   burnAmount: number;
   netPayout: number;
   payoutStatus: WinPayoutStatus;
@@ -43,8 +44,9 @@ export const MOCK_WIN_RESULT: MockWinResult = {
   grossPot: 4_000,
   feePercent: 2,
   feeAmount: 80,
-  treasuryAmount: 40,
-  burnAmount: 40,
+  treasuryAmount: 24,
+  buybackAmount: 28,
+  burnAmount: 28,
   netPayout: 3_920,
   payoutStatus: "paid",
   subtitle: "Last player standing takes the pot.",
@@ -68,8 +70,9 @@ export const MOCK_WIN_HISTORY: MockWinResult[] = [
     grossPot: 2_000,
     feePercent: 2,
     feeAmount: 40,
-    treasuryAmount: 20,
-    burnAmount: 20,
+    treasuryAmount: 12,
+    buybackAmount: 14,
+    burnAmount: 14,
     netPayout: 1_960,
     payoutStatus: "pending",
     subtitle: "All four pawns home first.",
@@ -90,8 +93,9 @@ export const MOCK_WIN_HISTORY: MockWinResult[] = [
     grossPot: 20_000,
     feePercent: 2,
     feeAmount: 400,
-    treasuryAmount: 200,
-    burnAmount: 200,
+    treasuryAmount: 120,
+    buybackAmount: 140,
+    burnAmount: 140,
     netPayout: 19_600,
     payoutStatus: "failed",
     subtitle: "You finished second · no payout this room.",

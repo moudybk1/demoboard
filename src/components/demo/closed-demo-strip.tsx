@@ -1,10 +1,16 @@
 import { PixelCard } from "@/components/ui/pixel-card";
 
 /**
- * Persistent reminder that playable screens are a closed preview, not live
- * staking. ProductShell and room pages mount this above sample tables.
+ * Persistent strip above product pages. Pass `label` to override the default
+ * closed-demo reminder.
  */
-export function ClosedDemoStrip({ className }: { className?: string }) {
+export function ClosedDemoStrip({
+  className,
+  label = "Closed demo · demo tables · no BOARD is staked or paid out",
+}: {
+  className?: string;
+  label?: string;
+}) {
   return (
     <PixelCard
       role="note"
@@ -13,7 +19,7 @@ export function ClosedDemoStrip({ className }: { className?: string }) {
       className={className}
       faceClassName="px-3 py-2 font-pixel text-xs font-semibold uppercase leading-snug text-void"
     >
-      Closed demo · sample tables · no BOARD is staked or paid out
+      {label}
     </PixelCard>
   );
 }

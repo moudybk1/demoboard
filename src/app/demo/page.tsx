@@ -75,15 +75,15 @@ export default async function DemoPage({ searchParams }: DemoPageProps) {
             <p className="mt-3 text-base leading-relaxed text-muted">
               Enter your invitation code to explore{" "}
               {game === "ludo" ? "Ludo" : game === "monopoly" ? "Monopoly" : "Monopoly or Ludo"}{" "}
-              with sample balances. No real tokens are used.
+              with demo balances. No real tokens are used.
             </p>
             <div className="mt-6">
               <DemoGateForm nextPath={next} game={game} errorCode={error} />
             </div>
             <p className="mt-5 border-t-[3px] border-void pt-4 text-sm text-muted">
               No code yet?{" "}
-              <Link href="/#demo-preview" className="text-link underline hover:text-parchment">
-                Watch a sample turn
+              <Link href="/#try-a-turn" className="text-link underline hover:text-parchment">
+                Watch a turn
               </Link>
               {" · "}
               <Link href="/how-to" className="text-link underline hover:text-parchment">

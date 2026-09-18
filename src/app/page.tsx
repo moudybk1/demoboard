@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { OnboardingPath } from "@/components/welcome/onboarding-path";
+import { InsideBoard } from "@/components/welcome/inside-board";
 import { TokenRoadmapSection } from "@/components/welcome/token-roadmap-section";
 import { WelcomeHero } from "@/components/welcome/welcome-hero";
 import { WelcomeHighlights } from "@/components/welcome/welcome-highlights";
@@ -12,9 +12,9 @@ import {
 } from "@/lib/wallet/chains";
 
 export const metadata: Metadata = {
-  title: "BOARD | Closed demo · cartoon pixel Monopoly & Ludo",
+  title: "BOARD | Relive your childhood. Play it differently.",
   description:
-    "Roll, buy, capture. Four player Monopoly and Ludo on a cartoon pixel tabletop. This closed demo shows the tables; live BOARD staking is next.",
+    "The board games you grew up with, reimagined as competitive four-player PvP. Closed demo by invitation.",
 };
 
 export default function Home() {
@@ -25,12 +25,9 @@ export default function Home() {
     <div className="board-atmosphere flex min-h-full flex-col">
       <SiteHeader />
       <main className="flex flex-1 flex-col overflow-x-hidden">
-        <WelcomeHero
-          tokenAddress={tokenAddress}
-          tokenExplorerUrl={tokenExplorerUrl}
-        />
+        <WelcomeHero />
         <WelcomeHighlights />
-        <OnboardingPath />
+        <InsideBoard />
         <TokenRoadmapSection
           tokenAddress={tokenAddress}
           tokenExplorerUrl={tokenExplorerUrl}
