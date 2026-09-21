@@ -9,18 +9,20 @@ import {
   TelegramLogo,
   XLogo,
 } from "@/components/icons/brand-logos";
+import { PlayWalletChip } from "@/components/play/play-wallet-chip";
 import { COMMUNITY_LINKS } from "@/lib/community-links";
 import { cn } from "@/lib/utils";
 
 /**
- * Game-client HUD. Social capsule top-right, speaker bottom-left.
+ * Game-client HUD. Wallet + social top-right, speaker bottom-left.
  * The hanging wooden sign on the arena is the identity — no website logo.
  */
 export function PlayChrome() {
   return (
     <div className="pointer-events-none absolute inset-0 z-40">
-      <div className="pointer-events-auto absolute right-3 top-3 sm:right-4 sm:top-4">
+      <div className="pointer-events-auto absolute right-2 top-2 flex max-w-[calc(100%-0.75rem)] flex-wrap items-center justify-end gap-2 sm:right-4 sm:top-4">
         <PlaySocialCapsule />
+        <PlayWalletChip />
       </div>
       <div className="pointer-events-auto absolute bottom-3 left-3 sm:bottom-4 sm:left-4">
         <AudioControlsPopover panel="corner" />

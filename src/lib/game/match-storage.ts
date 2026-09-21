@@ -46,6 +46,15 @@ function asMatchSeats(seats: PlayTableSeatView[]) {
   }));
 }
 
+function rosterMatches(
+  seats: PlayTableSeatView[],
+  players: Array<{ id: string }>,
+) {
+  if (players.length !== seats.length) return false;
+  const seated = new Set(seats.map((seat) => seat.address.toLowerCase()));
+  return players.every((player) => seated.has(player.id.toLowerCase()));
+}
+
 export function loadOrCreateMonopoly(roomId: string): MonopolyPlayState {
   const stored = readJson<MonopolyPlayState>(MONO_KEY(roomId));
   if (stored?.players?.length) return asPlayState(stored);
@@ -64,7 +73,7 @@ export function loadMonopolyForTable(
   viewerId: string | null,
 ): MonopolyPlayState {
   const stored = readJson<MonopolyPlayState>(MONO_KEY(roomId));
-  if (stored?.players?.length === seats.length) {
+  if (stored?.players && rosterMatches(seats, stored.players)) {
     return asPlayState({
       ...stored,
       players: markYou(stored.players, viewerId),
@@ -101,7 +110,7 @@ export function loadLudoForTable(
   viewerId: string | null,
 ): LudoRoomState {
   const stored = readJson<LudoRoomState>(LUDO_KEY(roomId));
-  if (stored?.players?.length === seats.length) {
+  if (stored?.players && rosterMatches(seats, stored.players)) {
     return { ...stored, players: markYou(stored.players, viewerId) };
   }
   const fresh = createLudoMatchForSeats(roomId, asMatchSeats(seats));

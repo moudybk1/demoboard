@@ -3,11 +3,45 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
+import {
+  finishDiceRoll,
+  startDiceRoll,
+  stopDiceRollLoop,
+} from "@/lib/audio/audio-manager";
 import { PIP_LAYOUT, randomDie, type DieValue } from "@/lib/game/dice";
 import { cn } from "@/lib/utils";
 
 /** How often the faces change while the dice are tumbling. */
-const FLICKER_MS = 70;
+const FLICKER_MS = 120;
+
+const TUMBLE_UP = 0.26;
+const TUMBLE_DOWN = 0.26;
+const TUMBLE_UP_2 = 0.22;
+const TUMBLE_DOWN_2 = 0.22;
+const LAND_DURATION = 0.55;
+
+/**
+ * Tie the table-clatter SFX to the rolling flag. Starts when the tumble
+ * begins, lands when it ends, and cancels quietly on unmount.
+ */
+function useDiceRollSound(rolling: boolean) {
+  const wasRolling = useRef(false);
+
+  useEffect(() => {
+    if (rolling) {
+      startDiceRoll();
+      wasRolling.current = true;
+      return () => {
+        stopDiceRollLoop();
+      };
+    }
+
+    if (wasRolling.current) {
+      wasRolling.current = false;
+      finishDiceRoll();
+    }
+  }, [rolling]);
+}
 
 /**
  * The pair of dice. While `rolling` is true the faces flicker and the dice
@@ -23,6 +57,7 @@ export function DiceTray({
   className?: string;
 }) {
   const [flicker, setFlicker] = useState<readonly [DieValue, DieValue]>([1, 1]);
+  useDiceRollSound(rolling);
 
   // Cycle random faces for as long as the roll is in flight.
   useEffect(() => {
@@ -79,6 +114,7 @@ export function DieTray({
   className?: string;
 }) {
   const [flicker, setFlicker] = useState<DieValue>(1);
+  useDiceRollSound(rolling);
 
   useEffect(() => {
     if (!rolling) return;
@@ -132,44 +168,49 @@ function Die({
     if (!node) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    if (rolling) {
-      // Continuous hop while tumbling · snappier pixel tumble with scale punch.
-      const timeline = gsap.timeline({ repeat: -1, delay });
-      timeline
-        .to(node, {
-          y: -16,
-          rotate: 90,
-          scale: 1.08,
-          duration: 0.16,
-          ease: "power2.out",
-        })
-        .to(node, {
-          y: 0,
-          rotate: 180,
-          scale: 0.92,
-          duration: 0.16,
-          ease: "power2.in",
-        })
-        .to(node, {
-          y: -11,
-          rotate: 270,
-          scale: 1.06,
-          duration: 0.14,
-          ease: "power2.out",
-        })
-        .to(node, {
-          y: 0,
-          rotate: 360,
-          scale: 1,
-          duration: 0.14,
-          ease: "power2.in",
-        })
-        .set(node, { rotate: 0 });
+    if (!rolling) return;
 
-      return () => {
-        timeline.kill();
-      };
-    }
+    const timeline = gsap.timeline({ repeat: -1, delay });
+    timeline
+      .to(node, {
+        y: -16,
+        rotate: 90,
+        scale: 1.08,
+        duration: TUMBLE_UP,
+        ease: "power2.out",
+      })
+      .to(node, {
+        y: 0,
+        rotate: 180,
+        scale: 0.92,
+        duration: TUMBLE_DOWN,
+        ease: "power2.in",
+      })
+      .to(node, {
+        y: -11,
+        rotate: 270,
+        scale: 1.06,
+        duration: TUMBLE_UP_2,
+        ease: "power2.out",
+      })
+      .to(node, {
+        y: 0,
+        rotate: 360,
+        scale: 1,
+        duration: TUMBLE_DOWN_2,
+        ease: "power2.in",
+      })
+      .set(node, { rotate: 0 });
+
+    return () => {
+      timeline.kill();
+    };
+  }, [rolling, delay]);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || rolling) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const landing = gsap.fromTo(
       node,
@@ -178,7 +219,7 @@ function Die({
         y: 0,
         scale: 1,
         rotate: 0,
-        duration: 0.42,
+        duration: LAND_DURATION,
         ease: "bounce.out",
         delay,
       },

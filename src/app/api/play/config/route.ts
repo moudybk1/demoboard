@@ -6,11 +6,13 @@ import {
   ROBINHOOD_TESTNET_FAUCET,
 } from "@/lib/wallet/chains";
 import { PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
+import { getPlayTreasuryStatus } from "@/server/lib/play-chain";
 import { getPlayConfig } from "@/server/services/play-table.service";
 
 /** GET /api/play/config · treasury + sit fee for the play client. */
 export async function GET() {
   const config = getPlayConfig();
+  const treasury = await getPlayTreasuryStatus();
   return NextResponse.json({
     ...config,
     symbol: PLAY_STAKE_SYMBOL,
@@ -18,5 +20,7 @@ export async function GET() {
     chainLabel: getBoardChainLabel(),
     faucet: ROBINHOOD_TESTNET_FAUCET,
     entryFee: PLAY_ENTRY_FEE,
+    treasuryBalance: treasury.balanceEth,
+    canRefund: treasury.canRefund,
   });
 }

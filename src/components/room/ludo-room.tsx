@@ -29,7 +29,6 @@ import {
 import {
   playCaptureSound,
   playLoseSound,
-  playRollSound,
   playWinSound,
 } from "@/lib/game/sfx";
 import {
@@ -42,7 +41,7 @@ import {
 import { saveLudo } from "@/lib/game/match-storage";
 import { isPlayBot } from "@/lib/game/play-table";
 
-const ROLL_MS = 700;
+const ROLL_MS = 1300;
 const NPC_THINK_MS = 650;
 
 /**
@@ -350,7 +349,6 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
       const withRoll = { ...snapshot, lastRoll: result };
       stateRef.current = withRoll;
       setState(withRoll);
-      void playRollSound();
       appendLog({ seat, message: `${who} rolled a ${result}.` });
 
       const legal = movablePawns(snapshot, roller, result);
@@ -516,7 +514,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
         />
         <LudoActionBar
           yourTurn={yourTurn && !awaitingPick && !movingId && !finished}
-          rolling={rolling || (!yourTurn && !finished && !canRoll)}
+          rolling={rolling}
           canRoll={canRoll}
           canEndTurn={rollSpent}
           value={die}

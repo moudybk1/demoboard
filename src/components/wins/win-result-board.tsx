@@ -125,7 +125,7 @@ export function WinResultBoard({
       </div>
 
       <div data-win-in className="flex flex-col gap-3 sm:flex-row">
-        <PixelButtonLink href="/lobby" size="lg" className="w-full sm:flex-1">
+        <PixelButtonLink href="/play" size="lg" className="w-full sm:flex-1">
           Back to lobby
         </PixelButtonLink>
         <PixelButtonLink

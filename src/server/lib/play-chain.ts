@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import {
   createPublicClient,
   createWalletClient,
+  formatEther,
   http,
   parseEther,
   type Hex,
@@ -167,20 +168,97 @@ export async function verifySitTransaction(input: {
   return { ok: true };
 }
 
-export async function refundSit(to: Hex): Promise<Hex> {
+export type RefundSitResult =
+  | { ok: true; hash: Hex }
+  | { ok: false; code: "INSUFFICIENT_FUNDS" | "SEND_FAILED"; message: string };
+
+export async function getPlayTreasuryStatus() {
+  const client = publicClient();
+  try {
+    const balance = await client.getBalance({ address: treasury.address });
+    const fees = await client.estimateFeesPerGas();
+    const zero = BigInt(0);
+    const fallbackGas = BigInt(21_000);
+    const maxFee = fees.maxFeePerGas ?? fees.gasPrice ?? zero;
+    const gasCost = fallbackGas * maxFee;
+    return {
+      address: treasury.address,
+      balanceWei: balance.toString(),
+      balanceEth: formatEther(balance),
+      canRefund: balance >= PLAY_SIT_VALUE + gasCost,
+    };
+  } catch {
+    return {
+      address: treasury.address,
+      balanceWei: "0",
+      balanceEth: "0",
+      canRefund: false,
+    };
+  }
+}
+
+/**
+ * Return the 0.002 ETH sit fee. The house wallet must also hold gas; if it
+ * only holds the sit amount, this fails with INSUFFICIENT_FUNDS so the table
+ * service can unseat the player and retry later.
+ */
+export async function refundSit(to: Hex): Promise<RefundSitResult> {
   const account = privateKeyToAccount(treasury.privateKey);
-  const client = createWalletClient({
-    account,
-    chain: getBoardChain(),
-    transport: http(getBoardRpcUrl()),
-  });
-  const hash = await client.sendTransaction({
-    account,
-    to,
-    value: PLAY_SIT_VALUE,
-    chain: getBoardChain(),
-  });
   const public_ = publicClient();
-  await public_.waitForTransactionReceipt({ hash });
-  return hash;
+
+  try {
+    const balance = await public_.getBalance({ address: account.address });
+    const fees = await public_.estimateFeesPerGas();
+    const zero = BigInt(0);
+    const fallbackGas = BigInt(21_000);
+    const maxFee = fees.maxFeePerGas ?? fees.gasPrice ?? zero;
+    const maxPriority = fees.maxPriorityFeePerGas ?? zero;
+    const gas = await public_
+      .estimateGas({
+        account,
+        to,
+        value: PLAY_SIT_VALUE,
+      })
+      .catch(() => fallbackGas);
+
+    const need = PLAY_SIT_VALUE + gas * maxFee;
+    if (balance < need) {
+      return {
+        ok: false,
+        code: "INSUFFICIENT_FUNDS",
+        message:
+          "House wallet needs a little extra ETH for gas. You can still leave; the 0.002 ETH refund is queued.",
+      };
+    }
+
+    const wallet = createWalletClient({
+      account,
+      chain: getBoardChain(),
+      transport: http(getBoardRpcUrl()),
+    });
+    const hash = await wallet.sendTransaction({
+      account,
+      to,
+      value: PLAY_SIT_VALUE,
+      gas,
+      ...(maxFee > zero
+        ? { maxFeePerGas: maxFee, maxPriorityFeePerGas: maxPriority }
+        : {}),
+      chain: getBoardChain(),
+    });
+    await public_.waitForTransactionReceipt({ hash });
+    return { ok: true, hash };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Refund transaction failed.";
+    if (/exceeds the balance|insufficient funds/i.test(message)) {
+      return {
+        ok: false,
+        code: "INSUFFICIENT_FUNDS",
+        message:
+          "House wallet needs a little extra ETH for gas. You can still leave; the 0.002 ETH refund is queued.",
+      };
+    }
+    return { ok: false, code: "SEND_FAILED", message };
+  }
 }

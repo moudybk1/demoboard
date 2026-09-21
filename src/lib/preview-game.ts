@@ -41,5 +41,5 @@ export function demoPathForGame(game: PreviewGame): string {
 }
 
 export function lobbyPathForGame(game: PreviewGame): string {
-  return `/lobby?game=${game}`;
+  return playPathForGame(game);
 }

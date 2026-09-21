@@ -77,7 +77,7 @@ export function AccountBoard() {
           </>
         }
         actions={
-          <PixelButtonLink href="/lobby" variant="primary" size="md">
+          <PixelButtonLink href="/play" variant="primary" size="md">
             Enter lobby
           </PixelButtonLink>
         }

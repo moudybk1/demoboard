@@ -1,6 +1,9 @@
 /**
  * BOARD audio manager · Web Audio SFX + soft looping BGM.
  * Sounds are synthesized (no binary assets). Autoplay starts after unlock.
+ *
+ * Dice and pawn steps use filtered noise so they read as physical objects
+ * (plastic on wood / token on felt), not pitched 8-bit beeps.
  */
 
 export type SfxId =
@@ -27,32 +30,13 @@ type SfxRecipe = {
 
 const SFX: Record<SfxId, SfxRecipe[]> = {
   ui_click: [
-    { type: "square", freq: 880, duration: 0.05, gain: 0.28 },
-    { type: "square", freq: 420, duration: 0.08, gain: 0.18, delay: 0.012 },
+    { type: "square", freq: 880, duration: 0.03, gain: 0.07 },
+    { type: "triangle", freq: 420, duration: 0.045, gain: 0.045, delay: 0.008 },
   ],
   ui_hover: [{ type: "triangle", freq: 520, duration: 0.04, gain: 0.12 }],
-  dice_roll: [
-    { type: "square", freq: 180, freqEnd: 90, duration: 0.1, gain: 0.28 },
-    {
-      type: "square",
-      freq: 220,
-      freqEnd: 110,
-      duration: 0.09,
-      gain: 0.22,
-      delay: 0.05,
-    },
-    {
-      type: "square",
-      freq: 260,
-      freqEnd: 130,
-      duration: 0.08,
-      gain: 0.2,
-      delay: 0.1,
-    },
-  ],
-  pawn_step: [
-    { type: "triangle", freq: 240, freqEnd: 180, duration: 0.07, gain: 0.2 },
-  ],
+  // Preview only — live rolls use startDiceRoll / finishDiceRoll.
+  dice_roll: [],
+  pawn_step: [],
   buy: [
     { type: "square", freq: 440, duration: 0.07, gain: 0.22 },
     { type: "square", freq: 660, duration: 0.09, gain: 0.2, delay: 0.05 },
@@ -112,6 +96,11 @@ class AudioManager {
   private musicPlaying = false;
   private musicTimer: number | null = null;
   private musicStep = 0;
+  private noiseBuffer: AudioBuffer | null = null;
+  private diceRolling = false;
+  private diceGen = 0;
+  private diceTimer: number | null = null;
+  private dicePreviewTimer: number | null = null;
 
   constructor() {
     if (typeof window === "undefined") return;
@@ -164,6 +153,7 @@ class AudioManager {
     this.muted = muted;
     this.applyGain();
     this.persist(STORAGE_MUTE, muted ? "1" : "0");
+    if (muted) this.stopDiceRollLoop();
   }
 
   toggleMute() {
@@ -254,6 +244,11 @@ class AudioManager {
 
     const spawn = () => {
       this.unlocked = true;
+      if (id === "dice_roll") {
+        this.previewDiceRoll();
+        if (this.musicAutoplay && !this.musicMuted) this.startMusic();
+        return;
+      }
       this.spawn(id);
       if (this.musicAutoplay && !this.musicMuted) this.startMusic();
     };
@@ -264,6 +259,50 @@ class AudioManager {
     }
 
     spawn();
+  }
+
+  /**
+   * Dice hitting a table while they tumble. Runs until `finishDiceRoll`.
+   * Procedural clacks last exactly as long as the roll animation.
+   */
+  startDiceRoll() {
+    if (typeof window === "undefined") return;
+    if (this.muted || this.volume <= 0) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    this.clearDicePreview();
+    this.diceGen += 1;
+    const gen = this.diceGen;
+    this.diceRolling = true;
+    this.clearDiceTimer();
+
+    const begin = () => {
+      if (gen !== this.diceGen || !this.diceRolling) return;
+      this.unlocked = true;
+      this.clackDice();
+      this.scheduleDiceClack(gen);
+    };
+
+    if (ctx.state === "suspended") {
+      void ctx.resume().then(begin);
+      return;
+    }
+    begin();
+  }
+
+  /** Stop the rattle without a landing thud (unmount / cancelled roll). */
+  stopDiceRollLoop() {
+    this.diceGen += 1;
+    this.diceRolling = false;
+    this.clearDiceTimer();
+  }
+
+  /** Stop the rattle and play the heavier settle knocks. */
+  finishDiceRoll() {
+    this.stopDiceRollLoop();
+    if (this.muted || this.volume <= 0) return;
+    this.landDice();
   }
 
   private persist(key: string, value: string) {
@@ -335,6 +374,11 @@ class AudioManager {
     const bus = this.sfxBus;
     if (!ctx || !bus) return;
 
+    if (id === "pawn_step") {
+      this.spawnPawnStep();
+      return;
+    }
+
     const recipes = SFX[id];
     const now = ctx.currentTime;
 
@@ -361,12 +405,171 @@ class AudioManager {
       osc.stop(start + recipe.duration + 0.02);
     }
   }
+
+  private previewDiceRoll() {
+    this.startDiceRoll();
+    this.clearDicePreview();
+    this.dicePreviewTimer = window.setTimeout(() => {
+      this.dicePreviewTimer = null;
+      this.finishDiceRoll();
+    }, 640);
+  }
+
+  private clearDicePreview() {
+    if (this.dicePreviewTimer !== null) {
+      window.clearTimeout(this.dicePreviewTimer);
+      this.dicePreviewTimer = null;
+    }
+  }
+
+  private clearDiceTimer() {
+    if (this.diceTimer !== null) {
+      window.clearTimeout(this.diceTimer);
+      this.diceTimer = null;
+    }
+  }
+
+  private scheduleDiceClack(gen: number) {
+    // Irregular gaps read as tumbling dice. Even ticks sound like a metronome.
+    const wait = 42 + Math.random() * 78;
+    this.diceTimer = window.setTimeout(() => {
+      if (gen !== this.diceGen || !this.diceRolling) return;
+      this.clackDice();
+      this.scheduleDiceClack(gen);
+    }, wait);
+  }
+
+  private clackDice() {
+    const bright = 1500 + Math.random() * 2500;
+    this.noiseHit({
+      duration: 0.028 + Math.random() * 0.03,
+      gain: 0.18 + Math.random() * 0.1,
+      frequency: bright,
+      q: 1.5 + Math.random() * 1.1,
+    });
+    if (Math.random() > 0.42) {
+      this.noiseHit({
+        duration: 0.045,
+        gain: 0.11 + Math.random() * 0.06,
+        delay: 0.006 + Math.random() * 0.012,
+        frequency: 260 + Math.random() * 480,
+        q: 0.85,
+        type: "lowpass",
+      });
+    }
+  }
+
+  private landDice() {
+    this.noiseHit({
+      duration: 0.1,
+      gain: 0.3,
+      frequency: 220,
+      q: 0.75,
+      type: "lowpass",
+    });
+    this.noiseHit({
+      duration: 0.08,
+      gain: 0.22,
+      delay: 0.05,
+      frequency: 160,
+      q: 0.7,
+      type: "lowpass",
+    });
+    this.noiseHit({
+      duration: 0.032,
+      gain: 0.16,
+      frequency: 1700,
+      q: 1.8,
+    });
+  }
+
+  /**
+   * Wooden token tap on felt — short, unpitched, slightly varied so a path
+   * of hops does not machine-gun one identical sample.
+   */
+  private spawnPawnStep() {
+    const body = 210 + Math.random() * 110;
+    this.noiseHit({
+      duration: 0.046,
+      gain: 0.2,
+      frequency: body,
+      q: 1.05,
+      type: "lowpass",
+    });
+    this.noiseHit({
+      duration: 0.014,
+      gain: 0.07,
+      frequency: 1200 + Math.random() * 500,
+      q: 2.4,
+    });
+  }
+
+  private ensureNoiseBuffer() {
+    const ctx = this.ctx;
+    if (!ctx) return null;
+    if (this.noiseBuffer) return this.noiseBuffer;
+    const length = Math.floor(ctx.sampleRate * 0.5);
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    this.noiseBuffer = buffer;
+    return buffer;
+  }
+
+  private noiseHit(opts: {
+    duration: number;
+    gain: number;
+    delay?: number;
+    frequency: number;
+    q?: number;
+    type?: BiquadFilterType;
+  }) {
+    const ctx = this.ctx;
+    const bus = this.sfxBus;
+    const buffer = this.ensureNoiseBuffer();
+    if (!ctx || !bus || !buffer) return;
+
+    const start = ctx.currentTime + (opts.delay ?? 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const offset = Math.random() * Math.max(0, buffer.duration - opts.duration);
+    const filter = ctx.createBiquadFilter();
+    filter.type = opts.type ?? "bandpass";
+    filter.frequency.setValueAtTime(opts.frequency, start);
+    filter.Q.setValueAtTime(opts.q ?? 1.2, start);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(
+      Math.max(0.0001, opts.gain),
+      start + 0.003,
+    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + opts.duration);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(bus);
+    src.start(start, offset);
+    src.stop(start + opts.duration + 0.02);
+  }
 }
 
 export const audioManager = new AudioManager();
 
 export function playSfx(id: SfxId) {
   audioManager.play(id);
+}
+
+export function startDiceRoll() {
+  audioManager.startDiceRoll();
+}
+
+export function stopDiceRollLoop() {
+  audioManager.stopDiceRollLoop();
+}
+
+export function finishDiceRoll() {
+  audioManager.finishDiceRoll();
 }
 
 export function unlockAudio() {

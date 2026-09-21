@@ -4,7 +4,7 @@ import { PlayChrome } from "@/components/play/play-chrome";
 
 export const metadata: Metadata = {
   title: "Play | BOARD",
-  description: "Enter Monopoly or Ludo. Four seats. One winner.",
+  description: "Connect a wallet, enter the lobby, and sit Monopoly or Ludo.",
 };
 
 /**
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  */
 export default function PlayLayout({ children }: LayoutProps<"/play">) {
   return (
-    <div className="board-atmosphere relative isolate flex min-h-[100dvh] flex-col overflow-hidden">
+    <div className="board-atmosphere relative isolate flex min-h-[100dvh] flex-col overflow-x-hidden">
       <PlayChrome />
       {children}
     </div>

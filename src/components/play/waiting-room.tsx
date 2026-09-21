@@ -9,6 +9,7 @@ import { PixelArt } from "@/components/game/pixel-art";
 import { pawnSprite } from "@/lib/game/pawn-sprite";
 import {
   clearPlaySeat,
+  isPlayBot,
   readPlaySeat,
   type PlayTableView,
 } from "@/lib/game/play-table";
@@ -86,12 +87,14 @@ export function WaitingRoom({
       const payload = (await response.json()) as {
         table?: PlayTableView;
         error?: string;
+        refundPending?: boolean;
+        refundTxHash?: string | null;
       };
       if (!response.ok) {
         throw new Error(payload.error ?? "Could not leave the table.");
       }
       clearPlaySeat();
-      router.push("/play");
+      router.push(payload.refundPending ? "/play?refund=queued" : "/play");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not leave.");
     } finally {
@@ -105,7 +108,7 @@ export function WaitingRoom({
         <div className="pixel-notch border-[4px] border-void bg-[#5a2408] p-[4px]">
           <div className="pixel-notch bg-[#1a0c06] px-5 py-6">
             <p className="text-center font-pixel text-[10px] font-semibold uppercase tracking-wide text-gold">
-              Waiting for players
+              {filled >= table.maxPlayers ? "Table is full" : "Waiting for players"}
             </p>
             <h1 className="mt-2 text-center font-pixel text-2xl font-bold uppercase text-cream">
               {filled}/{table.maxPlayers} seated
@@ -114,11 +117,14 @@ export function WaitingRoom({
               Sit fee{" "}
               <BoardAmount
                 value={table.entryFee}
-                size="xs"
+                size="sm"
                 tone="gold"
                 ticker={PLAY_STAKE_SYMBOL}
               />{" "}
               · {readyCount}/{table.maxPlayers} ready
+            </p>
+            <p className="mt-2 text-center font-pixel text-[10px] uppercase leading-relaxed text-cream/55">
+              Open seats fill with house NPCs. Tap ready to start.
             </p>
 
             <ol className="mt-5 grid grid-cols-2 gap-3">
@@ -144,11 +150,19 @@ export function WaitingRoom({
                       </p>
                       <p className="truncate font-pixel text-xs text-cream">
                         {player
-                          ? shortenAddress(player.address)
+                          ? isPlayBot(player.address)
+                            ? player.username
+                            : player.username || shortenAddress(player.address)
                           : "Open"}
                       </p>
                       <p className="font-pixel text-[10px] uppercase text-cream/60">
-                        {player ? (player.ready ? "Ready" : "Not ready") : "—"}
+                        {player
+                          ? isPlayBot(player.address)
+                            ? "House NPC · ready"
+                            : player.ready
+                              ? "Ready"
+                              : "Not ready"
+                          : "—"}
                       </p>
                     </div>
                   </li>
@@ -190,10 +204,13 @@ export function WaitingRoom({
                   disabled={busy !== null}
                   onClick={() => void leaveTable()}
                 >
-                  {busy === "leave" ? "Refunding…" : "Leave & refund"}
+                  {busy === "leave" ? "Leaving…" : "Leave table"}
                 </PixelButton>
               ) : null}
             </div>
+            <p className="mt-3 text-center font-pixel text-[10px] uppercase leading-relaxed text-cream/50">
+              Leave refunds your 0.002 ETH. If the house is short on gas, the refund queues and retries.
+            </p>
             {treasury ? (
               <p className="mt-4 break-all text-center font-pixel text-[10px] uppercase leading-relaxed text-cream/50">
                 House {shortenAddress(treasury)} · faucet it so refunds have gas

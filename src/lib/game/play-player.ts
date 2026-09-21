@@ -7,6 +7,18 @@ export const PLAY_ENTRY_FEE_ETH = "0.002";
 
 export const PLAY_STAKE_SYMBOL = "ETH";
 
+/**
+ * Sit-fee ETH amounts. Always keeps enough fraction digits that 0.002 and
+ * 0.008 stay distinct — pixel titles are not used for this string.
+ */
+export function formatPlayEth(amount: number) {
+  const digits = Math.abs(amount) >= 1 ? 2 : 3;
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: 4,
+  }).format(amount);
+}
+
 const PLAYER_KEY = "board.play.player";
 
 export type PlayPlayer = {

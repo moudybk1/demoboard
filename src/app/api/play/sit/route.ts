@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     }
     const address = readHex(body, "address", 20);
     const txHash = readHex(body, "txHash", 32);
-    const result = await sitPlayTable({ game, address, txHash });
+    const tableId = readOptionalString(body, "tableId") ?? undefined;
+    const result = await sitPlayTable({ game, tableId, address, txHash });
     if (!result.ok) return failureResponse(result);
     return NextResponse.json({
       table: result.table,

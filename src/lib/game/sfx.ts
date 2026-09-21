@@ -4,7 +4,7 @@
  */
 import { playSfx } from "@/lib/audio/audio-manager";
 
-/** Soft click when a die settles. */
+/** Settings / one-shot preview of a dice tumble. */
 export function playRollSound() {
   playSfx("dice_roll");
 }
@@ -14,7 +14,7 @@ export function playCaptureSound() {
   playSfx("capture");
 }
 
-/** Soft hop tick used optionally on each tile step. */
+/** Token tap on each tile the pawn hops. */
 export function playHopSound() {
   playSfx("pawn_step");
 }

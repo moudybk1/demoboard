@@ -35,7 +35,7 @@ import {
 } from "@/lib/game/monopoly-rules";
 import type { MonopolyRoomState } from "@/lib/mock/monopoly";
 
-const ROLL_MS = 900;
+const ROLL_MS = 1400;
 const NPC_THINK_MS = 750;
 
 type HopMove = {
@@ -233,7 +233,6 @@ export function MonopolyRoom({
       setRolling(true);
       setDice(null);
       setPendingBuy(null);
-      playSfx("dice_roll");
 
       const result = rollDice();
       const reveal = window.setTimeout(() => {

@@ -31,6 +31,7 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({
       table: result.table,
       refundTxHash: result.refundTxHash ?? null,
+      refundPending: result.refundPending ?? false,
     });
   } catch (error) {
     return errorResponse(error, "POST /api/play/tables/:tableId/leave");
