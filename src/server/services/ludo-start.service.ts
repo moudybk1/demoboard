@@ -1,3 +1,4 @@
+import { MATCH_TURN_SECONDS } from "@/lib/game/match-clock";
 import type { LudoPawn, LudoRoomState } from "@/lib/mock/ludo";
 import type { Db } from "@/server/db";
 import {
@@ -8,7 +9,7 @@ import {
 } from "@/server/db/schema";
 
 /** Seconds granted for each Ludo turn clock. */
-export const LUDO_TURN_SECONDS = 30;
+export const LUDO_TURN_SECONDS = MATCH_TURN_SECONDS;
 
 export type LudoSeatSeed = {
   userId: string;

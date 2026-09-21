@@ -8,6 +8,7 @@ import {
   type MonopolyRoomState,
 } from "@/lib/mock/monopoly";
 import { PLAY_ENTRY_FEE } from "@/lib/game/play-player";
+import { MATCH_AFK_STRIKES, MATCH_TURN_SECONDS } from "@/lib/game/match-clock";
 import { MAX_PLAYERS_PER_ROOM } from "@/lib/types";
 
 export const GO_SALARY = 200;
@@ -59,6 +60,8 @@ export type MonopolyExtra = {
   inJail?: boolean;
   jailTurnsLeft?: number;
   consecutiveDoubles?: number;
+  /** Missed rolls this match. Three kicks the seat with no refund. */
+  afkStrikes?: number;
 };
 
 export type MonopolyPlayState = MonopolyRoomState & {
@@ -566,8 +569,75 @@ export function advanceTurn(state: MonopolyPlayState, fromSeat: number): Monopol
     ...state,
     activeSeat: next.activeSeat,
     turn: state.turn + next.turnDelta,
-    turnSecondsLeft: 30,
+    turnSecondsLeft: MATCH_TURN_SECONDS,
   };
+}
+
+/** Mark a seat out. Properties return to the bank. Sit fee is not refunded. */
+export function eliminateSeat(
+  state: MonopolyPlayState,
+  seat: number,
+  message: string,
+): MonopolyPlayState {
+  const player = playerAt(state, seat);
+  if (!player || player.status === "eliminated") return state;
+
+  const owners = { ...state.owners };
+  for (const key of Object.keys(owners)) {
+    const tile = Number(key);
+    if (owners[tile] === seat) delete owners[tile];
+  }
+
+  let next: MonopolyPlayState = {
+    ...patchPlayer(state, seat, { status: "eliminated", owned: 0 }),
+    owners,
+    log: log(state, seat, message),
+  };
+
+  if (next.activeSeat === seat && !soleWinner(next)) {
+    next = advanceTurn(next, seat);
+  }
+  return next;
+}
+
+/**
+ * Player ran out of time to roll. Passes the turn, or kicks after three misses.
+ * Sit fee is not refunded on a kick.
+ */
+export function recordAfkMiss(
+  state: MonopolyPlayState,
+  seat: number,
+): { state: MonopolyPlayState; kicked: boolean } {
+  const player = playerAt(state, seat);
+  if (!player || player.status === "eliminated") {
+    return { state, kicked: false };
+  }
+
+  const strikes = (state.extras[seat]?.afkStrikes ?? 0) + 1;
+  let next = patchExtra(state, seat, { afkStrikes: strikes });
+
+  if (strikes >= MATCH_AFK_STRIKES) {
+    next = eliminateSeat(
+      next,
+      seat,
+      `${who(player)} missed ${MATCH_AFK_STRIKES} rolls and was kicked. Entry fee is not refunded.`,
+    );
+    return { state: next, kicked: true };
+  }
+
+  if (next.extras[seat]?.inJail) {
+    next = stayInJail(next, seat);
+  }
+  next = {
+    ...next,
+    log: log(
+      next,
+      seat,
+      `${who(player)} ran out of time (${strikes}/${MATCH_AFK_STRIKES}). Turn passed.`,
+    ),
+  };
+  next = advanceTurn(next, seat);
+  return { state: next, kicked: false };
 }
 
 export function soleWinner(state: MonopolyPlayState) {
@@ -631,7 +701,7 @@ export function createMonopolyMatchForSeats(
     maxPlayers: MAX_PLAYERS_PER_ROOM,
     activeSeat: 1,
     turn: 1,
-    turnSecondsLeft: 30,
+    turnSecondsLeft: MATCH_TURN_SECONDS,
     players,
     owners: {},
     vault: 0,

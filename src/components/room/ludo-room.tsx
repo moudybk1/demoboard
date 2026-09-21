@@ -15,12 +15,15 @@ import { LudoPlayerRail } from "@/components/room/ludo-player-rail";
 import { WinnerScreen } from "@/components/room/winner-screen";
 import { randomDie, type DieValue } from "@/lib/game/dice";
 import { cellCenter, pawnsForBoard } from "@/lib/game/ludo-geometry";
+import { useTurnClock } from "@/hooks/use-turn-clock";
+import { MATCH_TURN_SECONDS, type TurnClockInfo } from "@/lib/game/match-clock";
 import {
   chooseNpcMove,
   findCaptures,
   grantsExtraTurn,
   movablePawns,
   nextActiveSeat,
+  recordLudoAfkMiss,
   registerNonSixRoll,
   registerSixRoll,
   sendHome,
@@ -48,7 +51,17 @@ const NPC_THINK_MS = 650;
  * Ludo room with standard rules: 6 to exit, exact home, captures, blockades,
  * extra rolls on 6 / capture / finish, three-sixes penalty, and NPC seats.
  */
-export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
+export function LudoRoom({
+  initialState,
+  onClock,
+  onAfkKick,
+  clockPaused = false,
+}: {
+  initialState: LudoRoomState;
+  onClock?: (clock: TurnClockInfo) => void;
+  onAfkKick?: () => void;
+  clockPaused?: boolean;
+}) {
   const [state, setState] = useState(initialState);
   const [die, setDie] = useState<DieValue | null>(null);
   const [rolling, setRolling] = useState(false);
@@ -90,6 +103,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
     (player) => player.position === state.activeSeat,
   );
   const yourTurn = you?.position === state.activeSeat;
+  const youOut = you?.status === "eliminated";
   const awaitingPick = moves.length > 0 && movingId === null;
   const canRoll =
     !rolling &&
@@ -101,7 +115,8 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
   const winner = useMemo(() => {
     const finisher = players.find(
       (player) =>
-        player.status === "finished" || pawnsFinished(player) >= 4,
+        player.status !== "eliminated" &&
+        (player.status === "finished" || pawnsFinished(player) >= 4),
     );
     if (!finisher) return null;
     return {
@@ -114,6 +129,10 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
   }, [players, state]);
 
   const finished = winner !== null;
+  const rollWindow = Boolean(
+    yourTurn && !finished && !youOut && canRoll && !clockPaused,
+  );
+  const youStrikes = you ? (state.afkStrikes?.[you.position] ?? 0) : 0;
 
   useEffect(() => {
     if (!finished || !winner) return;
@@ -143,7 +162,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
         ...current,
         activeSeat: next.activeSeat,
         turn: current.turn + next.turnDelta,
-        turnSecondsLeft: 30,
+        turnSecondsLeft: MATCH_TURN_SECONDS,
         lastRoll: null,
       };
       stateRef.current = advanced;
@@ -299,7 +318,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
         ...nextState,
         activeSeat: next.activeSeat,
         turn: nextState.turn + next.turnDelta,
-        turnSecondsLeft: 30,
+        turnSecondsLeft: MATCH_TURN_SECONDS,
         lastRoll: null,
         log,
       };
@@ -393,7 +412,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
       if (movingId || awaitingPick || rolling) return;
 
       const roller = snapshot.players.find((player) => player.position === seat);
-      if (!roller || roller.status === "finished") return;
+      if (!roller || roller.status !== "alive") return;
 
       busyRef.current = true;
       setRolling(true);
@@ -455,6 +474,38 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
     yourTurn,
   ]);
 
+  const handleAfkExpire = useCallback(() => {
+    if (busyRef.current) return;
+    const snapshot = stateRef.current;
+    const actor = snapshot.players.find((player) => player.isYou);
+    if (!actor || actor.status !== "alive") return;
+    if (snapshot.activeSeat !== actor.position) return;
+    if (snapshot.lastRoll !== null) return;
+    consecutiveSixes.current = 0;
+    const result = recordLudoAfkMiss(snapshot, actor.position);
+    stateRef.current = result.state;
+    setState(result.state);
+    setDie(null);
+    setMoves([]);
+    setRollSpent(false);
+    busyRef.current = false;
+    if (result.kicked) onAfkKick?.();
+  }, [onAfkKick]);
+
+  const secondsLeft = useTurnClock({
+    running: rollWindow,
+    resetKey: `${state.activeSeat}-${state.turn}-${state.lastRoll ?? "roll"}`,
+    onExpire: handleAfkExpire,
+  });
+
+  useEffect(() => {
+    onClock?.({
+      seconds: rollWindow ? secondsLeft : MATCH_TURN_SECONDS,
+      active: rollWindow,
+      strikes: youStrikes,
+    });
+  }, [onClock, rollWindow, secondsLeft, youStrikes]);
+
   // NPC auto-roll when it becomes their turn.
   useEffect(() => {
     if (finished || rolling || movingId || awaitingPick) return;
@@ -463,7 +514,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
 
     const seat = state.activeSeat;
     const actor = state.players.find((player) => player.position === seat);
-    if (!actor || actor.isYou || actor.status === "finished") return;
+    if (!actor || actor.isYou || actor.status !== "alive") return;
     if (!isPlayBot(actor.id)) return;
 
     const t = window.setTimeout(() => {
@@ -508,16 +559,17 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
                   onDone={() => setCapture(null)}
                 />
               )}
-              {winner && <WinnerScreen winner={winner} game="ludo" />}
+              {winner && !youOut && <WinnerScreen winner={winner} game="ludo" />}
             </>
           }
         />
         <LudoActionBar
-          yourTurn={yourTurn && !awaitingPick && !movingId && !finished}
+          yourTurn={yourTurn && !awaitingPick && !movingId && !finished && !youOut}
           rolling={rolling}
           canRoll={canRoll}
           canEndTurn={rollSpent}
           value={die}
+          secondsLeft={rollWindow ? secondsLeft : null}
           onRoll={handleRoll}
           onEndTurn={handleEndTurn}
         />

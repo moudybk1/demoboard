@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { Connector } from "wagmi";
+import { useState } from "react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import {
   useAccount,
-  useConnect,
   useDisconnect,
   useSignMessage,
   useSwitchChain,
@@ -19,60 +18,8 @@ import {
 } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
-type WalletOption = {
-  match: (connector: Connector) => boolean;
-  id: string;
-  label: string;
-  hint: string;
-  installUrl?: string;
-};
-
-const WALLET_OPTIONS: WalletOption[] = [
-  {
-    id: "metaMask",
-    label: "MetaMask",
-    hint: "Browser extension",
-    installUrl: "https://metamask.io/download",
-    match: (c) =>
-      c.id === "metaMask" ||
-      c.id === "metaMaskSDK" ||
-      c.name.toLowerCase().includes("metamask"),
-  },
-  {
-    id: "okx",
-    label: "OKX Wallet",
-    hint: "Browser extension",
-    installUrl: "https://www.okx.com/download",
-    match: (c) => c.id === "okx" || c.name.toLowerCase().includes("okx"),
-  },
-  {
-    id: "rabby",
-    label: "Rabby",
-    hint: "Browser extension",
-    installUrl: "https://rabby.io",
-    match: (c) => c.id === "rabby" || c.name.toLowerCase().includes("rabby"),
-  },
-  {
-    id: "browser",
-    label: "Browser wallet",
-    hint: "Any other EVM extension",
-    match: (c) =>
-      c.id === "browser" ||
-      (c.type === "injected" &&
-        !/metamask|okx|rabby/i.test(`${c.id} ${c.name}`)),
-  },
-  {
-    id: "walletConnect",
-    label: "WalletConnect",
-    hint: "Mobile & more wallets",
-    installUrl: "https://walletconnect.com",
-    match: (c) =>
-      c.id === "walletConnect" || c.type === "walletConnect",
-  },
-];
-
 /**
- * Wallet-only sign-in: pick wallet → connect → switch network → sign → session.
+ * Wallet-only BOARD session: RainbowKit connect → switch network → sign → cookie.
  */
 export function WalletConnectPanel({
   className,
@@ -85,51 +32,24 @@ export function WalletConnectPanel({
   compact?: boolean;
 }) {
   const expectedChainId = getBoardChainId();
+  const { openConnectModal } = useConnectModal();
   const { address, isConnected, isConnecting, chainId, status } = useAccount();
-  const { connectAsync, connectors, isPending: isConnectPending, error: connectError } =
-    useConnect();
   const { disconnect } = useDisconnect();
   const { switchChainAsync, isPending: isSwitchPending } = useSwitchChain();
   const { signMessageAsync, isPending: isSignPending } = useSignMessage();
   const { authenticated, wallet, refresh } = useAuthMe();
 
   const [busy, setBusy] = useState(false);
-  const [pendingWallet, setPendingWallet] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const wrongNetwork =
     isConnected && typeof chainId === "number" && chainId !== expectedChainId;
-
-  const walletRows = useMemo(() => {
-    return WALLET_OPTIONS.map((option) => {
-      const connector = connectors.find(option.match);
-      return { option, connector };
-    }).filter((row) => row.connector || row.option.id !== "walletConnect");
-  }, [connectors]);
 
   const signedInHere =
     authenticated &&
     wallet?.address &&
     address &&
     wallet.address.toLowerCase() === address.toLowerCase();
-
-  async function handleConnect(connector: Connector, label: string) {
-    setError(null);
-    setPendingWallet(label);
-    try {
-      await connectAsync({ connector, chainId: expectedChainId });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Could not open wallet.";
-      if (/reject|denied|cancel/i.test(message)) {
-        setError("Connection cancelled in wallet.");
-      } else {
-        setError(message);
-      }
-    } finally {
-      setPendingWallet(null);
-    }
-  }
 
   async function handleSwitch() {
     setError(null);
@@ -195,11 +115,9 @@ export function WalletConnectPanel({
   const waiting =
     busy ||
     isConnecting ||
-    isConnectPending ||
     isSwitchPending ||
     isSignPending ||
-    status === "reconnecting" ||
-    pendingWallet !== null;
+    status === "reconnecting";
 
   return (
     <div className={cn("overflow-hidden", className)}>
@@ -223,7 +141,7 @@ export function WalletConnectPanel({
               size="sm"
               onClick={() => disconnect()}
             >
-              Disconnect extension
+              Disconnect wallet
             </PixelButton>
           </>
         ) : null}
@@ -231,74 +149,18 @@ export function WalletConnectPanel({
         {!signedInHere && !isConnected ? (
           <>
             <p className="text-sm leading-relaxed text-muted">
-              Choose a wallet on {getBoardChainLabel()}. Sign once, with no
+              Connect a wallet on {getBoardChainLabel()}. Sign once, with no
               gas, and your BOARD profile is this address.
             </p>
-            <ul className="space-y-2">
-              {walletRows.map(({ option, connector }) => {
-                const available = Boolean(connector);
-                const isPending = pendingWallet === option.label;
-
-                if (!available) {
-                  return (
-                    <li key={option.id}>
-                      <div className="flex w-full items-center gap-3 border-2 border-edge bg-ink/40 px-3 py-3 opacity-70">
-                        <WalletGlyph id={option.id} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-pixel text-[10px] uppercase tracking-wide text-parchment">
-                            {option.label}
-                          </span>
-                          <span className="mt-1 block font-pixel text-xs uppercase tracking-wider text-faint">
-                            Not detected
-                          </span>
-                        </span>
-                        {option.installUrl ? (
-                          <a
-                            href={option.installUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-pixel text-xs uppercase text-muted underline-offset-2 hover:text-gold hover:underline"
-                          >
-                            Install
-                          </a>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                }
-
-                return (
-                  <li key={option.id}>
-                    <button
-                      type="button"
-                      disabled={waiting}
-                      onClick={() => {
-                        void handleConnect(connector!, option.label);
-                      }}
-                      className={cn(
-                        "flex w-full items-center gap-3 border-2 border-edge-bright bg-surface-raised px-3 py-3 text-left transition-colors",
-                        "hover:border-gold/60 hover:bg-gold/5",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
-                        "disabled:pointer-events-none disabled:opacity-50",
-                      )}
-                    >
-                      <WalletGlyph id={option.id} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-pixel text-[10px] uppercase tracking-wide text-parchment">
-                          {option.label}
-                        </span>
-                        <span className="mt-1 block font-pixel text-xs uppercase tracking-wider text-faint">
-                          {isPending ? "Opening…" : option.hint}
-                        </span>
-                      </span>
-                      <span className="font-pixel text-xs uppercase text-gold">
-                        {isPending ? "…" : "Select"}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <PixelButton
+              type="button"
+              size="lg"
+              className="w-full"
+              onClick={() => openConnectModal?.()}
+              disabled={waiting || !openConnectModal}
+            >
+              {waiting ? "Opening…" : "Connect Wallet"}
+            </PixelButton>
           </>
         ) : null}
 
@@ -367,41 +229,19 @@ export function WalletConnectPanel({
           </>
         ) : null}
 
-        {(error || connectError) && (
+        {error ? (
           <p role="alert" className="text-sm text-danger">
-            {error || connectError?.message}
+            {error}
           </p>
-        )}
+        ) : null}
 
         {authenticated && wallet && !signedInHere && address ? (
           <p className="text-xs text-muted">
-            Signed in as {shortenAddress(wallet.address)}. Connected extension
+            Signed in as {shortenAddress(wallet.address)}. Connected wallet
             differs. Sign in again to switch profiles.
           </p>
         ) : null}
       </div>
     </div>
-  );
-}
-
-function WalletGlyph({ id }: { id: string }) {
-  const letter =
-    id === "metaMask"
-      ? "M"
-      : id === "okx"
-        ? "O"
-        : id === "rabby"
-          ? "R"
-          : id === "walletConnect"
-            ? "W"
-            : "E";
-
-  return (
-    <span
-      aria-hidden
-      className="grid size-9 shrink-0 place-items-center border-2 border-edge bg-ink font-pixel text-[11px] text-gold"
-    >
-      {letter}
-    </span>
   );
 }

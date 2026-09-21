@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 
 import { LudoRoom } from "@/components/room/ludo-room";
 import { MonopolyRoom } from "@/components/room/monopoly-room";
+import { LeaveMatchModal } from "@/components/room/leave-match-modal";
 import { RoomHeader } from "@/components/room/room-header";
 import { WaitingRoom } from "@/components/play/waiting-room";
+import { forfeitPlayMatch } from "@/lib/game/forfeit-match";
+import {
+  MATCH_TURN_SECONDS,
+  type TurnClockInfo,
+} from "@/lib/game/match-clock";
 import {
   loadLudoForTable,
   loadMonopolyForTable,
@@ -18,12 +25,48 @@ import {
 } from "@/lib/mock/monopoly";
 import type { PlayTableView } from "@/lib/game/play-table";
 
+const IDLE_CLOCK: TurnClockInfo = {
+  seconds: MATCH_TURN_SECONDS,
+  active: false,
+  strikes: 0,
+};
+
 export function GameRoom({ roomId }: { roomId: string }) {
+  const router = useRouter();
   const { address } = useAccount();
   const [table, setTable] = useState<PlayTableView | null>(null);
   const [missing, setMissing] = useState(false);
   const [ludo, setLudo] = useState<LudoRoomState | null>(null);
   const [mono, setMono] = useState<MonopolyRoomState | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [clock, setClock] = useState<TurnClockInfo>(IDLE_CLOCK);
+  const leavingRef = useRef(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  const exitMatch = useCallback(
+    async (reason: "leave" | "afk") => {
+      if (leavingRef.current) return;
+      leavingRef.current = true;
+      setLeaving(true);
+      await forfeitPlayMatch();
+      router.push(reason === "afk" ? "/play?forfeit=afk" : "/play?forfeit=1");
+    },
+    [router],
+  );
+
+  const handleAfkKick = useCallback(() => {
+    void exitMatch("afk");
+  }, [exitMatch]);
+
+  const openLeave = useCallback(() => {
+    if (leavingRef.current) return;
+    setLeaveOpen(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,8 +105,24 @@ export function GameRoom({ roomId }: { roomId: string }) {
   }, [roomId]);
 
   useEffect(() => {
+    if (!ready || !table || !address) return;
+    const seated = table.seats.some(
+      (seat) => seat.address.toLowerCase() === address.toLowerCase(),
+    );
+    if (table.status === "playing" && !seated) {
+      router.replace("/play");
+    }
+  }, [address, ready, router, table]);
+
+  useEffect(() => {
     if (!table || table.status !== "playing") return;
     const viewer = address ?? null;
+    if (
+      viewer &&
+      !table.seats.some((seat) => seat.address.toLowerCase() === viewer.toLowerCase())
+    ) {
+      return;
+    }
     if (table.game === "ludo") {
       setLudo(loadLudoForTable(table.id, table.seats, viewer));
     } else {
@@ -81,7 +140,7 @@ export function GameRoom({ roomId }: { roomId: string }) {
     );
   }
 
-  if (!table) return <RoomLoading />;
+  if (!ready || !table) return <RoomLoading />;
 
   if (table.status === "waiting" || table.status === "cancelled") {
     return (
@@ -100,39 +159,67 @@ export function GameRoom({ roomId }: { roomId: string }) {
     );
   }
 
-  if (table.game === "ludo") {
-    if (!ludo) return <RoomLoading />;
-    return (
-      <>
-        <RoomHeader
-          roomId={ludo.roomId}
-          turn={ludo.turn}
-          turnSecondsLeft={ludo.turnSecondsLeft}
-          pot={ludoPrizePool(ludo)}
-          entryFee={ludo.entryFee}
-          seats={ludo.maxPlayers}
-        />
-        <main className="mx-auto w-full max-w-[1800px] flex-1 px-3 py-3 sm:px-6 sm:py-5">
-          <LudoRoom initialState={ludo} />
-        </main>
-      </>
-    );
-  }
+  const headerClock = {
+    turnSecondsLeft: clock.seconds,
+    clockActive: clock.active,
+    afkStrikes: clock.strikes,
+    onLeave: openLeave,
+  };
 
-  if (!mono) return <RoomLoading />;
   return (
     <>
-      <RoomHeader
-        roomId={mono.roomId}
-        turn={mono.turn}
-        turnSecondsLeft={mono.turnSecondsLeft}
-        pot={monopolyPrizePool(mono)}
-        entryFee={mono.entryFee}
-        seats={mono.maxPlayers}
+      {table.game === "ludo" ? (
+        ludo ? (
+          <>
+            <RoomHeader
+              roomId={ludo.roomId}
+              turn={ludo.turn}
+              pot={ludoPrizePool(ludo)}
+              entryFee={ludo.entryFee}
+              seats={ludo.maxPlayers}
+              {...headerClock}
+            />
+            <main className="mx-auto w-full max-w-[1800px] flex-1 px-3 py-3 sm:px-6 sm:py-5">
+              <LudoRoom
+                initialState={ludo}
+                onClock={setClock}
+                onAfkKick={handleAfkKick}
+                clockPaused={leaveOpen || leaving}
+              />
+            </main>
+          </>
+        ) : (
+          <RoomLoading />
+        )
+      ) : mono ? (
+        <>
+          <RoomHeader
+            roomId={mono.roomId}
+            turn={mono.turn}
+            pot={monopolyPrizePool(mono)}
+            entryFee={mono.entryFee}
+            seats={mono.maxPlayers}
+            {...headerClock}
+          />
+          <main className="mx-auto w-full max-w-[1920px] flex-1 px-2 py-2 sm:px-4 sm:py-3">
+            <MonopolyRoom
+              initialState={mono}
+              onClock={setClock}
+              onAfkKick={handleAfkKick}
+              clockPaused={leaveOpen || leaving}
+            />
+          </main>
+        </>
+      ) : (
+        <RoomLoading />
+      )}
+
+      <LeaveMatchModal
+        open={leaveOpen}
+        busy={leaving}
+        onStay={() => setLeaveOpen(false)}
+        onLeave={() => void exitMatch("leave")}
       />
-      <main className="mx-auto w-full max-w-[1920px] flex-1 px-2 py-2 sm:px-4 sm:py-3">
-        <MonopolyRoom initialState={mono} />
-      </main>
     </>
   );
 }

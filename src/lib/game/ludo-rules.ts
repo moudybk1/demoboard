@@ -1,4 +1,5 @@
 import type { DieValue } from "@/lib/game/dice";
+import { MATCH_AFK_STRIKES, MATCH_TURN_SECONDS } from "@/lib/game/match-clock";
 import { HOME_BRIDGE, HOME_LANES, SAFE_CELLS } from "@/lib/game/ludo-board";
 import {
   TRACK_STEPS_BEFORE_HOME,
@@ -314,13 +315,13 @@ export function registerNonSixRoll(): { nextCount: number; voided: boolean } {
   return { nextCount: 0, voided: false };
 }
 
-/** Pick next alive seat after the current one (skips finished players). */
+/** Pick next alive seat after the current one (skips finished / kicked players). */
 export function nextActiveSeat(
   players: LudoPlayer[],
   currentSeat: number,
 ): { activeSeat: number; turnDelta: number } {
   const rotation = players
-    .filter((player) => player.status !== "finished")
+    .filter((player) => player.status === "alive")
     .map((player) => player.position)
     .sort((a, b) => a - b);
 
@@ -333,6 +334,90 @@ export function nextActiveSeat(
   const activeSeat = rotation[(from + 1) % rotation.length];
   const turnDelta = activeSeat <= currentSeat ? 1 : 0;
   return { activeSeat, turnDelta };
+}
+
+/**
+ * Player ran out of time to roll. Passes the turn, or kicks after three misses.
+ * Sit fee is not refunded on a kick.
+ */
+export function recordLudoAfkMiss(
+  state: LudoRoomState,
+  seat: number,
+): { state: LudoRoomState; kicked: boolean } {
+  const player = state.players.find((row) => row.position === seat);
+  if (!player || player.status !== "alive") {
+    return { state, kicked: false };
+  }
+
+  const strikes = { ...(state.afkStrikes ?? {}) };
+  const count = (strikes[seat] ?? 0) + 1;
+  strikes[seat] = count;
+  const who = player.isYou ? "You" : player.username;
+
+  const stamp = Date.now();
+  const push = (
+    current: LudoRoomState,
+    entrySeat: number | null,
+    message: string,
+    id: string,
+  ): LudoRoomState => ({
+    ...current,
+    log: [{ id, seat: entrySeat, message }, ...current.log],
+  });
+
+  if (count >= MATCH_AFK_STRIKES) {
+    const players = state.players.map((row) =>
+      row.position === seat ? { ...row, status: "eliminated" as const } : row,
+    );
+    let next: LudoRoomState = push(
+      { ...state, players, afkStrikes: strikes, lastRoll: null },
+      seat,
+      `${who} missed ${MATCH_AFK_STRIKES} rolls and was kicked. Entry fee is not refunded.`,
+      `afk-kick-${stamp}`,
+    );
+    if (next.activeSeat === seat) {
+      const rot = nextActiveSeat(players, seat);
+      const nxt = players.find((row) => row.position === rot.activeSeat);
+      next = {
+        ...next,
+        activeSeat: rot.activeSeat,
+        turn: next.turn + rot.turnDelta,
+        turnSecondsLeft: MATCH_TURN_SECONDS,
+        lastRoll: null,
+      };
+      next = push(
+        next,
+        rot.activeSeat,
+        `${nxt?.isYou ? "Your" : `${nxt?.username}'s`} turn.`,
+        `afk-next-${stamp}`,
+      );
+    }
+    return { state: next, kicked: true };
+  }
+
+  const rot = nextActiveSeat(state.players, seat);
+  const nxt = state.players.find((row) => row.position === rot.activeSeat);
+  let next: LudoRoomState = {
+    ...state,
+    afkStrikes: strikes,
+    activeSeat: rot.activeSeat,
+    turn: state.turn + rot.turnDelta,
+    turnSecondsLeft: MATCH_TURN_SECONDS,
+    lastRoll: null,
+  };
+  next = push(
+    next,
+    seat,
+    `${who} ran out of time (${count}/${MATCH_AFK_STRIKES}). Turn passed.`,
+    `afk-${stamp}`,
+  );
+  next = push(
+    next,
+    rot.activeSeat,
+    `${nxt?.isYou ? "Your" : `${nxt?.username}'s`} turn.`,
+    `afk-next-${stamp}`,
+  );
+  return { state: next, kicked: false };
 }
 
 /** Simple NPC chooser: prefer captures, then exits, then furthest pawn. */

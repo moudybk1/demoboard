@@ -8,11 +8,19 @@ import {
   getBoardRpcUrl,
 } from "@/lib/wallet/chains";
 
+function walletConnectProjectId() {
+  return (
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim() ||
+    "c4f79cc821685d19ea6ea6c793ffcebd"
+  );
+}
+
 function buildConnectors() {
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+  const projectId = walletConnectProjectId();
 
-  const connectors = [
+  return [
     metaMask({
       dappMetadata: {
         name: "BOARD",
@@ -25,7 +33,6 @@ function buildConnectors() {
       target: {
         id: "okx",
         name: "OKX Wallet",
-        // OKX injects `window.okxwallet` (not always on ethereum).
         provider: ((win: unknown) =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (win as any)?.okxwallet) as never,
@@ -58,25 +65,17 @@ function buildConnectors() {
           (win as any)?.ethereum) as never,
       },
     }),
+    walletConnect({
+      projectId,
+      metadata: {
+        name: "BOARD",
+        description: "Play classic board games, win real tokens",
+        url: appUrl,
+        icons: [`${appUrl}/board-logo.png`],
+      },
+      showQrModal: false,
+    }),
   ];
-
-  const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim();
-  if (projectId) {
-    connectors.push(
-      walletConnect({
-        projectId,
-        metadata: {
-          name: "BOARD",
-          description: "Play classic board games, win real tokens",
-          url: appUrl,
-          icons: [`${appUrl}/board-logo.png`],
-        },
-        showQrModal: true,
-      }),
-    );
-  }
-
-  return connectors;
 }
 
 const primary = getBoardChain();
@@ -90,8 +89,8 @@ const secondaryRpc =
     : "https://rpc.testnet.chain.robinhood.com";
 
 /**
- * Shared wagmi config (safe for server cookie hydration + client providers).
- * Both Robinhood networks are registered; PRIMARY is selected via NEXT_PUBLIC_CHAIN_ENV.
+ * Shared wagmi config (safe for server cookie hydration + RainbowKit).
+ * WalletConnect QR is shown by RainbowKit (`showQrModal: false` on the connector).
  */
 export const wagmiConfig = createConfig({
   chains: [primary, secondary],

@@ -8,7 +8,7 @@ import type { VariantProps } from "class-variance-authority";
 type ButtonVariants = VariantProps<typeof pixelButton>;
 
 /**
- * Opens the live wallet picker (MetaMask, OKX, Rabby, WalletConnect).
+ * Opens RainbowKit's connect modal.
  */
 export function ConnectWalletButton({
   className,

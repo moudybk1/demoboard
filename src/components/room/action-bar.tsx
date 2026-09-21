@@ -19,6 +19,7 @@ export function ActionBar({
   canBuy,
   canPayJail = false,
   hasRolled = false,
+  secondsLeft = null,
   onRoll,
   onBuy,
   onEndTurn,
@@ -32,6 +33,7 @@ export function ActionBar({
   canBuy: boolean;
   canPayJail?: boolean;
   hasRolled?: boolean;
+  secondsLeft?: number | null;
   onRoll: () => void;
   onBuy: () => void;
   onEndTurn: () => void;
@@ -52,7 +54,10 @@ export function ActionBar({
         {moving ? (
           <span className="text-gold animate-blink">Moving</span>
         ) : yourTurn ? (
-          <span className="text-gold">Your turn</span>
+          <span className="text-gold">
+            Your turn
+            {secondsLeft != null ? ` · ${secondsLeft}s` : ""}
+          </span>
         ) : (
           "Waiting for opponent"
         )}
@@ -66,7 +71,7 @@ export function ActionBar({
           onClick={onRoll}
         >
           <Dices className="size-4" aria-hidden />
-          {rolling ? "Rolling" : moving ? "Moving" : "Roll dice"}
+          {rolling ? "Rolling" : secondsLeft != null ? `Roll ${secondsLeft}s` : "Roll dice"}
         </PixelButton>
         {onPayJail ? (
           <PixelButton

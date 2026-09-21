@@ -45,6 +45,8 @@ type PlayTable = {
   status: PlayTableStatus;
   seats: PlaySeat[];
   version: number;
+  /** Wallets that forfeited the current match. They cannot sit this table again until a new match starts. */
+  leftAddresses: string[];
 };
 
 type PendingRefund = {
@@ -93,6 +95,7 @@ function hydrateTable(table: PlayTable): PlayTable {
     id: table.id.toUpperCase(),
     label: table.label ?? slot?.label ?? table.id,
     slot: table.slot ?? slot?.slot ?? 0,
+    leftAddresses: (table.leftAddresses ?? []).map((row) => row.toLowerCase()),
   };
 }
 
@@ -105,6 +108,7 @@ function newEmptySlot(slot: (typeof PLAY_LOBBY_SLOTS)[number]): PlayTable {
     status: "waiting",
     seats: [],
     version: 0,
+    leftAddresses: [],
   };
 }
 
@@ -203,7 +207,8 @@ function asView(table: PlayTable): PlayTableView {
   };
 }
 
-function asLobby(table: PlayTable): PlayLobbyGame {
+function asLobby(table: PlayTable, viewer?: string | null): PlayLobbyGame {
+  const viewerKey = viewer?.toLowerCase() ?? "";
   return {
     tableId: table.id,
     game: table.game,
@@ -214,12 +219,18 @@ function asLobby(table: PlayTable): PlayLobbyGame {
     maxPlayers: MAX_PLAYERS_PER_ROOM,
     seated: table.seats.length,
     seatsLeft: MAX_PLAYERS_PER_ROOM - table.seats.length,
+    blocked: Boolean(viewerKey && (table.leftAddresses ?? []).includes(viewerKey)),
     seats: table.seats.map((seat) => ({
       address: seat.address,
       username: seat.username,
       seat: seat.seat,
     })),
   };
+}
+
+function leftThisTable(table: PlayTable, address: string) {
+  if (!table.leftAddresses) table.leftAddresses = [];
+  return table.leftAddresses.includes(address.toLowerCase());
 }
 
 function bump(table: PlayTable) {
@@ -249,6 +260,7 @@ async function flushPendingRefunds() {
 }
 
 function startMatch(table: PlayTable) {
+  table.leftAddresses = [];
   table.status = "playing";
   const seats = table.seats.map((seat) => ({
     id: seat.address,
@@ -300,18 +312,41 @@ function dropHouseNpcs(table: PlayTable) {
 }
 
 function findActiveSeat(address: Hex): { table: PlayTable; seat: PlaySeat } | null {
+  const needle = address.toLowerCase();
   for (const table of tables.values()) {
     if (table.status === "cancelled") continue;
-    const seat = table.seats.find((row) => row.address === address);
+    const seat = table.seats.find((row) => row.address.toLowerCase() === needle);
     if (seat) return { table, seat };
   }
   return null;
 }
 
-function alreadySeatedMessage(table: PlayTable) {
-  return table.status === "playing"
-    ? "You already have a seat in a match. Return to that table."
-    : "You already have a seat at another waiting table. Leave it first.";
+function rememberLeaver(table: PlayTable, address: string) {
+  if (!table.leftAddresses) table.leftAddresses = [];
+  const leaver = address.toLowerCase();
+  if (isPlayBot(leaver) || table.leftAddresses.includes(leaver)) return;
+  table.leftAddresses.push(leaver);
+}
+
+/** Drop a seat. Last human out resets a lobby slot to waiting. */
+function unseat(table: PlayTable, seat: PlaySeat, ban: boolean) {
+  const index = table.seats.findIndex(
+    (row) => row.leaveToken === seat.leaveToken || row.address === seat.address,
+  );
+  if (index >= 0) table.seats.splice(index, 1);
+  if (ban) rememberLeaver(table, seat.address);
+  if (humanSeatCount(table) === 0) {
+    dropHouseNpcs(table);
+    if (isPlayLobbySlotId(table.id)) {
+      table.status = "waiting";
+    } else if (table.seats.length === 0) {
+      table.status = "cancelled";
+    }
+  }
+}
+
+function leftoverFromLeftMatch(table: PlayTable, address: string) {
+  return table.status === "playing" || leftThisTable(table, address);
 }
 
 function extraSitHash(seat: PlaySeat, txHash: Hex): Hex | null {
@@ -353,10 +388,10 @@ export function getPlayTable(tableId: string): PlayTableView | null {
   return table ? asView(table) : null;
 }
 
-export function listPlayLobby(): PlayLobbyGame[] {
+export function listPlayLobby(viewer?: string | null): PlayLobbyGame[] {
   return PLAY_LOBBY_SLOTS.map((slot) => {
     const table = tables.get(slot.id) ?? newEmptySlot(slot);
-    return asLobby(table);
+    return asLobby(table, viewer);
   });
 }
 
@@ -370,7 +405,14 @@ export type SitResult =
     }
   | {
       ok: false;
-      code: "BAD_TX" | "TX_USED" | "FULL" | "ALREADY_SEATED" | "NOT_FOUND" | "NOT_WAITING";
+      code:
+        | "BAD_TX"
+        | "TX_USED"
+        | "FULL"
+        | "ALREADY_SEATED"
+        | "NOT_FOUND"
+        | "NOT_WAITING"
+        | "LEFT_TABLE";
       message: string;
       refund?: boolean;
     };
@@ -408,16 +450,9 @@ export async function sitPlayTable(input: {
           },
         };
       }
-      return {
-        kind: "blocked",
-        extraTx,
-        result: {
-          ok: false,
-          code: "ALREADY_SEATED",
-          message: alreadySeatedMessage(found.table),
-          refund: Boolean(extraTx),
-        },
-      };
+      unseat(found.table, found.seat, leftoverFromLeftMatch(found.table, address));
+      bump(found.table);
+      return { kind: "pay" };
     }
     if (usedTx.has(txHash)) {
       return {
@@ -467,10 +502,10 @@ export async function sitPlayTable(input: {
 
     const found = findActiveSeat(address);
     if (found) {
-      usedTx.add(txHash);
-      persistStore();
       const sameTable = !wantedId || found.table.id === wantedId;
       if (sameTable) {
+        usedTx.add(txHash);
+        persistStore();
         return {
           ok: true,
           table: asView(found.table),
@@ -479,12 +514,8 @@ export async function sitPlayTable(input: {
           alreadySeated: true,
         };
       }
-      return {
-        ok: false,
-        code: "ALREADY_SEATED",
-        message: alreadySeatedMessage(found.table),
-        refund: true,
-      };
+      unseat(found.table, found.seat, leftoverFromLeftMatch(found.table, address));
+      bump(found.table);
     }
 
     const table = wantedId
@@ -523,6 +554,17 @@ export async function sitPlayTable(input: {
         ok: false,
         code: "NOT_WAITING",
         message: "That table is already in play. Pick another lobby.",
+        refund: true,
+      };
+    }
+    if (leftThisTable(table, address)) {
+      usedTx.add(txHash);
+      persistStore();
+      return {
+        ok: false,
+        code: "LEFT_TABLE",
+        message:
+          "You left this match. Sit a different waiting table. The entry fee is charged again.",
         refund: true,
       };
     }
@@ -590,7 +632,7 @@ export type TableActionResult =
     }
   | {
       ok: false;
-      code: "NOT_FOUND" | "NOT_WAITING" | "FORBIDDEN" | "REFUND_FAILED";
+      code: "NOT_FOUND" | "NOT_WAITING" | "NOT_PLAYING" | "FORBIDDEN" | "REFUND_FAILED";
       message: string;
     };
 
@@ -696,4 +738,48 @@ export async function leavePlayTable(input: {
     table: prepared.table,
     refundPending: true,
   };
+}
+
+/**
+ * Quit a match that already started. Seat is cleared. Sit fee is not refunded.
+ * Empty lobby slots reset so someone else can sit.
+ */
+export async function forfeitPlayTable(input: {
+  tableId: string;
+  leaveToken?: string;
+  address?: string;
+}): Promise<TableActionResult> {
+  return withLock(async () => {
+    const table = tables.get(input.tableId.toUpperCase());
+    if (!table) {
+      return { ok: false as const, code: "NOT_FOUND" as const, message: "Table not found." };
+    }
+    const token = input.leaveToken?.trim() ?? "";
+    const address = input.address?.toLowerCase() ?? "";
+    const index = table.seats.findIndex((row) => {
+      if (token && row.leaveToken === token) return true;
+      if (address && !isPlayBot(address) && row.address.toLowerCase() === address) {
+        return true;
+      }
+      return false;
+    });
+    if (index < 0) {
+      return {
+        ok: false as const,
+        code: "FORBIDDEN" as const,
+        message: "This seat token does not match the table.",
+      };
+    }
+    const seat = table.seats[index];
+    if (!seat) {
+      return {
+        ok: false as const,
+        code: "FORBIDDEN" as const,
+        message: "This seat token does not match the table.",
+      };
+    }
+    unseat(table, seat, true);
+    bump(table);
+    return { ok: true as const, table: asView(table) };
+  });
 }

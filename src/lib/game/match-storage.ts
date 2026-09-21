@@ -126,6 +126,16 @@ export function saveLudo(state: LudoRoomState) {
   writeJson(LUDO_KEY(state.roomId), state);
 }
 
+export function clearMatch(roomId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(MONO_KEY(roomId));
+    window.sessionStorage.removeItem(LUDO_KEY(roomId));
+  } catch {
+    // ignore
+  }
+}
+
 export function newMatchRoomId(game: "monopoly" | "ludo") {
   const prefix = game === "ludo" ? "LUD" : "MNP";
   const stamp = Date.now().toString(36).slice(-6).toUpperCase();

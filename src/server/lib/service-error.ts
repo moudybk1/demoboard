@@ -60,5 +60,7 @@ export function statusForCode(
   ALREADY_SETTLED: 409,
   NOT_READY: 409,
   NOT_WAITING: 409,
+  NOT_PLAYING: 409,
+  LEFT_TABLE: 409,
   REFUND_FAILED: 503,
 };

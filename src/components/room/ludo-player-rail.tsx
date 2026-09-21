@@ -46,6 +46,7 @@ function LudoPlayerCard({
 }) {
   const color = seatColor(player.position);
   const done = player.status === "finished";
+  const out = player.status === "eliminated";
   const finished = pawnsFinished(player);
   const activePawns = pawnsOnBoard(player);
 
@@ -56,8 +57,8 @@ function LudoPlayerCard({
       className={cn(
         "flex h-full flex-col gap-2 p-2.5 sm:gap-3 sm:p-3",
         "transition-colors",
-        active && !done && cn(color.border, "bg-surface-hover"),
-        done && "opacity-70",
+        active && !done && !out && cn(color.border, "bg-surface-hover"),
+        (done || out) && "opacity-70",
       )}
     >
       <div className="flex items-center gap-2">
@@ -71,7 +72,12 @@ function LudoPlayerCard({
         {player.isYou && (
           <span className="font-pixel text-xs uppercase text-faint">You</span>
         )}
-        {active && !done && (
+        {out && (
+          <span className="ml-auto font-pixel text-xs uppercase text-danger">
+            Out
+          </span>
+        )}
+        {active && !done && !out && (
           <span className="ml-auto font-pixel text-xs uppercase text-gold animate-blink">
             Turn
           </span>

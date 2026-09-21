@@ -13,7 +13,6 @@ import { pawnSprite } from "@/lib/game/pawn-sprite";
 import { PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import {
   PLAY_LOBBY_SLOTS,
-  readPlaySeat,
   type PlayLobbyGame,
 } from "@/lib/game/play-table";
 import { PLAY_WORLDS } from "@/lib/mock/play";
@@ -72,7 +71,10 @@ export function PlayLobby({
 
     async function load() {
       try {
-        const response = await fetch("/api/play/lobby");
+        const query = wallet.address
+          ? `?address=${encodeURIComponent(wallet.address)}`
+          : "";
+        const response = await fetch(`/api/play/lobby${query}`);
         const payload = (await response.json()) as {
           games?: PlayLobbyGame[];
           error?: string;
@@ -97,11 +99,7 @@ export function PlayLobby({
     const timer = window.setInterval(() => {
       void load();
     }, 4000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, []);
+  }, [wallet.address]);
 
   useEffect(() => {
     const node = root.current;
@@ -150,26 +148,29 @@ export function PlayLobby({
 
   const tables = games ?? EMPTY_GAMES;
   const [refundQueued, setRefundQueued] = useState(false);
+  const [forfeitNotice, setForfeitNotice] = useState<"leave" | "afk" | null>(
+    null,
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setRefundQueued(params.get("refund") === "queued");
+    const forfeit = params.get("forfeit");
+    if (forfeit === "afk") setForfeitNotice("afk");
+    else if (forfeit) setForfeitNotice("leave");
   }, []);
   const mine = useMemo(() => {
     if (!wallet.address) return null;
     const address = wallet.address.toLowerCase();
     for (const table of tables) {
+      if (table.blocked) continue;
       const seat = table.seats.find(
         (row) => row.address.toLowerCase() === address,
       );
       if (seat) return { game: table.game, tableId: table.tableId, seat: seat.seat };
     }
-    const stored = readPlaySeat();
-    if (stored && stored.address.toLowerCase() === address) {
-      return { game: selected, tableId: stored.tableId, seat: stored.seat };
-    }
     return null;
-  }, [tables, wallet.address, selected]);
+  }, [tables, wallet.address]);
 
   const selectedTables = tables.filter((table) => table.game === selected);
   const world = PLAY_WORLDS.find((item) => item.id === selected) ?? PLAY_WORLDS[0];
@@ -192,6 +193,20 @@ export function PlayLobby({
         {refundQueued ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
             You left the table. Your 0.002 ETH refund is queued and will retry when the house wallet has gas.
+          </p>
+        ) : null}
+
+        {forfeitNotice === "afk" ? (
+          <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
+            You were kicked for missing three rolls. Your entry fee is not refunded.
+            Sit a different waiting table to play again.
+          </p>
+        ) : null}
+
+        {forfeitNotice === "leave" ? (
+          <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
+            You left the match. Your entry fee is not refunded. Sit a different
+            waiting table and pay the entry fee again.
           </p>
         ) : null}
 
@@ -376,7 +391,6 @@ function LobbyTableRow({
 }) {
   const router = useRouter();
   const seatedHere = mine?.tableId === table.tableId;
-  const seatedElsewhere = Boolean(mine?.tableId) && mine?.tableId !== table.tableId;
   const sittingThis = sitPhase !== "idle" && sitTableId === table.tableId;
   const inPlay = table.status === "playing";
   const full = table.seatsLeft <= 0 && !seatedHere;
@@ -387,6 +401,10 @@ function LobbyTableRow({
   if (inPlay && !seatedHere) {
     action = (
       <span className="font-pixel text-[10px] uppercase text-gold">In play</span>
+    );
+  } else if (table.blocked) {
+    action = (
+      <span className="font-pixel text-[10px] uppercase text-gold">Left</span>
     );
   } else if (full) {
     action = (
@@ -406,10 +424,6 @@ function LobbyTableRow({
   } else if (!wallet.onNetwork) {
     action = (
       <span className="font-pixel text-[10px] uppercase text-cream/55">Network</span>
-    );
-  } else if (seatedElsewhere) {
-    action = (
-      <span className="font-pixel text-[10px] uppercase text-gold">Seated</span>
     );
   } else if (wallet.error) {
     action = (

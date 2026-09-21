@@ -1,3 +1,4 @@
+import { MATCH_TURN_SECONDS } from "@/lib/game/match-clock";
 import { PLAY_ENTRY_FEE } from "@/lib/game/play-player";
 import { MAX_PLAYERS_PER_ROOM, prizePool } from "@/lib/types";
 
@@ -25,7 +26,7 @@ export type LudoPlayer = {
   id: string;
   username: string;
   position: number;
-  status: "alive" | "finished";
+  status: "alive" | "finished" | "eliminated";
   pawns: LudoPawn[];
   isYou: boolean;
 };
@@ -47,6 +48,8 @@ export type LudoRoomState = {
   lastRoll: number | null;
   players: LudoPlayer[];
   log: LudoLogEntry[];
+  /** Missed rolls per seat. Three kicks that player with no refund. */
+  afkStrikes?: Record<number, number>;
 };
 
 function yardPawns(seat: number): LudoPawn[] {
@@ -101,7 +104,7 @@ export function createLudoMatchForSeats(
     maxPlayers: MAX_PLAYERS_PER_ROOM,
     activeSeat: 1,
     turn: 1,
-    turnSecondsLeft: 30,
+    turnSecondsLeft: MATCH_TURN_SECONDS,
     lastRoll: null,
     players: [...seats]
       .sort((left, right) => left.seat - right.seat)

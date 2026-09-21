@@ -63,6 +63,8 @@ export type PlayLobbyGame = {
     username: string;
     seat: number;
   }>;
+  /** True when this wallet forfeited the last match at this table. */
+  blocked?: boolean;
 };
 
 export type PlaySeatRecord = {

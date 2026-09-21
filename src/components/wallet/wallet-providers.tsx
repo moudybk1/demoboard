@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { WagmiProvider, type State } from "wagmi";
 
+import { boardRainbowTheme } from "@/lib/wallet/rainbowkit-theme";
+import { getBoardChain } from "@/lib/wallet/chains";
 import { wagmiConfig } from "@/lib/wallet/wagmi-config";
+
+import "@rainbow-me/rainbowkit/styles.css";
 
 type WalletProvidersProps = {
   children: React.ReactNode;
@@ -12,7 +17,7 @@ type WalletProvidersProps = {
 };
 
 /**
- * Client providers for chain wallet connection (wagmi + react-query).
+ * Client providers for chain wallet connection (wagmi + RainbowKit + react-query).
  */
 export function WalletProviders({
   children,
@@ -32,7 +37,18 @@ export function WalletProviders({
 
   return (
     <WagmiProvider config={wagmiConfig} initialState={initialState}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider
+          theme={boardRainbowTheme}
+          initialChain={getBoardChain()}
+          appInfo={{
+            appName: "BOARD",
+            learnMoreUrl: "/how-to",
+          }}
+        >
+          {children}
+        </RainbowKitProvider>
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }

@@ -18,6 +18,7 @@ export function LudoActionBar({
   canRoll = true,
   canEndTurn = true,
   value,
+  secondsLeft = null,
   onRoll,
   onEndTurn,
   className,
@@ -28,10 +29,17 @@ export function LudoActionBar({
   canRoll?: boolean;
   canEndTurn?: boolean;
   value: DieValue | null;
+  secondsLeft?: number | null;
   onRoll: () => void;
   onEndTurn: () => void;
   className?: string;
 }) {
+  const turnLabel =
+    yourTurn && secondsLeft != null
+      ? `Your turn · ${secondsLeft}s`
+      : yourTurn
+        ? "Your turn"
+        : "Waiting";
   return (
     <PixelPanel
       tone="raised"
@@ -44,7 +52,7 @@ export function LudoActionBar({
         <DieTray value={value} rolling={rolling} />
         <p className="font-pixel text-xs uppercase text-muted sm:hidden">
           {yourTurn ? (
-            <span className="text-gold">Your turn</span>
+            <span className="text-gold">{turnLabel}</span>
           ) : (
             "Waiting"
           )}
@@ -53,7 +61,7 @@ export function LudoActionBar({
 
       <p className="hidden font-pixel text-xs uppercase text-muted sm:block">
         {yourTurn ? (
-          <span className="text-gold">Your turn</span>
+          <span className="text-gold">{turnLabel}</span>
         ) : (
           "Waiting for opponent"
         )}
@@ -68,7 +76,7 @@ export function LudoActionBar({
           onClick={onRoll}
         >
           <Dices className="size-4" aria-hidden />
-          {rolling ? "Rolling" : "Roll die"}
+          {rolling ? "Rolling" : secondsLeft != null ? `Roll ${secondsLeft}s` : "Roll die"}
         </PixelButton>
         <PixelButton
           variant="outline"

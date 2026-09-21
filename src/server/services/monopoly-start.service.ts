@@ -1,3 +1,4 @@
+import { MATCH_TURN_SECONDS } from "@/lib/game/match-clock";
 import { MONOPOLY_STARTING_CASH } from "@/lib/mock/monopoly";
 import type { MonopolyRoomState } from "@/lib/mock/monopoly";
 import type { Db } from "@/server/db";
@@ -8,7 +9,7 @@ import {
 } from "@/server/db/schema";
 
 /** Seconds granted for each Monopoly turn clock. */
-export const MONOPOLY_TURN_SECONDS = 30;
+export const MONOPOLY_TURN_SECONDS = MATCH_TURN_SECONDS;
 
 export type MonopolySeatSeed = {
   userId: string;

@@ -19,8 +19,9 @@ import { BOARD_TILES } from "@/lib/game/monopoly-board";
 import { rollDice, type DieValue } from "@/lib/game/dice";
 import { saveMonopoly } from "@/lib/game/match-storage";
 import { isPlayBot } from "@/lib/game/play-table";
+import { useTurnClock } from "@/hooks/use-turn-clock";
+import { MATCH_TURN_SECONDS, type TurnClockInfo } from "@/lib/game/match-clock";
 import {
-  advanceTurn,
   applyRollMove,
   asPlayState,
   buyTile,
@@ -28,9 +29,11 @@ import {
   leaveJailByDoubles,
   leaveJailByFine,
   npcShouldBuy,
+  recordAfkMiss,
   resolveLanding,
   soleWinner,
   stayInJail,
+  advanceTurn,
   type MonopolyPlayState,
 } from "@/lib/game/monopoly-rules";
 import type { MonopolyRoomState } from "@/lib/mock/monopoly";
@@ -47,8 +50,14 @@ type HopMove = {
 
 export function MonopolyRoom({
   initialState,
+  onClock,
+  onAfkKick,
+  clockPaused = false,
 }: {
   initialState: MonopolyRoomState;
+  onClock?: (clock: TurnClockInfo) => void;
+  onAfkKick?: () => void;
+  clockPaused?: boolean;
 }) {
   const [state, setState] = useState<MonopolyPlayState>(() =>
     asPlayState(initialState),
@@ -100,6 +109,7 @@ export function MonopolyRoom({
 
   const you = players.find((player) => player.isYou);
   const yourTurn = you?.position === state.activeSeat;
+  const youOut = you?.status === "eliminated";
   const activePlayer = players.find(
     (player) => player.position === state.activeSeat,
   );
@@ -110,6 +120,17 @@ export function MonopolyRoom({
 
   const winner = useMemo(() => soleWinner(state), [state]);
   const finished = winner !== null;
+  const rollWindow = Boolean(
+    yourTurn &&
+      !finished &&
+      !youOut &&
+      !rolling &&
+      !hop &&
+      pendingBuy === null &&
+      !rolledThisTurn &&
+      !clockPaused,
+  );
+  const youStrikes = you ? (state.extras[you.position]?.afkStrikes ?? 0) : 0;
 
   useEffect(() => {
     if (!finished || !winner) return;
@@ -368,6 +389,35 @@ export function MonopolyRoom({
     yourTurn,
   ]);
 
+  const handleAfkExpire = useCallback(() => {
+    if (busyRef.current || hopRef.current) return;
+    const snapshot = stateRef.current;
+    const actor = snapshot.players.find((player) => player.isYou);
+    if (!actor || actor.status === "eliminated") return;
+    if (snapshot.activeSeat !== actor.position) return;
+    const result = recordAfkMiss(snapshot, actor.position);
+    commit(result.state);
+    setRolledThisTurn(false);
+    setDice(null);
+    setPendingBuy(null);
+    busyRef.current = false;
+    if (result.kicked) onAfkKick?.();
+  }, [commit, onAfkKick]);
+
+  const secondsLeft = useTurnClock({
+    running: rollWindow,
+    resetKey: `${state.activeSeat}-${state.turn}-${state.cue}`,
+    onExpire: handleAfkExpire,
+  });
+
+  useEffect(() => {
+    onClock?.({
+      seconds: rollWindow ? secondsLeft : MATCH_TURN_SECONDS,
+      active: rollWindow,
+      strikes: youStrikes,
+    });
+  }, [onClock, rollWindow, secondsLeft, youStrikes]);
+
   useEffect(() => {
     if (finished || rolling || hop || pendingBuy !== null) return;
     const seat = state.activeSeat;
@@ -438,7 +488,7 @@ export function MonopolyRoom({
                     onDecline={handleDecline}
                   />
                 )}
-                {winner && <WinnerScreen winner={winner} game="monopoly" />}
+                {winner && !youOut && <WinnerScreen winner={winner} game="monopoly" />}
               </>
             }
           />
@@ -457,13 +507,14 @@ export function MonopolyRoom({
       />
 
       <ActionBar
-        yourTurn={yourTurn && !finished && !hop && pendingBuy === null}
+        yourTurn={yourTurn && !finished && !hop && pendingBuy === null && !youOut}
         rolling={rolling}
         moving={Boolean(hop)}
         dice={dice}
         canBuy={canBuy && !finished}
         canPayJail={yourTurn && youInJail && !rolling && !hop && (you?.cash ?? 0) >= JAIL_FINE}
         hasRolled={rolledThisTurn}
+        secondsLeft={rollWindow ? secondsLeft : null}
         onRoll={handleRoll}
         onBuy={handleBuy}
         onEndTurn={handleEndTurn}
