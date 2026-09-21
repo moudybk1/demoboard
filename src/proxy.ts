@@ -8,9 +8,8 @@ import {
 } from "@/lib/demo-access";
 
 /**
- * Keep playable tables behind the closed-demo cookie. The public landing,
- * guide, and legal pages stay reachable so the GitHub project website can
- * point at `/` without exposing unfinished staking.
+ * Wallet, account, and payout screens stay behind the access cookie.
+ * Play, lobby, and game rooms are public so matches can start today.
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -27,9 +26,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/lobby",
-    "/lobby/:path*",
-    "/room/:path*",
     "/wallet",
     "/wallet/:path*",
     "/account",

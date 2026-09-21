@@ -32,6 +32,10 @@ export function readPreviewGame(): PreviewGame | null {
   }
 }
 
+export function playPathForGame(game: PreviewGame): string {
+  return `/play?game=${game}`;
+}
+
 export function demoPathForGame(game: PreviewGame): string {
   return `/demo?game=${game}`;
 }

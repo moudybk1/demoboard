@@ -118,7 +118,19 @@ function LudoPawnToken({
   // Hop along the move path.
   useEffect(() => {
     const node = ref.current;
-    if (!node || !moving || !movePath || movePath.length === 0) return;
+    if (!node || !moving || !movePath) return;
+
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      onMoveComplete();
+    };
+
+    if (movePath.length === 0) {
+      finish();
+      return;
+    }
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
       .matches;
@@ -129,12 +141,12 @@ function LudoPawnToken({
         movePath[movePath.length - 1][1],
       );
       gsap.set(node, { left: `${end.x}%`, top: `${end.y}%`, y: 0, scale: 1 });
-      onMoveComplete();
+      finish();
       return;
     }
 
     const timeline = gsap.timeline({
-      onComplete: onMoveComplete,
+      onComplete: finish,
     });
 
     for (const [row, col] of movePath) {

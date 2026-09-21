@@ -1,24 +1,20 @@
 "use client";
 
-import { SignInButton } from "@/components/account/sign-in-button";
+import { StartMatchButton } from "@/components/lobby/start-match-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
-import { useAuthMe } from "@/hooks/use-auth-me";
+import type { GameType } from "@/lib/types";
 
-/** Lobby hero CTAs. Sign-in modal when logged out. */
-export function LobbyHeroActions() {
-  const { authenticated } = useAuthMe();
-
+/** Lobby hero CTAs. Start a match immediately. */
+export function LobbyHeroActions({
+  game = "monopoly",
+}: {
+  game?: GameType;
+}) {
   return (
     <>
-      {authenticated ? (
-        <PixelButtonLink href="/lobby" variant="primary" size="md">
-          Browse rooms
-        </PixelButtonLink>
-      ) : (
-        <SignInButton variant="primary" size="md">
-          Sign in
-        </SignInButton>
-      )}
+      <StartMatchButton game={game} size="md" variant="primary">
+        Play now
+      </StartMatchButton>
       <PixelButtonLink href="/how-to" variant="ghost" size="md">
         How it works
       </PixelButtonLink>

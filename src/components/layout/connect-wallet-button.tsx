@@ -1,8 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
-
-import { ComingSoonModal } from "@/components/layout/coming-soon-modal";
+import { useSignIn } from "@/components/account/sign-in-provider";
 import { PixelButton, pixelButton } from "@/components/ui/pixel-button";
 import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
@@ -10,7 +8,7 @@ import type { VariantProps } from "class-variance-authority";
 type ButtonVariants = VariantProps<typeof pixelButton>;
 
 /**
- * Primary wallet CTA. Opens a polished coming-soon dialog until connect is live.
+ * Opens the live wallet picker (MetaMask, OKX, Rabby, WalletConnect).
  */
 export function ConnectWalletButton({
   className,
@@ -23,21 +21,17 @@ export function ConnectWalletButton({
   variant?: ButtonVariants["variant"];
   size?: ButtonVariants["size"];
 }) {
-  const [open, setOpen] = useState(false);
-  const onClose = useCallback(() => setOpen(false), []);
+  const { openSignIn } = useSignIn();
 
   return (
-    <>
-      <PixelButton
-        type="button"
-        variant={variant}
-        size={size}
-        className={cn("justify-center", className)}
-        onClick={() => setOpen(true)}
-      >
-        {label}
-      </PixelButton>
-      <ComingSoonModal open={open} onClose={onClose} />
-    </>
+    <PixelButton
+      type="button"
+      variant={variant}
+      size={size}
+      className={cn("justify-center", className)}
+      onClick={openSignIn}
+    >
+      {label}
+    </PixelButton>
   );
 }

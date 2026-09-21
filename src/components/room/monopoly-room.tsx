@@ -15,21 +15,34 @@ import { PlayerRail } from "@/components/room/player-rail";
 import { WinnerScreen } from "@/components/room/winner-screen";
 import { playSfx } from "@/lib/audio/audio-manager";
 import { pathForward } from "@/lib/game/board-geometry";
-import { BOARD_TILE_COUNT, BOARD_TILES } from "@/lib/game/monopoly-board";
+import { BOARD_TILES } from "@/lib/game/monopoly-board";
 import { rollDice, type DieValue } from "@/lib/game/dice";
+import { saveMonopoly } from "@/lib/game/match-storage";
+import { isPlayBot } from "@/lib/game/play-table";
 import {
-  monopolyPrizePool,
-  type MonopolyLogEntry,
-  type MonopolyRoomState,
-} from "@/lib/mock/monopoly";
+  advanceTurn,
+  applyRollMove,
+  asPlayState,
+  buyTile,
+  JAIL_FINE,
+  leaveJailByDoubles,
+  leaveJailByFine,
+  npcShouldBuy,
+  resolveLanding,
+  soleWinner,
+  stayInJail,
+  type MonopolyPlayState,
+} from "@/lib/game/monopoly-rules";
+import type { MonopolyRoomState } from "@/lib/mock/monopoly";
 
-/** How long the dice tumble before the result is revealed. */
 const ROLL_MS = 900;
+const NPC_THINK_MS = 750;
 
 type HopMove = {
   seat: number;
   path: number[];
   landing: number;
+  extraTurn: boolean;
 };
 
 export function MonopolyRoom({
@@ -37,15 +50,24 @@ export function MonopolyRoom({
 }: {
   initialState: MonopolyRoomState;
 }) {
-  const [state, setState] = useState<MonopolyRoomState>(initialState);
+  const [state, setState] = useState<MonopolyPlayState>(() =>
+    asPlayState(initialState),
+  );
   const [dice, setDice] = useState<readonly [DieValue, DieValue] | null>(null);
   const [rolling, setRolling] = useState(false);
   const [hop, setHop] = useState<HopMove | null>(null);
-  /** Tile index awaiting your buy/pass decision, if any. */
   const [pendingBuy, setPendingBuy] = useState<number | null>(null);
   const [rentNotice, setRentNotice] = useState<RentNotice | null>(null);
+  const [rolledThisTurn, setRolledThisTurn] = useState(false);
   const timers = useRef<number[]>([]);
   const hopRef = useRef<HopMove | null>(null);
+  const busyRef = useRef(false);
+
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+    saveMonopoly(state);
+  }, [state]);
 
   useEffect(
     () => () => {
@@ -54,11 +76,6 @@ export function MonopolyRoom({
     },
     [],
   );
-
-  const stateRef = useRef(state);
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
 
   useEffect(() => {
     hopRef.current = hop;
@@ -86,22 +103,12 @@ export function MonopolyRoom({
   const activePlayer = players.find(
     (player) => player.position === state.activeSeat,
   );
+  const youInJail = Boolean(you && state.extras[you.position]?.inJail);
   const canBuy =
     pendingBuy !== null &&
-    (you?.cash ?? 0) >= (BOARD_TILES[pendingBuy].price ?? 0);
+    (you?.cash ?? 0) >= (BOARD_TILES[pendingBuy]?.price ?? 0);
 
-  const winner = useMemo(() => {
-    const alive = players.filter((player) => player.status !== "eliminated");
-    if (alive.length !== 1) return null;
-    const sole = alive[0];
-    return {
-      seat: sole.position,
-      username: sole.username,
-      isYou: sole.isYou,
-      pot: monopolyPrizePool(state),
-    };
-  }, [players, state]);
-
+  const winner = useMemo(() => soleWinner(state), [state]);
   const finished = winner !== null;
 
   useEffect(() => {
@@ -109,256 +116,292 @@ export function MonopolyRoom({
     playSfx(winner.isYou ? "win" : "lose");
   }, [finished, winner]);
 
-  const appendLog = useCallback((entry: Omit<MonopolyLogEntry, "id">) => {
-    setState((current) => ({
-      ...current,
-      log: [
-        { ...entry, id: `l-${current.log.length + 1}-${Date.now()}` },
-        ...current.log,
-      ],
-    }));
+  const commit = useCallback((next: MonopolyPlayState) => {
+    stateRef.current = next;
+    setState(next);
+    return next;
   }, []);
 
-  const chargeRent = useCallback(
-    (tileIndex: number, payerSeat: number, ownerSeat: number) => {
-      const tile = BOARD_TILES[tileIndex];
-      const current = stateRef.current;
-      const payer = current.players.find((p) => p.position === payerSeat);
-      const owner = current.players.find((p) => p.position === ownerSeat);
-      if (!payer || !owner) return;
-
-      const due = tile.rent ?? 0;
-      const paid = Math.min(due, payer.cash);
-      const bankrupted = paid < due || payer.cash - paid <= 0;
-      playSfx("rent");
-
-      setState((previous) => ({
-        ...previous,
-        players: previous.players.map((player) => {
-          if (player.position === payerSeat) {
-            return {
-              ...player,
-              cash: player.cash - paid,
-              status: bankrupted ? "eliminated" : player.status,
-            };
-          }
-          if (player.position === ownerSeat) {
-            return { ...player, cash: player.cash + paid };
-          }
-          return player;
-        }),
-      }));
-
-      const payerName = payer.isYou ? "You" : payer.username;
-      const ownerName = owner.isYou ? "you" : owner.username;
-
-      appendLog({
-        seat: payerSeat,
-        message: `${payerName} paid ${paid} rent to ${ownerName} for ${tile.name}.`,
-      });
-
-      if (bankrupted) {
-        appendLog({
-          seat: payerSeat,
-          message: `${payerName} ${payer.isYou ? "are" : "is"} bankrupt and out of the game.`,
-        });
-
-        const survivors = current.players.filter(
-          (player) =>
-            player.position !== payerSeat && player.status !== "eliminated",
-        );
-        if (survivors.length === 1) {
-          const sole = survivors[0];
-          appendLog({
-            seat: sole.position,
-            message: `${sole.isYou ? "You" : sole.username} win${
-              sole.isYou ? "" : "s"
-            } the room!`,
-          });
-          setPendingBuy(null);
-        }
+  const finishTurn = useCallback(
+    (current: MonopolyPlayState, seat: number, extraTurn: boolean) => {
+      if (soleWinner(current)) {
+        busyRef.current = false;
+        setRolledThisTurn(false);
+        setPendingBuy(null);
+        return;
       }
-
-      setRentNotice({
-        id: `${tileIndex}-${payerSeat}-${Date.now()}`,
-        country: tile.name,
-        amount: paid,
-        payerSeat,
-        payerName,
-        ownerSeat,
-        ownerName: owner.isYou ? "You" : owner.username,
-        bankrupted,
-        youArePayer: Boolean(payer.isYou),
-      });
+      if (extraTurn && current.players.find((p) => p.position === seat)?.status === "alive") {
+        busyRef.current = false;
+        setRolledThisTurn(false);
+        setDice(null);
+        commit({
+          ...current,
+          cue: current.cue + 1,
+          log: [
+            {
+              id: `extra-${Date.now()}`,
+              seat,
+              message: "Doubles! Roll again.",
+            },
+            ...current.log,
+          ],
+        });
+        return;
+      }
+      const advanced = advanceTurn(current, seat);
+      commit(advanced);
+      busyRef.current = false;
+      setRolledThisTurn(false);
+      setDice(null);
+      setPendingBuy(null);
     },
-    [appendLog],
+    [commit],
   );
 
-  const resolveLanding = useCallback(
-    (landing: number, seat: number) => {
-      const tile = BOARD_TILES[landing];
-      const roller = stateRef.current.players.find((p) => p.position === seat);
-      if (!roller) return;
-      const who = roller.isYou ? "You" : roller.username;
+  const afterLanding = useCallback(
+    (landed: ReturnType<typeof resolveLanding>, seat: number) => {
+      const current = commit(landed.state);
+      if (landed.rent) {
+        playSfx("rent");
+        const payer = current.players.find((p) => p.position === landed.rent?.payerSeat);
+        const owner = current.players.find((p) => p.position === landed.rent?.ownerSeat);
+        setRentNotice({
+          id: `${landed.rent.tileIndex}-${seat}-${Date.now()}`,
+          country: BOARD_TILES[landed.rent.tileIndex]?.name ?? "City",
+          amount: landed.rent.paid,
+          payerSeat: landed.rent.payerSeat,
+          payerName: payer?.isYou ? "You" : payer?.username ?? "Player",
+          ownerSeat: landed.rent.ownerSeat,
+          ownerName: owner?.isYou ? "You" : owner?.username ?? "Rival",
+          bankrupted: landed.rent.bankrupted,
+          youArePayer: Boolean(payer?.isYou),
+        });
+      }
 
-      appendLog({ seat, message: `${who} landed on ${tile.name}.` });
-
-      if (tile.kind !== "country") return;
-
-      const ownerSeat = stateRef.current.owners[landing];
-
-      if (ownerSeat === undefined) {
-        if (roller.isYou) setPendingBuy(landing);
+      if (landed.goToJail || soleWinner(current)) {
+        finishTurn(current, seat, false);
         return;
       }
 
-      if (ownerSeat === seat) {
-        appendLog({ seat, message: `${who} already own ${tile.name}.` });
+      if (landed.pendingBuy !== null) {
+        const actor = current.players.find((p) => p.position === seat);
+        if (actor?.isYou) {
+          setPendingBuy(landed.pendingBuy);
+          busyRef.current = false;
+          return;
+        }
+        if (npcShouldBuy(current, seat, landed.pendingBuy)) {
+          const bought = buyTile(current, seat, landed.pendingBuy);
+          if (bought) {
+            playSfx("buy");
+            finishTurn(commit(bought), seat, landed.extraTurn);
+            return;
+          }
+        }
+        finishTurn(current, seat, landed.extraTurn);
         return;
       }
 
-      chargeRent(landing, seat, ownerSeat);
+      finishTurn(current, seat, landed.extraTurn);
     },
-    [appendLog, chargeRent],
+    [commit, finishTurn],
   );
 
   const handleHopComplete = useCallback(() => {
-    const current = hopRef.current;
-    if (!current) return;
-
-    const { seat, landing } = current;
+    const currentHop = hopRef.current;
+    if (!currentHop) return;
     setHop(null);
     hopRef.current = null;
+    const landed = resolveLanding(
+      stateRef.current,
+      currentHop.seat,
+      currentHop.extraTurn,
+    );
+    afterLanding(landed, currentHop.seat);
+  }, [afterLanding]);
 
-    setState((prev) => ({
-      ...prev,
-      players: prev.players.map((player) =>
-        player.position === seat ? { ...player, tile: landing } : player,
-      ),
-    }));
+  const performRoll = useCallback(
+    (seat: number) => {
+      if (finished || busyRef.current || hop) return;
+      const snapshot = stateRef.current;
+      const roller = snapshot.players.find((player) => player.position === seat);
+      if (!roller || roller.status === "eliminated") return;
+      if (snapshot.activeSeat !== seat) return;
 
-    resolveLanding(landing, seat);
-  }, [resolveLanding]);
+      const jailed = Boolean(snapshot.extras[seat]?.inJail);
+      busyRef.current = true;
+      setRolling(true);
+      setDice(null);
+      setPendingBuy(null);
+      playSfx("dice_roll");
+
+      const result = rollDice();
+      const reveal = window.setTimeout(() => {
+        setDice(result.dice);
+        setRolling(false);
+        setRolledThisTurn(true);
+
+        if (jailed) {
+          if (result.isDouble) {
+            let next = leaveJailByDoubles(snapshot, seat);
+            next = {
+              ...next,
+              log: [
+                {
+                  id: `jail-out-${Date.now()}`,
+                  seat,
+                  message: `${roller.isYou ? "You" : roller.username} rolled doubles and left Jail.`,
+                },
+                ...next.log,
+              ],
+            };
+            const moved = applyRollMove(next, seat, result);
+            commit(moved.state);
+            const path = pathForward(moved.from, result.total);
+            if (path.length === 0) {
+              afterLanding(resolveLanding(moved.state, seat, false), seat);
+              return;
+            }
+            const nextHop = { seat, path, landing: moved.to, extraTurn: false };
+            hopRef.current = nextHop;
+            setHop(nextHop);
+            return;
+          }
+          finishTurn(stayInJail(snapshot, seat), seat, false);
+          return;
+        }
+
+        const moved = applyRollMove(snapshot, seat, result);
+        commit(moved.state);
+        if (moved.goToJail) {
+          finishTurn(moved.state, seat, false);
+          return;
+        }
+
+        const path = pathForward(moved.from, result.total);
+        if (path.length === 0) {
+          afterLanding(
+            resolveLanding(moved.state, seat, result.isDouble),
+            seat,
+          );
+          return;
+        }
+        const nextHop = {
+          seat,
+          path,
+          landing: moved.to,
+          extraTurn: result.isDouble,
+        };
+        hopRef.current = nextHop;
+        setHop(nextHop);
+      }, ROLL_MS);
+
+      timers.current.push(reveal);
+    },
+    [afterLanding, commit, finishTurn, finished, hop],
+  );
 
   const handleRoll = useCallback(() => {
-    if (rolling || finished || hop) return;
-
-    const seat = state.activeSeat;
-    const roller = state.players.find((player) => player.position === seat);
-    if (!roller) return;
-
-    setRolling(true);
-    setDice(null);
-    playSfx("dice_roll");
-
-    const result = rollDice();
-    const from = roller.tile;
-    const landing = (from + result.total) % BOARD_TILE_COUNT;
-    const path = pathForward(from, result.total);
-
-    const reveal = window.setTimeout(() => {
-      setDice(result.dice);
-      setRolling(false);
-
-      appendLog({
-        seat,
-        message: `${roller.isYou ? "You" : roller.username} rolled ${
-          result.dice[0]
-        } and ${result.dice[1]}.`,
-      });
-
-      // Drive hops from an explicit path; tile updates only after animation.
-      if (path.length === 0) {
-        setState((prev) => ({
-          ...prev,
-          players: prev.players.map((player) =>
-            player.position === seat ? { ...player, tile: landing } : player,
-          ),
-        }));
-        resolveLanding(landing, seat);
-        return;
-      }
-
-      const nextHop = { seat, path, landing };
-      hopRef.current = nextHop;
-      setHop(nextHop);
-    }, ROLL_MS);
-
-    timers.current.push(reveal);
+    if (!yourTurn || rolling || hop || finished || pendingBuy !== null) return;
+    performRoll(state.activeSeat);
   }, [
-    appendLog,
     finished,
     hop,
-    resolveLanding,
+    pendingBuy,
+    performRoll,
     rolling,
     state.activeSeat,
-    state.players,
+    yourTurn,
   ]);
 
   const handleBuy = useCallback(() => {
     if (pendingBuy === null || finished) return;
-
-    const tile = BOARD_TILES[pendingBuy];
-    const price = tile.price ?? 0;
-    const seat = state.activeSeat;
-
-    setState((current) => {
-      const buyer = current.players.find(
-        (player) => player.position === seat,
-      );
-      if (!buyer || buyer.cash < price) return current;
-
-      return {
-        ...current,
-        owners: { ...current.owners, [pendingBuy]: seat },
-        players: current.players.map((player) =>
-          player.position === seat
-            ? { ...player, cash: player.cash - price, owned: player.owned + 1 }
-            : player,
-        ),
-      };
-    });
-
-    appendLog({ seat, message: `You bought ${tile.name} for ${price}.` });
+    const bought = buyTile(stateRef.current, state.activeSeat, pendingBuy);
+    if (!bought) return;
     playSfx("buy");
     setPendingBuy(null);
-  }, [appendLog, finished, pendingBuy, state.activeSeat]);
+    const extra = Boolean(
+      dice && dice[0] === dice[1] && !stateRef.current.extras[state.activeSeat]?.inJail,
+    );
+    finishTurn(commit(bought), state.activeSeat, extra);
+  }, [commit, dice, finishTurn, finished, pendingBuy, state.activeSeat]);
 
   const handleDecline = useCallback(() => {
     if (pendingBuy === null || finished) return;
-
-    appendLog({
-      seat: state.activeSeat,
-      message: `You passed on ${BOARD_TILES[pendingBuy].name}.`,
-    });
+    const tile = BOARD_TILES[pendingBuy];
     setPendingBuy(null);
-  }, [appendLog, finished, pendingBuy, state.activeSeat]);
+    const extra = Boolean(
+      dice && dice[0] === dice[1] && !stateRef.current.extras[state.activeSeat]?.inJail,
+    );
+    const next = {
+      ...stateRef.current,
+      log: [
+        {
+          id: `pass-${Date.now()}`,
+          seat: state.activeSeat,
+          message: `You passed on ${tile?.name ?? "the city"}.`,
+        },
+        ...stateRef.current.log,
+      ],
+    };
+    finishTurn(commit(next), state.activeSeat, extra);
+  }, [commit, dice, finishTurn, finished, pendingBuy, state.activeSeat]);
+
+  const handlePayJail = useCallback(() => {
+    if (!yourTurn || finished || busyRef.current) return;
+    const paid = leaveJailByFine(stateRef.current, state.activeSeat);
+    if (!paid) return;
+    commit(paid);
+    busyRef.current = false;
+    setRolledThisTurn(false);
+  }, [commit, finished, state.activeSeat, yourTurn]);
 
   const handleEndTurn = useCallback(() => {
-    if (finished || hop) return;
-    setState((current) => {
-      const alive = [...current.players]
-        .filter((player) => player.status !== "eliminated")
-        .sort((a, b) => a.position - b.position);
-      if (alive.length === 0) return current;
+    if (!yourTurn || finished || hop || rolling || pendingBuy !== null) return;
+    finishTurn(stateRef.current, state.activeSeat, false);
+  }, [
+    finishTurn,
+    finished,
+    hop,
+    pendingBuy,
+    rolling,
+    state.activeSeat,
+    yourTurn,
+  ]);
 
-      const currentIndex = alive.findIndex(
-        (player) => player.position === current.activeSeat,
-      );
-      const next = alive[(currentIndex + 1) % alive.length];
+  useEffect(() => {
+    if (finished || rolling || hop || pendingBuy !== null) return;
+    const seat = state.activeSeat;
+    const actor = state.players.find((player) => player.position === seat);
+    if (!actor || actor.isYou || actor.status === "eliminated") return;
+    if (!isPlayBot(actor.id)) return;
 
-      return {
-        ...current,
-        activeSeat: next.position,
-        turn:
-          next.position <= current.activeSeat
-            ? current.turn + 1
-            : current.turn,
-        turnSecondsLeft: 30,
-      };
-    });
-    setDice(null);
-  }, [finished, hop]);
+    const think = window.setTimeout(() => {
+      const jailed = Boolean(stateRef.current.extras[seat]?.inJail);
+      if (jailed && (actor.cash > 220 || (stateRef.current.extras[seat]?.jailTurnsLeft ?? 3) <= 1)) {
+        const paid = leaveJailByFine(stateRef.current, seat);
+        if (paid) {
+          busyRef.current = false;
+          commit(paid);
+          return;
+        }
+      }
+      performRoll(seat);
+    }, NPC_THINK_MS);
+    timers.current.push(think);
+    return () => window.clearTimeout(think);
+  }, [
+    commit,
+    finished,
+    hop,
+    pendingBuy,
+    performRoll,
+    rolling,
+    state.activeSeat,
+    state.players,
+    state.turn,
+    state.cue,
+  ]);
 
   return (
     <div className="flex flex-col gap-2 lg:gap-3">
@@ -396,7 +439,7 @@ export function MonopolyRoom({
                     onDecline={handleDecline}
                   />
                 )}
-                {winner && <WinnerScreen winner={winner} />}
+                {winner && <WinnerScreen winner={winner} game="monopoly" />}
               </>
             }
           />
@@ -415,19 +458,25 @@ export function MonopolyRoom({
       />
 
       <ActionBar
-        yourTurn={yourTurn && !finished && !hop}
+        yourTurn={yourTurn && !finished && !hop && pendingBuy === null}
         rolling={rolling}
         moving={Boolean(hop)}
         dice={dice}
         canBuy={canBuy && !finished}
+        canPayJail={yourTurn && youInJail && !rolling && !hop && (you?.cash ?? 0) >= JAIL_FINE}
+        hasRolled={rolledThisTurn}
         onRoll={handleRoll}
         onBuy={handleBuy}
         onEndTurn={handleEndTurn}
+        onPayJail={handlePayJail}
       />
       {hop ? (
         <p className="text-center font-mono text-[10px] uppercase tracking-wide text-gold">
-          Hopping {hop.path.length}{" "}
-          {hop.path.length === 1 ? "tile" : "tiles"}
+          Hopping {hop.path.length} {hop.path.length === 1 ? "tile" : "tiles"}
+        </p>
+      ) : youInJail && yourTurn && !finished ? (
+        <p className="text-center font-mono text-[10px] uppercase tracking-wide text-muted">
+          In Jail. Roll doubles or pay {JAIL_FINE} BOARD.
         </p>
       ) : null}
 

@@ -5,6 +5,8 @@ export type BoardChainEnv = "mainnet" | "testnet";
 /** Display name stored in the ledger / UI copy. */
 export const ROBINHOOD_CHAIN_LABEL = "Robinhood Chain";
 
+export const ROBINHOOD_TESTNET_FAUCET = "https://faucet.testnet.chain.robinhood.com/";
+
 export function getBoardChainEnv(): BoardChainEnv {
   const raw = (process.env.NEXT_PUBLIC_CHAIN_ENV ?? "mainnet").toLowerCase();
   return raw === "testnet" ? "testnet" : "mainnet";
@@ -35,7 +37,13 @@ export function getBoardExplorerUrl(): string {
     : "https://robinhoodchain.blockscout.com";
 }
 
-/** Optional BOARD ERC-20 on Robinhood Chain (deposit/withdraw later). */
+export function getBoardChainLabel() {
+  return getBoardChainEnv() === "testnet"
+    ? "Robinhood Chain Testnet"
+    : ROBINHOOD_CHAIN_LABEL;
+}
+
+/** Optional BOARD ERC-20. Play sits with native ETH; this is for token pages. */
 export function getBoardTokenAddress(): `0x${string}` | null {
   const raw = process.env.NEXT_PUBLIC_BOARD_TOKEN_ADDRESS?.trim();
   if (!raw || !/^0x[a-fA-F0-9]{40}$/.test(raw)) return null;

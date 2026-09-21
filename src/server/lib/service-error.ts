@@ -37,7 +37,7 @@ export function statusForCode(
  * Status for the result codes shared across room/game services. Routes used to
  * repeat this as a ternary chain, which drifted between endpoints.
  */
-const DEFAULT_CODE_STATUS: Record<string, number> = {
+  const DEFAULT_CODE_STATUS: Record<string, number> = {
   NOT_FOUND: 404,
   USER_NOT_FOUND: 401,
   NOT_AUTHENTICATED: 401,
@@ -51,9 +51,14 @@ const DEFAULT_CODE_STATUS: Record<string, number> = {
   INSUFFICIENT_CASH: 402,
   WRONG_GAME: 400,
   INVALID_MOVE: 400,
+  BAD_TX: 400,
   NOT_OPEN: 409,
   FULL: 409,
   ALREADY_JOINED: 409,
+  ALREADY_SEATED: 409,
+  TX_USED: 409,
   ALREADY_SETTLED: 409,
   NOT_READY: 409,
+  NOT_WAITING: 409,
+  REFUND_FAILED: 503,
 };

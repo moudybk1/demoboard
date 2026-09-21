@@ -1,0 +1,43 @@
+import { NextResponse } from "next/server";
+
+import {
+  errorResponse,
+  failureResponse,
+  InvalidBodyError,
+  readJsonBody,
+  readOptionalString,
+} from "@/server/lib/api-response";
+import { sitPlayTable } from "@/server/services/play-table.service";
+import type { Hex } from "viem";
+
+function readHex(body: unknown, key: string, bytes: 20 | 32): Hex {
+  const raw = readOptionalString(body, key);
+  const size = bytes * 2;
+  if (!raw || !new RegExp(`^0x[a-fA-F0-9]{${size}}$`).test(raw)) {
+    throw new InvalidBodyError(`${key} must be a 0x-prefixed ${bytes}-byte hex value.`, 400);
+  }
+  return raw.toLowerCase() as Hex;
+}
+
+/** POST /api/play/sit · verify the 0.002 ETH sit tx and take a waiting seat. */
+export async function POST(request: Request) {
+  try {
+    const body = await readJsonBody(request);
+    const game = readOptionalString(body, "game");
+    if (game !== "monopoly" && game !== "ludo") {
+      throw new InvalidBodyError("game must be monopoly or ludo.", 400);
+    }
+    const address = readHex(body, "address", 20);
+    const txHash = readHex(body, "txHash", 32);
+    const result = await sitPlayTable({ game, address, txHash });
+    if (!result.ok) return failureResponse(result);
+    return NextResponse.json({
+      table: result.table,
+      seat: result.seat,
+      leaveToken: result.leaveToken,
+      alreadySeated: result.alreadySeated,
+    });
+  } catch (error) {
+    return errorResponse(error, "POST /api/play/sit");
+  }
+}

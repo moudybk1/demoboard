@@ -1,16 +1,12 @@
 /**
- * Whether staking real BOARD is wired end to end.
- *
- * The API exists, but the lobby and game screens still render from
- * `src/lib/mock`, and joining a room charges nothing. While this is false the
- * UI must say so: balances, room lists, and Join are labelled as demo data
- * rather than presented as real. Flip it when the screens call the API.
+ * Whether the games can be started from the lobby and play pages.
+ * On-chain staking can still ship later; tables themselves are live.
  */
-export const PLAY_IS_LIVE = false;
+export const PLAY_IS_LIVE = true;
 
-/** Shown wherever demo figures stand in for real ones. */
-export const DEMO_DATA_LABEL = "Demo data";
+/** Shown wherever figures stand in for chain settlement. */
+export const DEMO_DATA_LABEL = "Match pot";
 
-/** One sentence explaining why a screen shows demo figures. */
+/** One sentence explaining prize copy while chain payouts are still catching up. */
 export const DEMO_DATA_NOTE =
-  "Closed demo: tables, players, and balances on this page are demo data. Staking is not live, so nothing here charges or pays out.";
+  "Tables are live. Match pots are tracked in-game. On-chain payouts follow when staking is fully wired.";

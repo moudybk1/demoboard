@@ -9,8 +9,7 @@ import type { DieValue } from "@/lib/game/dice";
 import { cn } from "@/lib/utils";
 
 /**
- * Turn controls plus the dice tray. Purchase handling lands with the next
- * task; for now only rolling and ending a turn are wired up.
+ * Turn controls plus the dice tray.
  */
 export function ActionBar({
   yourTurn,
@@ -18,24 +17,29 @@ export function ActionBar({
   moving = false,
   dice,
   canBuy,
+  canPayJail = false,
+  hasRolled = false,
   onRoll,
   onBuy,
   onEndTurn,
+  onPayJail,
   className,
 }: {
   yourTurn: boolean;
   rolling: boolean;
-  /** True while the active pawn is hopping tile-to-tile. */
   moving?: boolean;
   dice: readonly [DieValue, DieValue] | null;
-  /** True while an affordable, unowned country is awaiting your decision. */
   canBuy: boolean;
+  canPayJail?: boolean;
+  hasRolled?: boolean;
   onRoll: () => void;
   onBuy: () => void;
   onEndTurn: () => void;
+  onPayJail?: () => void;
   className?: string;
 }) {
   const busy = rolling || moving;
+  const canRoll = yourTurn && !busy && !hasRolled;
 
   return (
     <PixelPanel
@@ -58,12 +62,22 @@ export function ActionBar({
         <PixelButton
           variant="primary"
           size="md"
-          disabled={!yourTurn || busy}
+          disabled={!canRoll}
           onClick={onRoll}
         >
           <Dices className="size-4" aria-hidden />
           {rolling ? "Rolling" : moving ? "Moving" : "Roll dice"}
         </PixelButton>
+        {onPayJail ? (
+          <PixelButton
+            variant="secondary"
+            size="md"
+            disabled={!canPayJail || busy}
+            onClick={onPayJail}
+          >
+            Pay jail
+          </PixelButton>
+        ) : null}
         <PixelButton
           variant="secondary"
           size="md"
@@ -76,7 +90,7 @@ export function ActionBar({
         <PixelButton
           variant="outline"
           size="md"
-          disabled={!yourTurn || busy}
+          disabled={!yourTurn || busy || !hasRolled}
           onClick={onEndTurn}
         >
           <SkipForward className="size-4" aria-hidden />

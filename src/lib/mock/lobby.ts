@@ -30,8 +30,8 @@ export const GAME_OPTIONS: GameOption[] = [
     description:
       "Roll, buy countries, and collect rent until your last rival goes bankrupt.",
     glyph: "🏛️",
-    activePlayers: 1284,
-    openRooms: 6,
+    activePlayers: 4,
+    openRooms: 1,
   },
   {
     type: "ludo",
@@ -40,8 +40,8 @@ export const GAME_OPTIONS: GameOption[] = [
     description:
       "Sprint all four pawns to the finish line and send your rivals back to start.",
     glyph: "🎲",
-    activePlayers: 942,
-    openRooms: 5,
+    activePlayers: 4,
+    openRooms: 1,
   },
 ];
 

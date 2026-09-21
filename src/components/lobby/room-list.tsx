@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Coins, Radio, SearchX, Swords } from "lucide-react";
 
 import { RoomCard } from "@/components/lobby/room-card";
+import { StartMatchButton } from "@/components/lobby/start-match-button";
 import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelBadge } from "@/components/ui/pixel-badge";
 import { PixelPanel } from "@/components/ui/pixel-panel";
@@ -90,7 +91,11 @@ export function RoomList({
       </div>
 
       {open.length === 0 ? (
-        <RoomListEmpty gameName={game.name} filtered={filtered} />
+        <RoomListEmpty
+          gameName={game.name}
+          gameType={gameType}
+          filtered={filtered}
+        />
       ) : (
         <ul className="grid list-none gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {open.map((room) => (
@@ -121,9 +126,11 @@ export function RoomList({
 
 function RoomListEmpty({
   gameName,
+  gameType,
   filtered,
 }: {
   gameName: string;
+  gameType: GameType;
   filtered: boolean;
 }) {
   return (
@@ -135,8 +142,13 @@ function RoomListEmpty({
       <p className="max-w-xs text-xs leading-relaxed text-faint">
         {filtered
           ? "Try a different entry fee · there are other tables waiting."
-          : `Every ${gameName} table is mid-game right now. A new one opens up in a moment.`}
+          : `Start a ${gameName} match now. You plus three rivals.`}
       </p>
+      {!filtered ? (
+        <StartMatchButton game={gameType} size="md">
+          Play {gameName}
+        </StartMatchButton>
+      ) : null}
     </PixelPanel>
   );
 }

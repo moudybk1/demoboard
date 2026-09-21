@@ -44,6 +44,7 @@ export function BoardAmount({
   /** Prefix with an explicit +/- , for ledger-style rows. */
   signed = false,
   showTicker = true,
+  ticker = "BOARD",
   className,
   ...props
 }: Omit<React.ComponentProps<"span">, "children"> &
@@ -52,6 +53,7 @@ export function BoardAmount({
     compact?: boolean;
     signed?: boolean;
     showTicker?: boolean;
+    ticker?: string;
   }) {
   const magnitude = Math.abs(value);
   const sign = signed && value !== 0 ? (value > 0 ? "+" : "−") : "";
@@ -61,7 +63,7 @@ export function BoardAmount({
   return (
     <span
       className={cn("inline-flex items-baseline gap-1", className)}
-      title={`${exact} BOARD`}
+      title={`${exact} ${ticker}`}
       {...props}
     >
       {/* "12.5K" is ambiguous read aloud, so the exact value is kept for
@@ -79,7 +81,7 @@ export function BoardAmount({
             TICKER_SIZE[size ?? "md"],
           )}
         >
-          BOARD
+          {ticker}
         </span>
       )}
     </span>

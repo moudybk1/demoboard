@@ -3,11 +3,9 @@
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { PixelCard } from "@/components/ui/pixel-card";
 import { LudoDemo, MonopolyDemo } from "@/components/welcome/game-demos";
-import { useDemoAccess } from "@/hooks/use-demo-access";
 import { WELCOME_GAMES } from "@/lib/mock/welcome";
 import {
-  demoPathForGame,
-  lobbyPathForGame,
+  playPathForGame,
   rememberPreviewGame,
 } from "@/lib/preview-game";
 import { cn } from "@/lib/utils";
@@ -16,8 +14,6 @@ import { cn } from "@/lib/utils";
  * Rivalry game pick: staggered Monopoly / Ludo cards with a center VS mark.
  */
 export function GameChoice({ className }: { className?: string }) {
-  const { unlocked } = useDemoAccess();
-
   return (
     <div
       className={cn(
@@ -26,9 +22,7 @@ export function GameChoice({ className }: { className?: string }) {
       )}
     >
       {WELCOME_GAMES.map((game, index) => {
-        const href = unlocked
-          ? lobbyPathForGame(game.id)
-          : demoPathForGame(game.id);
+        const href = playPathForGame(game.id);
         const Demo = game.id === "monopoly" ? MonopolyDemo : LudoDemo;
         const isMonopoly = game.id === "monopoly";
 

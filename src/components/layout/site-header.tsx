@@ -9,7 +9,6 @@ import { SignInButton } from "@/components/account/sign-in-button";
 import { AudioControlsPopover } from "@/components/audio/audio-controls-popover";
 import { DemoLeaveButton } from "@/components/demo/demo-leave-button";
 import { BoardLogo } from "@/components/layout/board-logo";
-import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { LinksMenu } from "@/components/layout/links-menu";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { BalanceWidget } from "@/components/wallet/balance-widget";
@@ -17,16 +16,10 @@ import { useAuthMe } from "@/hooks/use-auth-me";
 import { useDemoAccess } from "@/hooks/use-demo-access";
 import { cn } from "@/lib/utils";
 
-const PUBLIC_LINKS = [
+const NAV_LINKS = [
   { href: "/faq", label: "FAQ" },
   { href: "/how-to", label: "How to play" },
   { href: "/rules", label: "Prizes & fees" },
-] as const;
-
-const DEMO_LINKS = [
-  { href: "/lobby", label: "Lobby" },
-  { href: "/how-to", label: "How to play" },
-  { href: "/settings", label: "Settings" },
 ] as const;
 
 const NAV_CHIP =
@@ -35,8 +28,8 @@ const NAV_CHIP =
 export function SiteHeader({ className }: { className?: string }) {
   const pathname = usePathname();
   const { authenticated, loading } = useAuthMe();
-  const { ready, unlocked } = useDemoAccess();
-  const navLinks = unlocked ? DEMO_LINKS : PUBLIC_LINKS;
+  const { unlocked } = useDemoAccess();
+  const navLinks = NAV_LINKS;
   const [menuOpen, setMenuOpen] = useState(false);
   const panelId = useId();
 
@@ -156,25 +149,21 @@ export function SiteHeader({ className }: { className?: string }) {
                     </span>
                   </button>
 
-                  {ready ? (
-                    unlocked ? (
-                      <PixelButtonLink
-                        href="/lobby"
-                        variant="primary"
-                        size="sm"
-                        className="rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4"
-                      >
-                        Play
-                      </PixelButtonLink>
-                    ) : (
-                      <ConnectWalletButton
-                        size="sm"
-                        className="rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4"
-                      />
-                    )
-                  ) : (
-                    <span className="inline-block h-9 w-24" aria-hidden />
-                  )}
+                  <PixelButtonLink
+                    href="/play"
+                    variant="primary"
+                    size="sm"
+                    aria-current={
+                      isActivePath(pathname, "/play") ? "page" : undefined
+                    }
+                    className={cn(
+                      "rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4",
+                      isActivePath(pathname, "/play") &&
+                        "bg-void text-gold hover:bg-void hover:text-gold",
+                    )}
+                  >
+                    Play
+                  </PixelButtonLink>
                 </div>
               </div>
 

@@ -8,8 +8,10 @@ import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { PrizeSplit } from "@/components/wins/prize-split";
+import { StartMatchButton } from "@/components/lobby/start-match-button";
 import { seatColor } from "@/lib/game/seats";
-import { PRIZE_FEE_RATE } from "@/lib/types";
+import { PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
+import { PRIZE_FEE_RATE, type GameType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type WinnerSummary = {
@@ -26,13 +28,19 @@ export type WinnerSummary = {
  * Full-board overlay when the room has a winner. Shows the prize split
  * (winner / development / buyback / burn) and a path back to the lobby.
  */
-export function WinnerScreen({ winner }: { winner: WinnerSummary }) {
+export function WinnerScreen({
+  winner,
+  game = "monopoly",
+}: {
+  winner: WinnerSummary;
+  game?: GameType;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const color = seatColor(winner.seat);
-  const fee = Math.round(winner.pot * PRIZE_FEE_RATE);
+  const fee = winner.pot * PRIZE_FEE_RATE;
   // Matches economy.service feeDestination: 30% / 35% / 35%.
-  const treasury = Math.round(fee * 0.3);
-  const buyback = Math.round(fee * 0.35);
+  const treasury = fee * 0.3;
+  const buyback = fee * 0.35;
   const burn = fee - treasury - buyback;
   const payout = winner.pot - fee;
   const feePercent = Math.round(PRIZE_FEE_RATE * 100);
@@ -146,12 +154,14 @@ export function WinnerScreen({ winner }: { winner: WinnerSummary }) {
                 value={payout}
                 size="xl"
                 tone="gold"
+                ticker={PLAY_STAKE_SYMBOL}
                 className="mt-2 justify-center"
               />
             </div>
 
             <PrizeSplit
               compact
+              ticker={PLAY_STAKE_SYMBOL}
               className="border-t-2 border-edge pt-4"
               values={{
                 grossPot: winner.pot,
@@ -163,21 +173,21 @@ export function WinnerScreen({ winner }: { winner: WinnerSummary }) {
               }}
             />
 
-            <PixelButtonLink
-              href="/result"
+            <StartMatchButton
+              game={game}
               variant="primary"
               size="lg"
               className="w-full"
             >
-              View full result
-            </PixelButtonLink>
+              Play again
+            </StartMatchButton>
             <PixelButtonLink
-              href="/lobby"
+              href="/play"
               variant="secondary"
               size="md"
               className="w-full"
             >
-              Back to lobby
+              Choose game
             </PixelButtonLink>
           </div>
         </PixelPanel>

@@ -39,6 +39,8 @@ import {
   type LudoPlayer,
   type LudoRoomState,
 } from "@/lib/mock/ludo";
+import { saveLudo } from "@/lib/game/match-storage";
+import { isPlayBot } from "@/lib/game/play-table";
 
 const ROLL_MS = 700;
 const NPC_THINK_MS = 650;
@@ -66,6 +68,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
 
   useEffect(() => {
     stateRef.current = state;
+    saveLudo(state);
   }, [state]);
 
   useEffect(
@@ -204,10 +207,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
       const mover = snapshot.players.find((p) => p.position === seat);
       const who = mover?.isYou ? "You" : mover?.username ?? "Player";
       const captures = findCaptures(snapshot, seat, move.next);
-
       const nextState = applyMoveToState(snapshot, seat, move, captures);
-      setState({ ...nextState, lastRoll: null });
-      stateRef.current = { ...nextState, lastRoll: null };
 
       const label =
         move.next.status === "finished"
@@ -218,7 +218,19 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
               ? "released a pawn"
               : "moved a pawn";
 
-      appendLog({ seat, message: `${who} ${label}.` });
+      let log = nextState.log;
+      const addLog = (entrySeat: number | null, message: string) => {
+        log = [
+          {
+            id: `l-${log.length + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            seat: entrySeat,
+            message,
+          },
+          ...log,
+        ];
+      };
+
+      addLog(seat, `${who} ${label}.`);
 
       if (captures.length > 0) {
         const first = captures[0];
@@ -234,10 +246,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
           const victim = snapshot.players.find(
             (player) => player.position === hit.victimSeat,
           );
-          appendLog({
-            seat,
-            message: `${who} captured ${victim?.username ?? "a rival"}'s pawn!`,
-          });
+          addLog(seat, `${who} captured ${victim?.username ?? "a rival"}'s pawn!`);
         }
       }
 
@@ -247,7 +256,6 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
         (updatedMover.status === "finished" ||
           pawnsFinished(updatedMover) >= 4);
 
-      pendingMove.current = null;
       setMovingId(null);
       setMovePath(null);
       setMoves([]);
@@ -255,54 +263,51 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
       busyRef.current = false;
 
       if (won) {
-        appendLog({
-          seat,
-          message: `${who} win${mover?.isYou ? "" : "s"} the room!`,
-        });
+        addLog(seat, `${who} win${mover?.isYou ? "" : "s"} the room!`);
+        const finishedState = { ...nextState, lastRoll: null, log };
+        stateRef.current = finishedState;
+        setState(finishedState);
         setRollSpent(true);
         return;
       }
 
-      const keep =
-        grantsExtraTurn({
-          roll,
-          movedPawn: move.next,
-          captured: captures.length > 0,
-        }) && !won;
+      const keep = grantsExtraTurn({
+        roll,
+        movedPawn: move.next,
+        captured: captures.length > 0,
+      });
 
       if (keep) {
-        if (captures.length > 0) {
-          appendLog({ seat, message: "Capture! Roll again." });
-        } else if (move.next.status === "finished") {
-          appendLog({ seat, message: "Pawn home! Roll again." });
-        } else if (roll === 6) {
-          appendLog({ seat, message: "Rolled a 6 · roll again." });
-        }
+        if (captures.length > 0) addLog(seat, "Capture! Roll again.");
+        else if (move.next.status === "finished") addLog(seat, "Pawn home! Roll again.");
+        else if (roll === 6) addLog(seat, "Rolled a 6 · roll again.");
+        const extra = { ...nextState, lastRoll: null, log };
+        stateRef.current = extra;
+        setState(extra);
         setRollSpent(false);
-        setState((prev) => ({ ...prev, lastRoll: null }));
         return;
       }
 
-      // Non-bonus move ends the turn automatically.
       consecutiveSixes.current = 0;
       setRollSpent(false);
       const next = nextActiveSeat(nextState.players, seat);
+      const nxt = nextState.players.find((p) => p.position === next.activeSeat);
+      addLog(
+        next.activeSeat,
+        `${nxt?.isYou ? "Your" : `${nxt?.username}'s`} turn.`,
+      );
       const advanced: LudoRoomState = {
         ...nextState,
         activeSeat: next.activeSeat,
         turn: nextState.turn + next.turnDelta,
         turnSecondsLeft: 30,
         lastRoll: null,
+        log,
       };
       stateRef.current = advanced;
       setState(advanced);
-      const nxt = advanced.players.find((p) => p.position === next.activeSeat);
-      appendLog({
-        seat: next.activeSeat,
-        message: `${nxt?.isYou ? "Your" : `${nxt?.username}'s`} turn.`,
-      });
     },
-    [appendLog, applyMoveToState],
+    [applyMoveToState],
   );
 
   const startHop = useCallback((move: MovePreview) => {
@@ -342,7 +347,9 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
 
       setDie(result);
       setRolling(false);
-      setState((current) => ({ ...current, lastRoll: result }));
+      const withRoll = { ...snapshot, lastRoll: result };
+      stateRef.current = withRoll;
+      setState(withRoll);
       void playRollSound();
       appendLog({ seat, message: `${who} rolled a ${result}.` });
 
@@ -412,10 +419,10 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
 
   const handleHopComplete = useCallback(() => {
     const move = pendingMove.current;
+    pendingMove.current = null;
     const roll = stateRef.current.lastRoll as DieValue | null;
     const seat = stateRef.current.activeSeat;
     if (!move || roll === null) {
-      pendingMove.current = null;
       setMovingId(null);
       setMovePath(null);
       busyRef.current = false;
@@ -435,7 +442,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
 
   const handleEndTurn = useCallback(() => {
     if (!yourTurn || rolling || awaitingPick || movingId || finished) return;
-    // Only allow manual end when the roll is spent or there was nothing to do.
+    if (busyRef.current) return;
     if (state.lastRoll !== null && !rollSpent) return;
     advanceTurn(state.activeSeat);
   }, [
@@ -459,6 +466,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
     const seat = state.activeSeat;
     const actor = state.players.find((player) => player.position === seat);
     if (!actor || actor.isYou || actor.status === "finished") return;
+    if (!isPlayBot(actor.id)) return;
 
     const t = window.setTimeout(() => {
       performRoll(seat);
@@ -502,7 +510,7 @@ export function LudoRoom({ initialState }: { initialState: LudoRoomState }) {
                   onDone={() => setCapture(null)}
                 />
               )}
-              {winner && <WinnerScreen winner={winner} />}
+              {winner && <WinnerScreen winner={winner} game="ludo" />}
             </>
           }
         />

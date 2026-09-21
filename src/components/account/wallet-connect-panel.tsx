@@ -14,7 +14,7 @@ import { useAuthMe } from "@/hooks/use-auth-me";
 import { PixelButton } from "@/components/ui/pixel-button";
 import {
   getBoardChainId,
-  ROBINHOOD_CHAIN_LABEL,
+  getBoardChainLabel,
   shortenAddress,
 } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
@@ -214,7 +214,7 @@ export function WalletConnectPanel({
                 {address}
               </p>
               <p className="mt-2 text-xs text-muted">
-                Your profile is this wallet on {ROBINHOOD_CHAIN_LABEL}.
+                Your profile is this wallet on {getBoardChainLabel()}.
               </p>
             </div>
             <PixelButton
@@ -231,7 +231,7 @@ export function WalletConnectPanel({
         {!signedInHere && !isConnected ? (
           <>
             <p className="text-sm leading-relaxed text-muted">
-              Choose a wallet on {ROBINHOOD_CHAIN_LABEL}. Sign once, with no
+              Choose a wallet on {getBoardChainLabel()}. Sign once, with no
               gas, and your BOARD profile is this address.
             </p>
             <ul className="space-y-2">
@@ -309,7 +309,7 @@ export function WalletConnectPanel({
                 Wrong network
               </p>
               <p className="mt-2 text-sm text-muted">
-                Switch to {ROBINHOOD_CHAIN_LABEL} (chain ID {expectedChainId}).
+                Switch to {getBoardChainLabel()} (chain ID {expectedChainId}).
               </p>
             </div>
             <PixelButton

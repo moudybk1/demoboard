@@ -13,6 +13,7 @@ export type RoomEconomyProps = {
   /** Optional available balance for affordability contrast. */
   balance?: number;
   className?: string;
+  ticker?: string;
   /** Compact strip for headers; full panel for lobby / sidebars. */
   variant?: "strip" | "panel";
 };
@@ -25,6 +26,7 @@ export function RoomEconomyHighlight({
   seats = 4,
   balance,
   className,
+  ticker = "BOARD",
   variant = "panel",
 }: RoomEconomyProps) {
   const gross = prizePool({ entryFee, maxPlayers: seats });
@@ -65,6 +67,9 @@ export function RoomEconomyHighlight({
         <span className="font-pixel text-xs font-bold uppercase text-faint">
           −{feePercent}% fee
         </span>
+        <span className="font-pixel text-xs font-bold uppercase text-muted">
+          {ticker}
+        </span>
         {balance !== undefined && (
           <Metric
             icon={<Wallet className="size-3 text-muted" aria-hidden />}
@@ -92,24 +97,28 @@ export function RoomEconomyHighlight({
           label="Entry fee"
           value={entryFee}
           tone={canAfford ? "default" : "danger"}
+          ticker={ticker}
         />
         <EconomyCell
           icon={<Trophy className="size-3.5 text-gold" aria-hidden />}
           label="Gross pot"
           value={gross}
           tone="gold"
+          ticker={ticker}
         />
         <EconomyCell
           icon={<Landmark className="size-3.5 text-muted" aria-hidden />}
           label="Treasury"
           value={treasury}
           tone="muted"
+          ticker={ticker}
         />
         <EconomyCell
           icon={<Flame className="size-3.5 text-danger" aria-hidden />}
           label="Burn"
           value={burn}
           tone="danger"
+          ticker={ticker}
         />
       </div>
 
@@ -118,7 +127,7 @@ export function RoomEconomyHighlight({
           <span className="font-pixel text-xs font-bold uppercase text-void">
             Winner receives
           </span>
-          <BoardAmount value={net} size="lg" tone="default" />
+          <BoardAmount value={net} size="lg" tone="default" ticker={ticker} />
         </div>
         {balance !== undefined && (
           <p
@@ -174,11 +183,13 @@ function EconomyCell({
   label,
   value,
   tone,
+  ticker,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   tone: "default" | "gold" | "danger" | "muted";
+  ticker: string;
 }) {
   return (
     <PixelCard size="sm" tone="cream" faceClassName="px-3 py-2.5">
@@ -186,7 +197,13 @@ function EconomyCell({
         {icon}
         {label}
       </p>
-      <BoardAmount value={value} size="md" tone={tone} className="mt-1.5" />
+      <BoardAmount
+        value={value}
+        size="md"
+        tone={tone}
+        className="mt-1.5"
+        ticker={ticker}
+      />
     </PixelCard>
   );
 }

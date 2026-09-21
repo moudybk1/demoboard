@@ -1,6 +1,6 @@
 /**
- * Closed-demo gate. Playable tables sit behind an access cookie so the public
- * site can be the project link without pretending staking is live.
+ * Access cookie for wallet, account, and payout screens. Play, lobby, and
+ * rooms are public — matches start without this gate.
  *
  * Edge-safe: no Node builtins. The access code itself is checked only in the
  * enter route handler.
@@ -13,11 +13,9 @@ export const DEFAULT_DEMO_ACCESS_CODE = "BOARD-CLOSED";
 export const DEMO_CHANGE_EVENT = "board-demo-change";
 
 export const DEMO_ENTER_PATH = "/demo";
-export const DEMO_DEFAULT_NEXT = "/lobby";
+export const DEMO_DEFAULT_NEXT = "/play";
 
 const PROTECTED_PREFIXES = [
-  "/lobby",
-  "/room",
   "/wallet",
   "/account",
   "/wins",

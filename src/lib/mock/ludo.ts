@@ -1,3 +1,4 @@
+import { PLAY_ENTRY_FEE } from "@/lib/game/play-player";
 import { MAX_PLAYERS_PER_ROOM, prizePool } from "@/lib/types";
 
 /**
@@ -55,6 +56,72 @@ function yardPawns(seat: number): LudoPawn[] {
     status: "yard" as const,
     steps: 0,
   }));
+}
+
+const LUDO_RIVALS = [
+  { id: "bot-pixel", username: "PixelBaron" },
+  { id: "bot-dice", username: "DiceDuchess" },
+  { id: "bot-rent", username: "RentSeeker" },
+] as const;
+
+/** Fresh four-seat Ludo match. You plus three rivals, every pawn in the yard. */
+export function createFreshLudoMatch(
+  roomId: string,
+  you?: { id?: string; username?: string },
+): LudoRoomState {
+  const state = createLudoMatchForSeats(roomId, [
+    {
+      id: you?.id ?? "u_me",
+      username: you?.username ?? "You",
+      seat: 1,
+    },
+    ...LUDO_RIVALS.map((rival, index) => ({
+      id: rival.id,
+      username: rival.username,
+      seat: index + 2,
+    })),
+  ]);
+  return {
+    ...state,
+    players: state.players.map((player) => ({
+      ...player,
+      isYou: player.position === 1,
+    })),
+  };
+}
+
+/** Four human seats. `isYou` is assigned on the client from the connected wallet. */
+export function createLudoMatchForSeats(
+  roomId: string,
+  seats: { id: string; username: string; seat: number }[],
+): LudoRoomState {
+  return {
+    roomId,
+    entryFee: PLAY_ENTRY_FEE,
+    maxPlayers: MAX_PLAYERS_PER_ROOM,
+    activeSeat: 1,
+    turn: 1,
+    turnSecondsLeft: 30,
+    lastRoll: null,
+    players: [...seats]
+      .sort((left, right) => left.seat - right.seat)
+      .map((seat) => ({
+        id: seat.id,
+        username: seat.username,
+        position: seat.seat,
+        status: "alive" as const,
+        isYou: false,
+        pawns: yardPawns(seat.seat),
+      })),
+    log: [
+      {
+        id: "start",
+        seat: null,
+        message:
+          "Match started. Roll a 6 to leave the yard. First to finish all four pawns wins.",
+      },
+    ],
+  };
 }
 
 export const MOCK_LUDO_ROOM: LudoRoomState = {

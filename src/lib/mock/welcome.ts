@@ -25,22 +25,21 @@ export type WelcomeHighlight = {
 
 export const WELCOME_HERO = {
   brand: "BOARD",
-  eyebrow: "Closed demo · demo balances only",
+  eyebrow: "Four-player tables · live now",
   headline: "Relive your childhood. Play it differently.",
   support:
     "The board games you grew up with, reimagined as competitive four-player PvP.",
   ctas: [
     {
-      label: "Buy $BOARD",
-      href: BUY_BOARD_HREF,
+      label: "Play now",
+      href: "/play",
       variant: "primary",
-      external: true,
     },
     {
-      label: "Connect Wallet",
-      href: "#connect-wallet",
+      label: "Buy $BOARD",
+      href: BUY_BOARD_HREF,
       variant: "secondary",
-      action: "connect-wallet",
+      external: true,
     },
   ] as WelcomeCta[],
 };
@@ -68,17 +67,17 @@ export const WELCOME_HIGHLIGHTS: WelcomeHighlight[] = [
   {
     id: "wallet",
     title: "Do I need a wallet?",
-    body: "Not for this closed demo. You enter with an invitation code and play with demo balances. Wallet connection is planned for the live game.",
+    body: "Not to play. Sit a table now. Wallet connection is for staking when that ships.",
   },
   {
     id: "includes",
-    title: "What does the demo include?",
-    body: "Four-seat Monopoly and Ludo tables, demo pots, and the turn controls. No real tokens move.",
+    title: "What can I play?",
+    body: "Full Monopoly and Ludo matches. You plus three rivals. Last standing / first home wins the pot.",
   },
   {
     id: "code",
-    title: "How do I get in?",
-    body: "Use the access code from the project link. Without a code you can still try the public guided turn on the home page.",
+    title: "How do I start?",
+    body: "Tap Play, pick Monopoly or Ludo, and the match begins. No access code.",
   },
 ];
 
@@ -111,31 +110,31 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "deposit",
     index: 1,
-    title: "Enter your code",
-    body: "Invitation code from the project link.",
+    title: "Pick a game",
+    body: "Monopoly or Ludo. Four seats, one winner.",
     status: "upcoming",
-    href: "/demo",
+    href: "/play",
   },
   {
     id: "lobby",
     index: 2,
-    title: "Pick a table",
-    body: "Monopoly or Ludo. Demo pots only.",
+    title: "Sit the table",
+    body: "You plus three rivals. Match starts immediately.",
     status: "upcoming",
-    href: "/demo",
+    href: "/play",
   },
   {
     id: "win",
     index: 3,
-    title: "Join a demo table",
-    body: "Four seats. Nothing cashes out.",
+    title: "Crown the board",
+    body: "Last standing in Monopoly, first home in Ludo.",
     status: "upcoming",
-    href: "/demo",
+    href: "/play",
   },
 ];
 
 export const ONBOARDING_ACTIONS: WelcomeCta[] = [
-  { label: "Enter closed demo", href: "/demo", variant: "primary" },
+  { label: "Play now", href: "/play", variant: "primary" },
 ];
 
 /**

@@ -12,7 +12,7 @@ import {
 import { WalletConnectPanel } from "@/components/account/wallet-connect-panel";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { PixelCard } from "@/components/ui/pixel-card";
-import { ROBINHOOD_CHAIN_LABEL } from "@/lib/wallet/chains";
+import { getBoardChainLabel } from "@/lib/wallet/chains";
 
 type SignInContextValue = {
   open: boolean;
@@ -108,7 +108,7 @@ function SignInModal({
         <div className="flex items-start justify-between gap-3 border-b-[3px] border-void px-4 py-4 sm:px-5">
           <div>
             <p className="font-pixel text-xs font-semibold uppercase leading-none text-gold-deep">
-              {ROBINHOOD_CHAIN_LABEL}
+              {getBoardChainLabel()}
             </p>
             <h2
               id="sign-in-title"

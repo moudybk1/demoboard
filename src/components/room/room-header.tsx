@@ -4,6 +4,7 @@ import { Clock, LogOut } from "lucide-react";
 import { BoardLogo } from "@/components/layout/board-logo";
 import { PixelBadge } from "@/components/ui/pixel-badge";
 import { RoomEconomyHighlight } from "@/components/ui/room-economy-highlight";
+import { PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 
 export function RoomHeader({
   roomId,
@@ -13,6 +14,7 @@ export function RoomHeader({
   entryFee,
   seats = 4,
   balance,
+  waiting = false,
 }: {
   roomId: string;
   turn: number;
@@ -22,13 +24,14 @@ export function RoomHeader({
   entryFee: number;
   seats?: number;
   balance?: number;
+  waiting?: boolean;
 }) {
   void pot;
 
   return (
     <header className="border-b-[3px] border-void bg-surface/90 backdrop-blur-sm">
       <div className="mx-auto flex w-full max-w-[1800px] flex-wrap items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
-        <Link href="/" aria-label="BOARD home" className="shrink-0">
+        <Link href="/play" aria-label="Back to play" className="shrink-0">
           <BoardLogo />
         </Link>
 
@@ -36,31 +39,40 @@ export function RoomHeader({
           {roomId}
         </span>
 
-        <PixelBadge tone="neutral" className="hidden sm:inline-flex">
-          Turn {turn}
-        </PixelBadge>
+        {!waiting ? (
+          <>
+            <PixelBadge tone="neutral" className="hidden sm:inline-flex">
+              Turn {turn}
+            </PixelBadge>
 
-        <PixelBadge tone={turnSecondsLeft <= 10 ? "danger" : "neutral"}>
-          <Clock className="size-3" aria-hidden />
-          {turnSecondsLeft}s
-        </PixelBadge>
+            <PixelBadge tone={turnSecondsLeft <= 10 ? "danger" : "neutral"}>
+              <Clock className="size-3" aria-hidden />
+              {turnSecondsLeft}s
+            </PixelBadge>
+          </>
+        ) : (
+          <PixelBadge tone="neutral">Waiting</PixelBadge>
+        )}
 
         <div className="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
           <RoomEconomyHighlight
             entryFee={entryFee}
             seats={seats}
             balance={balance}
+            ticker={PLAY_STAKE_SYMBOL}
             variant="strip"
           />
         </div>
 
-        <Link
-          href="/lobby"
-          className="flex items-center gap-1.5 pixel-corners border-[3px] border-void bg-cream px-2.5 py-1 font-pixel text-xs font-semibold uppercase leading-none text-muted transition-colors hover:bg-danger hover:text-cream sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[10px]"
-        >
-          <LogOut className="size-3" aria-hidden />
-          <span className="hidden sm:inline">Leave</span>
-        </Link>
+        {!waiting ? (
+          <Link
+            href="/play"
+            className="flex items-center gap-1.5 pixel-corners border-[3px] border-void bg-cream px-2.5 py-1 font-pixel text-xs font-semibold uppercase leading-none text-muted transition-colors hover:bg-danger hover:text-cream sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[10px]"
+          >
+            <LogOut className="size-3" aria-hidden />
+            <span className="hidden sm:inline">Leave</span>
+          </Link>
+        ) : null}
       </div>
     </header>
   );

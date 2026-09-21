@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatBoard(amount: number) {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 6,
   }).format(amount);
 }
 

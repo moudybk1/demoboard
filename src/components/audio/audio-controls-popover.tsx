@@ -18,7 +18,14 @@ const STEP = 0.1;
  * Header sound control. On narrow screens the panel is a full-width sheet
  * under the header so it never clips off the left edge.
  */
-export function AudioControlsPopover({ className }: { className?: string }) {
+export function AudioControlsPopover({
+  className,
+  panel = "header",
+}: {
+  className?: string;
+  /** `corner` opens the mixer above a bottom-left control. */
+  panel?: "header" | "corner";
+}) {
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -126,7 +133,12 @@ export function AudioControlsPopover({ className }: { className?: string }) {
         <div
           role="dialog"
           aria-label="Sound volume"
-          className="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+4.85rem)] z-[80] sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-[16.5rem]"
+          className={cn(
+            "z-[80]",
+            panel === "corner"
+              ? "absolute bottom-[calc(100%+10px)] left-0 w-[16.5rem]"
+              : "fixed inset-x-4 top-[calc(env(safe-area-inset-top)+4.85rem)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-[16.5rem]",
+          )}
         >
           <PixelCard size="sm" faceClassName="p-4 sm:p-3">
             <p className="mb-3 font-pixel text-xs font-bold uppercase text-parchment">

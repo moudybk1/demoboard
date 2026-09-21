@@ -20,10 +20,12 @@ export function PrizeSplit({
   values,
   className,
   compact = false,
+  ticker = "BOARD",
 }: {
   values: PrizeSplitValues;
   className?: string;
   compact?: boolean;
+  ticker?: string;
 }) {
   return (
     <PixelCard
@@ -33,7 +35,7 @@ export function PrizeSplit({
       className={className}
       faceClassName={cn("space-y-2 p-4", compact ? "text-[11px]" : "text-sm")}
     >
-      <SplitRow label="Gross pot" value={values.grossPot} compact={compact} />
+      <SplitRow label="Gross pot" value={values.grossPot} compact={compact} ticker={ticker} />
       <SplitRow
         label={`Fee (${values.feePercent}%) → development`}
         value={values.treasuryAmount}
@@ -41,6 +43,7 @@ export function PrizeSplit({
           <Landmark className={compact ? "size-3" : "size-3.5"} aria-hidden />
         }
         compact={compact}
+        ticker={ticker}
       />
       <SplitRow
         label="Buyback"
@@ -49,6 +52,7 @@ export function PrizeSplit({
           <RefreshCw className={compact ? "size-3" : "size-3.5"} aria-hidden />
         }
         compact={compact}
+        ticker={ticker}
       />
       <SplitRow
         label="Burned"
@@ -56,6 +60,7 @@ export function PrizeSplit({
         tone="danger"
         icon={<Flame className={compact ? "size-3" : "size-3.5"} aria-hidden />}
         compact={compact}
+        ticker={ticker}
       />
       <SplitRow
         label="Winner receives"
@@ -63,6 +68,7 @@ export function PrizeSplit({
         tone="gold"
         emphasize
         compact={compact}
+        ticker={ticker}
       />
     </PixelCard>
   );
@@ -75,6 +81,7 @@ function SplitRow({
   icon,
   emphasize = false,
   compact = false,
+  ticker = "BOARD",
 }: {
   label: string;
   value: number;
@@ -82,6 +89,7 @@ function SplitRow({
   icon?: React.ReactNode;
   emphasize?: boolean;
   compact?: boolean;
+  ticker?: string;
 }) {
   return (
     <div
@@ -99,6 +107,7 @@ function SplitRow({
           value={value}
           size={emphasize && !compact ? "sm" : "xs"}
           tone={tone}
+          ticker={ticker}
           showTicker={!compact}
         />
       </dd>
