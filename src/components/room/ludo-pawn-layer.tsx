@@ -8,6 +8,7 @@ import { cellCenter, type LudoPawnView } from "@/lib/game/ludo-geometry";
 import { pawnGlyph, pawnSprite } from "@/lib/game/pawn-sprite";
 import { playHopSound } from "@/lib/game/sfx";
 import { seatColor } from "@/lib/game/seats";
+import { prefersReducedMotion } from "@/lib/motion/gsap-config";
 import { cn } from "@/lib/utils";
 
 const STEP_MS = 0.14;
@@ -66,7 +67,6 @@ function LudoPawnToken({
   const ref = useRef<HTMLButtonElement>(null);
   const color = seatColor(pawn.seat);
   const finished = pawn.status === "finished";
-  const inYard = pawn.status === "yard";
 
   // Place + idle bob.
   useEffect(() => {
@@ -80,40 +80,33 @@ function LudoPawnToken({
       top: `${pawn.point.y}%`,
     });
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches;
+    const reduced = prefersReducedMotion();
     if (reduced) return;
 
+    // Only animate selectable pawns. Idle-bobbing all 16 pieces burns frames.
+    if (!selectable) return;
+
     const idle = gsap.to(node, {
-      y: selectable ? -6 : inYard ? -2 : -4,
-      duration: selectable ? 0.55 : inYard ? 1.4 : 0.9,
+      y: -6,
+      duration: 0.55,
       ease: "sine.inOut",
       yoyo: true,
       repeat: -1,
-      // Idle bob yields when a hop timeline starts (overwrite: auto).
     });
 
-    const pulse = selectable
-      ? gsap.to(node, {
-          scale: 1.2,
-          duration: 0.45,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        })
-      : null;
+    const pulse = gsap.to(node, {
+      scale: 1.18,
+      duration: 0.45,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1,
+    });
 
     return () => {
       idle.kill();
-      pulse?.kill();
+      pulse.kill();
     };
-  }, [
-    pawn.point.x,
-    pawn.point.y,
-    selectable,
-    inYard,
-    moving,
-  ]);
+  }, [pawn.point.x, pawn.point.y, selectable, moving]);
 
   // Hop along the move path.
   useEffect(() => {
@@ -132,8 +125,7 @@ function LudoPawnToken({
       return;
     }
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches;
+    const reduced = prefersReducedMotion();
 
     if (reduced) {
       const end = cellCenter(
@@ -188,7 +180,8 @@ function LudoPawnToken({
       disabled={!selectable}
       onClick={onSelect}
       className={cn(
-        "absolute w-[4.6%] will-change-transform",
+        "absolute w-[4.6%]",
+        moving && "will-change-transform",
         selectable
           ? "pointer-events-auto cursor-pointer"
           : "pointer-events-none",

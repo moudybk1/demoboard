@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ActivityLog } from "@/components/room/activity-log";
 import {
@@ -12,10 +12,10 @@ import { LudoActionBar } from "@/components/room/ludo-action-bar";
 import { LudoBoardStage } from "@/components/room/ludo-board-stage";
 import { LudoPawnLayer } from "@/components/room/ludo-pawn-layer";
 import { LudoPlayerRail } from "@/components/room/ludo-player-rail";
+import { RoomTurnClock } from "@/components/room/room-turn-clock";
 import { WinnerScreen } from "@/components/room/winner-screen";
 import { randomDie, type DieValue } from "@/lib/game/dice";
 import { cellCenter, pawnsForBoard } from "@/lib/game/ludo-geometry";
-import { useTurnClock } from "@/hooks/use-turn-clock";
 import { MATCH_TURN_SECONDS, type TurnClockInfo } from "@/lib/game/match-clock";
 import {
   chooseNpcMove,
@@ -51,7 +51,7 @@ const NPC_THINK_MS = 650;
  * Ludo room with standard rules: 6 to exit, exact home, captures, blockades,
  * extra rolls on 6 / capture / finish, three-sixes penalty, and NPC seats.
  */
-export function LudoRoom({
+export const LudoRoom = memo(function LudoRoom({
   initialState,
   onClock,
   onAfkKick,
@@ -492,19 +492,7 @@ export function LudoRoom({
     if (result.kicked) onAfkKick?.();
   }, [onAfkKick]);
 
-  const secondsLeft = useTurnClock({
-    running: rollWindow,
-    resetKey: `${state.activeSeat}-${state.turn}-${state.lastRoll ?? "roll"}`,
-    onExpire: handleAfkExpire,
-  });
-
-  useEffect(() => {
-    onClock?.({
-      seconds: rollWindow ? secondsLeft : MATCH_TURN_SECONDS,
-      active: rollWindow,
-      strikes: youStrikes,
-    });
-  }, [onClock, rollWindow, secondsLeft, youStrikes]);
+  const clockKey = `${state.activeSeat}-${state.turn}-${state.lastRoll ?? "roll"}`;
 
   // NPC auto-roll when it becomes their turn.
   useEffect(() => {
@@ -563,16 +551,26 @@ export function LudoRoom({
             </>
           }
         />
-        <LudoActionBar
-          yourTurn={yourTurn && !awaitingPick && !movingId && !finished && !youOut}
-          rolling={rolling}
-          canRoll={canRoll}
-          canEndTurn={rollSpent}
-          value={die}
-          secondsLeft={rollWindow ? secondsLeft : null}
-          onRoll={handleRoll}
-          onEndTurn={handleEndTurn}
-        />
+        <RoomTurnClock
+          running={rollWindow}
+          resetKey={clockKey}
+          strikes={youStrikes}
+          onExpire={handleAfkExpire}
+          onClock={onClock}
+        >
+          {(secondsLeft) => (
+            <LudoActionBar
+              yourTurn={yourTurn && !awaitingPick && !movingId && !finished && !youOut}
+              rolling={rolling}
+              canRoll={canRoll}
+              canEndTurn={rollSpent}
+              value={die}
+              secondsLeft={secondsLeft}
+              onRoll={handleRoll}
+              onEndTurn={handleEndTurn}
+            />
+          )}
+        </RoomTurnClock>
         <p className="text-center font-mono text-xs uppercase tracking-wide text-faint">
           {finished
             ? "Match over"
@@ -615,4 +613,4 @@ export function LudoRoom({
       </aside>
     </div>
   );
-}
+});

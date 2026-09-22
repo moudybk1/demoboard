@@ -1,3 +1,5 @@
+import { memo, type CSSProperties } from "react";
+
 import {
   LUDO_CELLS,
   LUDO_SIZE,
@@ -52,7 +54,7 @@ export function LudoBoard({
   );
 }
 
-function YardBadge({ seat }: { seat: number }) {
+const YardBadge = memo(function YardBadge({ seat }: { seat: number }) {
   const color = seatColor(seat);
   // Place badge in the inner corner of each yard (away from the track).
   const placement: Record<number, string> = {
@@ -75,9 +77,9 @@ function YardBadge({ seat }: { seat: number }) {
       {pawnGlyph(seat)}
     </div>
   );
-}
+});
 
-function LudoCellView({ cell }: { cell: LudoCell }) {
+const LudoCellView = memo(function LudoCellView({ cell }: { cell: LudoCell }) {
   return (
     <div
       data-row={cell.row}
@@ -92,7 +94,6 @@ function LudoCellView({ cell }: { cell: LudoCell }) {
         cell.kind === "center" && "bg-gold",
       )}
       style={cellStyle(cell)}
-      title={cellTitle(cell)}
     >
       {cell.kind === "safe" && (
         <span
@@ -123,9 +124,9 @@ function LudoCellView({ cell }: { cell: LudoCell }) {
       )}
     </div>
   );
-}
+});
 
-function cellStyle(cell: LudoCell): React.CSSProperties | undefined {
+function cellStyle(cell: LudoCell): CSSProperties | undefined {
   if (cell.kind === "yard" || cell.kind === "yard-pad") {
     return {
       backgroundColor: yardHex(cell.seat ?? 1),
@@ -143,26 +144,4 @@ function cellStyle(cell: LudoCell): React.CSSProperties | undefined {
     };
   }
   return undefined;
-}
-
-function cellTitle(cell: LudoCell) {
-  const color = cell.seat ? seatColor(cell.seat).label : null;
-  switch (cell.kind) {
-    case "yard":
-      return `${color} yard`;
-    case "yard-pad":
-      return `${color} start pad`;
-    case "home-lane":
-      return `${color} home lane`;
-    case "entry":
-      return `${color} entry`;
-    case "safe":
-      return "Safe spot";
-    case "center":
-      return "Finish";
-    case "path":
-      return "Track";
-    default:
-      return undefined;
-  }
 }

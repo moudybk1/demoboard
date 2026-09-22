@@ -7,8 +7,9 @@ import { PIP_LAYOUT, randomDie, type DieValue } from "@/lib/game/dice";
 import { prefersReducedMotion } from "@/lib/motion/gsap-config";
 import { cn } from "@/lib/utils";
 
-const MIN_MS = 1600;
-const MAX_MS = 4200;
+const MIN_MS = 400;
+const MAX_MS = 1800;
+const BOOT_SEEN_KEY = "board.boot.seen";
 
 type Phase = "loading" | "leaving" | "gone";
 
@@ -26,6 +27,15 @@ export function AppBootLoader() {
   // No mount guard: effects only run on the client, and `mounted` was never
   // read during render, so the extra state was one wasted render pass.
   useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(BOOT_SEEN_KEY) === "1") {
+        setPhase("gone");
+        return;
+      }
+    } catch {
+      // private mode still shows the splash
+    }
+
     startedAt.current = performance.now();
     const reduced = prefersReducedMotion();
     const node = root.current;
@@ -183,9 +193,14 @@ export function AppBootLoader() {
         setPhase("leaving");
         window.setTimeout(() => {
           setPhase("gone");
+          try {
+            window.sessionStorage.setItem(BOOT_SEEN_KEY, "1");
+          } catch {
+            // ignore
+          }
           delete document.documentElement.dataset.boardBoot;
           document.body.style.overflow = "";
-        }, reduced ? 0 : 420);
+        }, reduced ? 0 : 220);
       }, wait);
     };
 

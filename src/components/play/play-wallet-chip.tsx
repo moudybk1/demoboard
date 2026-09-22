@@ -7,6 +7,7 @@ import { useSignIn } from "@/components/account/sign-in-provider";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { PixelCard } from "@/components/ui/pixel-card";
 import { useBoardTokenBalance } from "@/hooks/use-board-token-balance";
+import { useClientReady } from "@/hooks/use-client-ready";
 import { formatPlayEth, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import { cn } from "@/lib/utils";
 import {
@@ -22,6 +23,7 @@ import {
 export function PlayWalletChip() {
   const root = useRef<HTMLDivElement>(null);
   const wallet = useBoardTokenBalance();
+  const ready = useClientReady();
   const { openSignIn } = useSignIn();
   const { disconnect } = useDisconnect();
   const { switchChainAsync, isPending: switching } = useSwitchChain();
@@ -44,7 +46,7 @@ export function PlayWalletChip() {
     };
   }, [open]);
 
-  if (!wallet.isConnected || !wallet.address) {
+  if (!ready || !wallet.isConnected || !wallet.address) {
     return (
       <PixelButton
         type="button"

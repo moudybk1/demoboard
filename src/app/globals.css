@@ -397,8 +397,12 @@ html[data-reduced-motion="true"] .seat-idle {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     opacity: 0.92;
-    will-change: transform;
     animation: cloud-drift 14s ease-in-out infinite;
+  }
+
+  html[data-tab-hidden="1"] .board-clouds,
+  html[data-tab-hidden="1"] .board-sun-face {
+    animation-play-state: paused !important;
   }
 
   .board-sky-actors {
@@ -919,4 +923,188 @@ html[data-reduced-motion="true"] .footer-parade-pawn {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* Play plaza. Pixel props, smooth motion. Transforms and opacity only. */
+.play-world {
+  contain: layout paint style;
+}
+
+.play-horizon {
+  transition: background-color 320ms steps(6, end);
+}
+
+.play-sun {
+  animation: play-sun 8s ease-in-out infinite;
+}
+
+.play-cloud {
+  animation: play-cloud 16s ease-in-out infinite alternate;
+}
+
+.play-cloud-b {
+  animation-duration: 22s;
+  animation-delay: -6s;
+}
+
+.play-cloud-c {
+  animation-duration: 13s;
+  animation-delay: -3s;
+}
+
+.play-bird {
+  animation: play-bird 24s linear infinite;
+}
+
+.play-sway {
+  transform-origin: 50% 100%;
+  animation: play-sway 5.2s ease-in-out infinite;
+}
+
+.play-sway-late {
+  animation-delay: -2.4s;
+  animation-duration: 6.4s;
+}
+
+.play-flag {
+  transform-origin: 0 40%;
+  animation: play-flag 0.9s steps(3, end) infinite;
+}
+
+.play-flame {
+  transform-origin: 50% 80%;
+  animation: play-flame 0.42s steps(2, end) infinite;
+}
+
+.play-walker {
+  animation: play-walk 28s linear infinite;
+}
+
+.play-hop {
+  animation: play-hop 0.48s ease-in-out infinite;
+}
+
+.play-spark {
+  animation: play-spark 2.2s steps(2, end) infinite;
+}
+
+@keyframes play-sun {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
+@keyframes play-cloud {
+  from {
+    transform: translate3d(-20px, 0, 0);
+  }
+  to {
+    transform: translate3d(28px, 6px, 0);
+  }
+}
+
+@keyframes play-bird {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  40% {
+    transform: translate3d(28vw, -10px, 0);
+  }
+  100% {
+    transform: translate3d(70vw, 4px, 0);
+  }
+}
+
+@keyframes play-sway {
+  0%,
+  100% {
+    transform: rotate(-2.2deg);
+  }
+  50% {
+    transform: rotate(2.4deg);
+  }
+}
+
+@keyframes play-flag {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.45);
+  }
+}
+
+@keyframes play-flame {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.62;
+    transform: translate3d(1px, -3px, 0);
+  }
+}
+
+@keyframes play-walk {
+  from {
+    transform: translate3d(-3rem, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(100vw + 3rem), 0, 0);
+  }
+}
+
+@keyframes play-hop {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -7px, 0);
+  }
+}
+
+@keyframes play-spark {
+  0%,
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  55%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-sun,
+  .play-cloud,
+  .play-bird,
+  .play-sway,
+  .play-flag,
+  .play-flame,
+  .play-walker,
+  .play-hop,
+  .play-spark {
+    animation: none;
+  }
+}
+
+html[data-reduced-motion="true"] .play-sun,
+html[data-reduced-motion="true"] .play-cloud,
+html[data-reduced-motion="true"] .play-bird,
+html[data-reduced-motion="true"] .play-sway,
+html[data-reduced-motion="true"] .play-flag,
+html[data-reduced-motion="true"] .play-flame,
+html[data-reduced-motion="true"] .play-walker,
+html[data-reduced-motion="true"] .play-hop,
+html[data-reduced-motion="true"] .play-spark {
+  animation: none;
 }

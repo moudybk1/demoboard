@@ -55,11 +55,16 @@ const SHAPES: Record<number, string[]> = {
   ],
 };
 
+const spriteCache = new Map<number, PixelSprite>();
+
 /** Builds a seat-tinted pawn sprite with a unique silhouette. */
 export function pawnSprite(seat: number): PixelSprite {
-  const color = seatColor(seat);
-  const rows = SHAPES[((seat - 1) % 4) + 1] ?? SHAPES[1];
-  return {
+  const index = ((seat - 1) % 4) + 1;
+  const cached = spriteCache.get(index);
+  if (cached) return cached;
+  const color = seatColor(index);
+  const rows = SHAPES[index] ?? SHAPES[1];
+  const sprite: PixelSprite = {
     palette: {
       c: color.hex,
       d: color.shadeHex,
@@ -68,6 +73,8 @@ export function pawnSprite(seat: number): PixelSprite {
     },
     rows,
   };
+  spriteCache.set(index, sprite);
+  return sprite;
 }
 
 /** Short glyph used on yard badges and player rails. */

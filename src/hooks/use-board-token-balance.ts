@@ -26,7 +26,7 @@ export function useBoardTokenBalance() {
     chainId: expectedChainId,
     query: {
       enabled,
-      refetchInterval: 12_000,
+      refetchInterval: 30_000,
     },
   });
 

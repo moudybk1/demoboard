@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 
@@ -8,7 +8,6 @@ import { PixelArt } from "@/components/game/pixel-art";
 import { SeatDots } from "@/components/lobby/seat-dots";
 import { PlayArena, PlaySign } from "@/components/play/play-arena";
 import { PixelButton } from "@/components/ui/pixel-button";
-import { LudoDemo, MonopolyDemo } from "@/components/welcome/game-demos";
 import { pawnSprite } from "@/lib/game/pawn-sprite";
 import { PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import {
@@ -30,6 +29,15 @@ import { MAX_PLAYERS_PER_ROOM } from "@/lib/types";
 import type { PlaySit } from "@/hooks/use-play-sit";
 
 const EMPTY_GAMES: PlayLobbyGame[] = PLAY_LOBBY_SLOTS.map(emptyLobbyFromSlot);
+const LOBBY_POLL_MS = 8000;
+
+function readForfeitNotice(): "leave" | "afk" | null {
+  if (typeof window === "undefined") return null;
+  const forfeit = new URLSearchParams(window.location.search).get("forfeit");
+  if (forfeit === "afk") return "afk";
+  if (forfeit) return "leave";
+  return null;
+}
 
 function emptyLobbyFromSlot(
   slot: (typeof PLAY_LOBBY_SLOTS)[number],
@@ -48,6 +56,17 @@ function emptyLobbyFromSlot(
   };
 }
 
+function lobbySnapshot(games: PlayLobbyGame[]) {
+  return games
+    .map(
+      (game) =>
+        `${game.tableId}:${game.status}:${game.seated}:${game.blocked ? 1 : 0}:${game.seats
+          .map((seat) => `${seat.seat}:${seat.address}`)
+          .join(",")}`,
+    )
+    .join("|");
+}
+
 export function PlayLobby({
   initialGame,
   play,
@@ -60,7 +79,10 @@ export function PlayLobby({
     play;
   const [games, setGames] = useState<PlayLobbyGame[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [lobbyEpoch, setLobbyEpoch] = useState(0);
   const [selected, setSelected] = useState<PreviewGame>(initialGame);
+  const selectMonopoly = useCallback(() => setSelected("monopoly"), []);
+  const selectLudo = useCallback(() => setSelected("ludo"), []);
 
   useEffect(() => {
     rememberPreviewGame(selected);
@@ -68,13 +90,18 @@ export function PlayLobby({
 
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
 
     async function load() {
+      if (document.hidden || inFlight) return;
+      inFlight = true;
       try {
         const query = wallet.address
           ? `?address=${encodeURIComponent(wallet.address)}`
           : "";
-        const response = await fetch(`/api/play/lobby${query}`);
+        const response = await fetch(`/api/play/lobby${query}`, {
+          cache: "no-store",
+        });
         const payload = (await response.json()) as {
           games?: PlayLobbyGame[];
           error?: string;
@@ -82,24 +109,39 @@ export function PlayLobby({
         if (!response.ok || !payload.games) {
           throw new Error(payload.error ?? "Could not load the lobby.");
         }
-        if (!cancelled) {
-          setGames(payload.games);
-          setLoadError(null);
-        }
+        if (cancelled) return;
+        setGames((prev) => {
+          if (prev && lobbySnapshot(prev) === lobbySnapshot(payload.games!)) {
+            return prev;
+          }
+          return payload.games!;
+        });
+        setLoadError(null);
       } catch (caught) {
         if (!cancelled) {
           setLoadError(
             caught instanceof Error ? caught.message : "Could not load the lobby.",
           );
         }
+      } finally {
+        inFlight = false;
       }
     }
 
     void load();
     const timer = window.setInterval(() => {
       void load();
-    }, 4000);
-  }, [wallet.address]);
+    }, LOBBY_POLL_MS);
+    const onVisible = () => {
+      if (!document.hidden) void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [lobbyEpoch, wallet.address]);
 
   useEffect(() => {
     const node = root.current;
@@ -111,7 +153,7 @@ export function PlayLobby({
     if (sign) {
       intro.from(sign, {
         y: -14,
-        duration: 0.45,
+        duration: 0.35,
         ease: "power3.out",
         clearProps: "transform",
       });
@@ -120,25 +162,25 @@ export function PlayLobby({
       intro.from(
         picks,
         {
-          y: 16,
-          duration: 0.4,
-          stagger: 0.08,
+          y: 12,
+          duration: 0.3,
+          stagger: 0.05,
           ease: "power3.out",
           clearProps: "transform",
         },
-        "-=0.22",
+        "-=0.18",
       );
     }
     if (list) {
       intro.from(
         list,
         {
-          y: 12,
-          duration: 0.35,
+          y: 10,
+          duration: 0.28,
           ease: "power3.out",
           clearProps: "transform",
         },
-        "-=0.18",
+        "-=0.14",
       );
     }
     return () => {
@@ -148,17 +190,51 @@ export function PlayLobby({
 
   const tables = games ?? EMPTY_GAMES;
   const [refundQueued, setRefundQueued] = useState(false);
-  const [forfeitNotice, setForfeitNotice] = useState<"leave" | "afk" | null>(
-    null,
-  );
+  const [forfeitNotice] = useState(readForfeitNotice);
+  const [releasing, setReleasing] = useState(() => readForfeitNotice() !== null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setRefundQueued(params.get("refund") === "queued");
-    const forfeit = params.get("forfeit");
-    if (forfeit === "afk") setForfeitNotice("afk");
-    else if (forfeit) setForfeitNotice("leave");
   }, []);
+
+  useEffect(() => {
+    if (!forfeitNotice || !wallet.address) return;
+    let ignore = false;
+    setReleasing(true);
+
+    void (async () => {
+      try {
+        const query = `?address=${encodeURIComponent(wallet.address!)}`;
+        const response = await fetch(`/api/play/lobby${query}`, {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as { games?: PlayLobbyGame[] };
+        const address = wallet.address!.toLowerCase();
+        const seated = payload.games?.find((table) =>
+          table.seats.some((seat) => seat.address.toLowerCase() === address),
+        );
+        if (seated) {
+          await fetch(`/api/play/tables/${seated.tableId}/forfeit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address: wallet.address }),
+          });
+        }
+      } catch {
+        // A failed release keeps the Sit button; the next poll retries occupancy.
+      } finally {
+        if (ignore) return;
+        setReleasing(false);
+        setLobbyEpoch((epoch) => epoch + 1);
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, [forfeitNotice, wallet.address]);
+
   const mine = useMemo(() => {
     if (!wallet.address) return null;
     const address = wallet.address.toLowerCase();
@@ -172,8 +248,17 @@ export function PlayLobby({
     return null;
   }, [tables, wallet.address]);
 
-  const selectedTables = tables.filter((table) => table.game === selected);
+  const selectedTables = useMemo(
+    () => tables.filter((table) => table.game === selected),
+    [tables, selected],
+  );
   const world = PLAY_WORLDS.find((item) => item.id === selected) ?? PLAY_WORLDS[0];
+  const handleSit = useCallback(
+    (game: PreviewGame, tableId: string) => {
+      void sit(game, tableId);
+    },
+    [sit],
+  );
 
   return (
     <section
@@ -199,14 +284,14 @@ export function PlayLobby({
         {forfeitNotice === "afk" ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
             You were kicked for missing three rolls. Your entry fee is not refunded.
-            Sit a different waiting table to play again.
+            Sit again to play — the entry fee is charged again.
           </p>
         ) : null}
 
         {forfeitNotice === "leave" ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
-            You left the match. Your entry fee is not refunded. Sit a different
-            waiting table and pay the entry fee again.
+            You left the match. Your entry fee is not refunded. Sit again to
+            play — the entry fee is charged again.
           </p>
         ) : null}
 
@@ -215,14 +300,16 @@ export function PlayLobby({
           aria-label="Game"
           className="mt-5 grid w-full grid-cols-2 gap-3 sm:gap-4"
         >
-          {(["monopoly", "ludo"] as const).map((game) => (
-            <GamePickCard
-              key={game}
-              game={game}
-              active={selected === game}
-              onSelect={() => setSelected(game)}
-            />
-          ))}
+          <GamePickCard
+            game="monopoly"
+            active={selected === "monopoly"}
+            onSelect={selectMonopoly}
+          />
+          <GamePickCard
+            game="ludo"
+            active={selected === "ludo"}
+            onSelect={selectLudo}
+          />
         </div>
 
         {loadError ? (
@@ -285,9 +372,16 @@ export function PlayLobby({
                       loading={games === null}
                       sitPhase={sitPhase}
                       sitTableId={sitTableId}
-                      wallet={wallet}
-                      mine={mine}
-                      onSit={() => void sit(table.game, table.tableId)}
+                      viewerAddress={wallet.address}
+                      walletLoading={wallet.loading}
+                      onNetwork={wallet.onNetwork}
+                      walletError={Boolean(wallet.error)}
+                      canEnter={wallet.canEnter}
+                      symbol={wallet.symbol}
+                      entryFee={wallet.entryFee}
+                      releasing={releasing}
+                      mine={releasing ? null : mine}
+                      onSit={() => handleSit(table.game, table.tableId)}
                     />
                   ))}
                 </ul>
@@ -311,7 +405,7 @@ export function PlayLobby({
   );
 }
 
-function GamePickCard({
+const GamePickCard = memo(function GamePickCard({
   game,
   active,
   onSelect,
@@ -321,7 +415,6 @@ function GamePickCard({
   onSelect: () => void;
 }) {
   const monopoly = game === "monopoly";
-  const Demo = monopoly ? MonopolyDemo : LudoDemo;
   const world = PLAY_WORLDS.find((item) => item.id === game) ?? PLAY_WORLDS[0];
 
   return (
@@ -350,7 +443,7 @@ function GamePickCard({
             )}
           >
             <div className="pointer-events-none relative mx-auto w-full max-w-[16rem] px-2 pt-2">
-              <Demo />
+              <GamePickStill game={game} />
             </div>
             <div className="border-t-[3px] border-void bg-[#1a0c06]/85 px-2.5 py-2">
               <p
@@ -370,14 +463,72 @@ function GamePickCard({
       </div>
     </button>
   );
-}
+});
 
-function LobbyTableRow({
+const GamePickStill = memo(function GamePickStill({
+  game,
+}: {
+  game: PreviewGame;
+}) {
+  const monopoly = game === "monopoly";
+
+  return (
+    <div className="relative mx-auto aspect-square w-full max-w-[14rem]" aria-hidden>
+      {monopoly ? (
+        <div className="absolute inset-[6%] grid grid-cols-5 grid-rows-5 gap-px border-[3px] border-void bg-void">
+          {Array.from({ length: 25 }, (_, index) => {
+            const row = Math.floor(index / 5);
+            const col = index % 5;
+            const edge = row === 0 || row === 4 || col === 0 || col === 4;
+            const colors = ["#c45a32", "#3ec9b0", "#ff7a59", "#6cff9f", "#d4a017"];
+            return (
+              <span
+                key={index}
+                className={edge ? "block" : "block bg-[#1a6b4a]"}
+                style={edge ? { backgroundColor: colors[index % colors.length] } : undefined}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="absolute inset-[8%] grid grid-cols-2 grid-rows-2 gap-1 border-[3px] border-void bg-[#2a0c18] p-1">
+          <span className="bg-[#c45a32]" />
+          <span className="bg-[#3ec9b0]" />
+          <span className="bg-[#6cff9f]" />
+          <span className="bg-[#ff7a59]" />
+        </div>
+      )}
+      {([1, 2, 3, 4] as const).map((seat) => (
+        <span
+          key={seat}
+          className={cn(
+            "absolute w-7 sm:w-8",
+            seat === 1 && "bottom-[10%] left-[10%]",
+            seat === 2 && "bottom-[10%] right-[10%]",
+            seat === 3 && "top-[10%] right-[10%]",
+            seat === 4 && "top-[10%] left-[10%]",
+          )}
+        >
+          <PixelArt sprite={pawnSprite(seat)} />
+        </span>
+      ))}
+    </div>
+  );
+});
+
+const LobbyTableRow = memo(function LobbyTableRow({
   table,
   loading,
   sitPhase,
   sitTableId,
-  wallet,
+  viewerAddress,
+  walletLoading,
+  onNetwork,
+  walletError,
+  canEnter,
+  symbol,
+  entryFee,
+  releasing,
   mine,
   onSit,
 }: {
@@ -385,20 +536,44 @@ function LobbyTableRow({
   loading: boolean;
   sitPhase: PlaySit["sitPhase"];
   sitTableId: string | null;
-  wallet: PlaySit["wallet"];
+  viewerAddress: string | null;
+  walletLoading: boolean;
+  onNetwork: boolean;
+  walletError: boolean;
+  canEnter: boolean;
+  symbol: string;
+  entryFee: number;
+  releasing: boolean;
   mine: { game: PreviewGame; tableId: string | null; seat: number } | null;
   onSit: () => void;
 }) {
   const router = useRouter();
+  const viewerHere = Boolean(
+    viewerAddress &&
+      table.seats.some(
+        (row) => row.address.toLowerCase() === viewerAddress.toLowerCase(),
+      ),
+  );
   const seatedHere = mine?.tableId === table.tableId;
   const sittingThis = sitPhase !== "idle" && sitTableId === table.tableId;
   const inPlay = table.status === "playing";
   const full = table.seatsLeft <= 0 && !seatedHere;
   const busy = sitPhase !== "idle";
-  const ticker = wallet.symbol;
+  const ticker = symbol;
 
   let action: ReactNode;
-  if (inPlay && !seatedHere) {
+  if (releasing && viewerHere) {
+    action = (
+      <PixelButton
+        type="button"
+        size="sm"
+        variant={table.game === "monopoly" ? "monopoly" : "ludo"}
+        disabled
+      >
+        Sit
+      </PixelButton>
+    );
+  } else if (inPlay && !seatedHere) {
     action = (
       <span className="font-pixel text-[10px] uppercase text-gold">In play</span>
     );
@@ -421,15 +596,19 @@ function LobbyTableRow({
         Open
       </PixelButton>
     );
-  } else if (!wallet.onNetwork) {
+  } else if (loading || walletLoading) {
+    action = (
+      <span className="font-pixel text-[10px] uppercase text-cream/55">…</span>
+    );
+  } else if (!onNetwork) {
     action = (
       <span className="font-pixel text-[10px] uppercase text-cream/55">Network</span>
     );
-  } else if (wallet.error) {
+  } else if (walletError) {
     action = (
       <span className="font-pixel text-[10px] uppercase text-gold">No RPC</span>
     );
-  } else if (wallet.canEnter) {
+  } else if (canEnter) {
     action = (
       <PixelButton
         type="button"
@@ -450,7 +629,7 @@ function LobbyTableRow({
   } else {
     action = (
       <span className="font-pixel text-[10px] uppercase text-gold">
-        Need {formatBoard(wallet.entryFee)} {ticker}
+        Need {formatBoard(entryFee)} {ticker}
       </span>
     );
   }
@@ -497,4 +676,4 @@ function LobbyTableRow({
       <div className="shrink-0">{action}</div>
     </li>
   );
-}
+});

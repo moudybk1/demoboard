@@ -7,19 +7,19 @@ import gsap from "gsap";
 let configured = false;
 
 export function configureBoardMotion() {
-  if (configured || typeof window === "undefined") return;
-  configured = true;
+  if (typeof window === "undefined") return;
 
   gsap.config({
     nullTargetWarn: false,
-    force3D: true,
   });
-
-  gsap.ticker.lagSmoothing(500, 33);
   gsap.defaults({
     overwrite: "auto",
-    force3D: true,
   });
+
+  if (configured) return;
+  configured = true;
+
+  gsap.ticker.lagSmoothing(500, 33);
 
   try {
     if (window.localStorage.getItem("board.display.reducedMotion") === "1") {
@@ -32,9 +32,15 @@ export function configureBoardMotion() {
   // Pause the global ticker while the tab is hidden so stacked room
   // animations do not pile up catch-up work when the user returns.
   const onVisibility = () => {
-    if (document.hidden) gsap.globalTimeline.pause();
-    else gsap.globalTimeline.resume();
+    if (document.hidden) {
+      document.documentElement.dataset.tabHidden = "1";
+      gsap.globalTimeline.pause();
+    } else {
+      delete document.documentElement.dataset.tabHidden;
+      gsap.globalTimeline.resume();
+    }
   };
+  onVisibility();
   document.addEventListener("visibilitychange", onVisibility);
 }
 

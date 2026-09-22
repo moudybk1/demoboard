@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import {
   spritePixels,
   spriteSize,
@@ -5,12 +7,38 @@ import {
 } from "@/lib/game/pixel-sprite";
 import { cn } from "@/lib/utils";
 
+const urlCache = new Map<string, string>();
+
+function spriteKey(sprite: PixelSprite) {
+  let key = sprite.rows.join("\n");
+  for (const row of Object.keys(sprite.palette)) {
+    key += `|${row}${sprite.palette[row]}`;
+  }
+  return key;
+}
+
+/** One cached image per sprite, instead of a DOM node per pixel. */
+function spriteUrl(sprite: PixelSprite) {
+  const key = spriteKey(sprite);
+  const hit = urlCache.get(key);
+  if (hit) return hit;
+  const { width, height } = spriteSize(sprite);
+  const pixels = spritePixels(sprite);
+  let rects = "";
+  for (const pixel of pixels) {
+    rects += `<rect x="${pixel.x}" y="${pixel.y}" width="1" height="1" fill="${pixel.fill}"/>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" shape-rendering="crispEdges">${rects}</svg>`;
+  const url = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  urlCache.set(key, url);
+  return url;
+}
+
 /**
- * Renders a {@link PixelSprite} as an SVG of 1x1 rects on a viewBox sized to
- * the sprite grid. `shapeRendering: crispEdges` keeps the pixel grid sharp at
- * every scale instead of blurring the edges.
+ * Renders a {@link PixelSprite} as one cached image. Pixel grids stay sharp
+ * via `image-rendering: pixelated` without a DOM node per pixel.
  */
-export function PixelArt({
+export const PixelArt = memo(function PixelArt({
   sprite,
   label,
   className,
@@ -20,29 +48,14 @@ export function PixelArt({
   label?: string;
   className?: string;
 }) {
-  const { width, height } = spriteSize(sprite);
-  const pixels = spritePixels(sprite);
-
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className={cn("block h-auto w-full", className)}
-      shapeRendering="crispEdges"
+    <img
+      src={spriteUrl(sprite)}
+      alt={label ?? ""}
+      draggable={false}
       data-pixel
-      role={label ? "img" : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
-    >
-      {pixels.map((pixel) => (
-        <rect
-          key={`${pixel.x}-${pixel.y}`}
-          x={pixel.x}
-          y={pixel.y}
-          width={1}
-          height={1}
-          fill={pixel.fill}
-        />
-      ))}
-    </svg>
+      className={cn("pointer-events-none block h-auto w-full select-none", className)}
+      style={{ imageRendering: "pixelated" }}
+    />
   );
-}
+});

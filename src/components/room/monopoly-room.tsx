@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ActionBar } from "@/components/room/action-bar";
 import { ActivityLog } from "@/components/room/activity-log";
@@ -12,6 +12,7 @@ import {
 } from "@/components/room/pawn-layer";
 import { RentToast, type RentNotice } from "@/components/room/rent-toast";
 import { PlayerRail } from "@/components/room/player-rail";
+import { RoomTurnClock } from "@/components/room/room-turn-clock";
 import { WinnerScreen } from "@/components/room/winner-screen";
 import { playSfx } from "@/lib/audio/audio-manager";
 import { pathForward } from "@/lib/game/board-geometry";
@@ -19,8 +20,7 @@ import { BOARD_TILES } from "@/lib/game/monopoly-board";
 import { rollDice, type DieValue } from "@/lib/game/dice";
 import { saveMonopoly } from "@/lib/game/match-storage";
 import { isPlayBot } from "@/lib/game/play-table";
-import { useTurnClock } from "@/hooks/use-turn-clock";
-import { MATCH_TURN_SECONDS, type TurnClockInfo } from "@/lib/game/match-clock";
+import { type TurnClockInfo } from "@/lib/game/match-clock";
 import {
   applyRollMove,
   asPlayState,
@@ -48,7 +48,7 @@ type HopMove = {
   extraTurn: boolean;
 };
 
-export function MonopolyRoom({
+export const MonopolyRoom = memo(function MonopolyRoom({
   initialState,
   onClock,
   onAfkKick,
@@ -404,19 +404,7 @@ export function MonopolyRoom({
     if (result.kicked) onAfkKick?.();
   }, [commit, onAfkKick]);
 
-  const secondsLeft = useTurnClock({
-    running: rollWindow,
-    resetKey: `${state.activeSeat}-${state.turn}-${state.cue}`,
-    onExpire: handleAfkExpire,
-  });
-
-  useEffect(() => {
-    onClock?.({
-      seconds: rollWindow ? secondsLeft : MATCH_TURN_SECONDS,
-      active: rollWindow,
-      strikes: youStrikes,
-    });
-  }, [onClock, rollWindow, secondsLeft, youStrikes]);
+  const clockKey = `${state.activeSeat}-${state.turn}-${state.cue}`;
 
   useEffect(() => {
     if (finished || rolling || hop || pendingBuy !== null) return;
@@ -506,20 +494,30 @@ export function MonopolyRoom({
         className="lg:hidden"
       />
 
-      <ActionBar
-        yourTurn={yourTurn && !finished && !hop && pendingBuy === null && !youOut}
-        rolling={rolling}
-        moving={Boolean(hop)}
-        dice={dice}
-        canBuy={canBuy && !finished}
-        canPayJail={yourTurn && youInJail && !rolling && !hop && (you?.cash ?? 0) >= JAIL_FINE}
-        hasRolled={rolledThisTurn}
-        secondsLeft={rollWindow ? secondsLeft : null}
-        onRoll={handleRoll}
-        onBuy={handleBuy}
-        onEndTurn={handleEndTurn}
-        onPayJail={handlePayJail}
-      />
+      <RoomTurnClock
+        running={rollWindow}
+        resetKey={clockKey}
+        strikes={youStrikes}
+        onExpire={handleAfkExpire}
+        onClock={onClock}
+      >
+        {(secondsLeft) => (
+          <ActionBar
+            yourTurn={yourTurn && !finished && !hop && pendingBuy === null && !youOut}
+            rolling={rolling}
+            moving={Boolean(hop)}
+            dice={dice}
+            canBuy={canBuy && !finished}
+            canPayJail={yourTurn && youInJail && !rolling && !hop && (you?.cash ?? 0) >= JAIL_FINE}
+            hasRolled={rolledThisTurn}
+            secondsLeft={secondsLeft}
+            onRoll={handleRoll}
+            onBuy={handleBuy}
+            onEndTurn={handleEndTurn}
+            onPayJail={handlePayJail}
+          />
+        )}
+      </RoomTurnClock>
       {hop ? (
         <p className="text-center font-mono text-[10px] uppercase tracking-wide text-gold">
           Hopping {hop.path.length} {hop.path.length === 1 ? "tile" : "tiles"}
@@ -533,4 +531,4 @@ export function MonopolyRoom({
       <ActivityLog entries={state.log} className="xl:hidden" />
     </div>
   );
-}
+});

@@ -53,10 +53,13 @@ export function GameRoom({ roomId }: { roomId: string }) {
       if (leavingRef.current) return;
       leavingRef.current = true;
       setLeaving(true);
-      await forfeitPlayMatch();
+      await forfeitPlayMatch({
+        tableId: roomId,
+        address: address ?? undefined,
+      });
       router.push(reason === "afk" ? "/play?forfeit=afk" : "/play?forfeit=1");
     },
-    [router],
+    [address, roomId, router],
   );
 
   const handleAfkKick = useCallback(() => {

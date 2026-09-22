@@ -16,7 +16,7 @@ export function LudoBoardStage({
   return (
     <PixelFrame
       className={cn(
-        "scanlines relative mx-auto aspect-square w-full max-w-[min(100%,78vh)]",
+        "relative mx-auto aspect-square w-full max-w-[min(100%,78vh)]",
         className,
       )}
     >

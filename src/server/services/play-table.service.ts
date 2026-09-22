@@ -140,9 +140,7 @@ function ensureLobbySlots() {
   }
 
   for (const table of tables.values()) {
-    if (table.status === "waiting" && humanSeatCount(table) === 0) {
-      dropHouseNpcs(table);
-    }
+    healIdleLobby(table);
   }
 
   persistStore();
@@ -328,7 +326,10 @@ function rememberLeaver(table: PlayTable, address: string) {
   table.leftAddresses.push(leaver);
 }
 
-/** Drop a seat. Last human out resets a lobby slot to waiting. */
+/**
+ * Drop a seat. Last human out resets a lobby slot to waiting and clears the
+ * leave ban, so the same wallet can sit again and must pay the entry fee.
+ */
 function unseat(table: PlayTable, seat: PlaySeat, ban: boolean) {
   const index = table.seats.findIndex(
     (row) => row.leaveToken === seat.leaveToken || row.address === seat.address,
@@ -339,10 +340,30 @@ function unseat(table: PlayTable, seat: PlaySeat, ban: boolean) {
     dropHouseNpcs(table);
     if (isPlayLobbySlotId(table.id)) {
       table.status = "waiting";
+      table.leftAddresses = [];
     } else if (table.seats.length === 0) {
       table.status = "cancelled";
     }
   }
+}
+
+/** Empty waiting lobby slots are open to everyone, including a previous leaver. */
+function healIdleLobby(table: PlayTable) {
+  if (!isPlayLobbySlotId(table.id) || humanSeatCount(table) > 0) return false;
+  let changed = false;
+  if (table.seats.length > 0) {
+    dropHouseNpcs(table);
+    changed = true;
+  }
+  if (table.status !== "waiting") {
+    table.status = "waiting";
+    changed = true;
+  }
+  if ((table.leftAddresses ?? []).length > 0) {
+    table.leftAddresses = [];
+    changed = true;
+  }
+  return changed;
 }
 
 function leftoverFromLeftMatch(table: PlayTable, address: string) {
@@ -391,6 +412,8 @@ export function getPlayTable(tableId: string): PlayTableView | null {
 export function listPlayLobby(viewer?: string | null): PlayLobbyGame[] {
   return PLAY_LOBBY_SLOTS.map((slot) => {
     const table = tables.get(slot.id) ?? newEmptySlot(slot);
+    if (!tables.has(slot.id)) tables.set(slot.id, table);
+    healIdleLobby(table);
     return asLobby(table, viewer);
   });
 }
