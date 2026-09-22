@@ -462,6 +462,7 @@ test("Paid Ludo waits for four distinct paying humans and never inserts house bo
       document.usedTx = [];
       document.matches = {};
       document.pendingRefunds = [];
+      document.entryCutoverBlock = "1";
     },
   );
   const chain = await import("../src/server/lib/play-chain");
@@ -485,7 +486,7 @@ test("Paid Ludo waits for four distinct paying humans and never inserts house bo
     service.sitPlayTable(entry),
     service.sitPlayTable(entry),
   ]);
-  assert.ok(first.ok && retry.ok);
+  assert.ok(first.ok && retry.ok, JSON.stringify({ first, retry }));
   if (!first.ok || !retry.ok) return;
   assert.equal(first.seat, retry.seat);
   await store.withPlayDocument<{ pendingRefunds: unknown[] }, void>(
