@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { erc20Abi, type Hex } from "viem";
-import { usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
+import { parseEther, stringToHex, type Hex } from "viem";
+import { usePublicClient, useSendTransaction, useSwitchChain } from "wagmi";
 import { useBoardTokenBalance } from "@/hooks/use-board-token-balance";
 import { usePlaySession } from "@/hooks/use-play-session";
 import { readResponseJson } from "@/lib/fetch-json";
-import { PLAY_ENTRY_AMOUNT, savePlayPlayer } from "@/lib/game/play-player";
-import { getUsdgAddress, usdgUnits } from "@/lib/wallet/usdg";
+import { PLAY_ENTRY_FEE_ETH, savePlayPlayer } from "@/lib/game/play-player";
 import {
   clearPendingPlayPayment,
   readPendingPlayPayment,
@@ -37,7 +36,7 @@ export function usePlaySit() {
   const wallet = useBoardTokenBalance();
   const ensureSession = usePlaySession();
   const { switchChainAsync, isPending: switching } = useSwitchChain();
-  const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
   const publicClient = usePublicClient({ chainId: wallet.expectedChainId });
   const busy = useRef(false);
   const [sitPhase, setSitPhase] = useState<SitPhase>("idle");
@@ -90,11 +89,9 @@ export function usePlaySit() {
       ) {
         // Never open a wallet transfer for a disabled game, even with a stale server.
         if (!isGameEnabled(game)) throw new Error(GAME_DISABLED_MESSAGE);
-        const token = getUsdgAddress();
-        if (!token) throw new Error("USDG is not configured for this network.");
         if (!wallet.canEnter)
           throw new Error(
-            "Check your network and USDG balance before paying.",
+            "Check your network and entry balance before paying.",
           );
         const configResponse = await fetch("/api/play/config", {
           cache: "no-store",
@@ -110,11 +107,10 @@ export function usePlaySit() {
         if (!config.entriesAllowed)
           throw new Error(config.entryBlockReason ?? "Paid entries are paused.");
         setSitPhase("sending");
-        const hash = await writeContractAsync({
-          address: token,
-          abi: erc20Abi,
-          functionName: "transfer",
-          args: [config.treasury, usdgUnits(PLAY_ENTRY_AMOUNT)],
+        const hash = await sendTransactionAsync({
+          to: config.treasury,
+          value: parseEther(PLAY_ENTRY_FEE_ETH),
+          data: stringToHex(tableId),
           chainId: wallet.expectedChainId,
         });
         pending = { tableId, game, address, txHash: hash };

@@ -17,7 +17,7 @@ import {
 } from "@/lib/wallet/chains";
 
 /**
- * Play HUD wallet: address + live USDG balance, pinned top-right.
+ * Play HUD wallet: address + live ETH balance, pinned top-right.
  * Numbers use Outfit so 0.002 / 0.008 stay readable at HUD size.
  */
 export function PlayWalletChip() {

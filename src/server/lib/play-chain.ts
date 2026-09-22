@@ -3,13 +3,10 @@ import { dirname } from "node:path";
 import {
   createPublicClient,
   createWalletClient,
-  decodeEventLog,
-  decodeFunctionData,
-  encodeFunctionData,
-  erc20Abi,
   formatEther,
-  formatUnits,
+  hexToString,
   http,
+  parseEther,
   keccak256,
   parseTransaction,
   recoverTransactionAddress,
@@ -18,7 +15,7 @@ import {
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-import { PLAY_ENTRY_AMOUNT } from "@/lib/game/play-player";
+import { PLAY_ENTRY_FEE_ETH } from "@/lib/game/play-player";
 import { boardRpcFetch } from "@/server/lib/board-rpc-fetch";
 import { playDataPath } from "@/server/lib/play-data-path";
 import { withPlayDocument } from "@/server/lib/play-store";
@@ -28,11 +25,10 @@ import {
   getBoardExplorerUrl,
   getBoardRpcUrl,
 } from "@/lib/wallet/chains";
-import { getUsdgAddress, USDG_DECIMALS, usdgUnits } from "@/lib/wallet/usdg";
 
 const TREASURY_PATH = playDataPath("play-treasury.json");
 
-export const PLAY_SIT_VALUE = usdgUnits(PLAY_ENTRY_AMOUNT);
+export const PLAY_SIT_VALUE = parseEther(PLAY_ENTRY_FEE_ETH);
 
 type TreasuryFile = {
   address: Hex;
@@ -98,7 +94,7 @@ function loadTreasury(): TreasuryFile {
     );
   }
   console.info(
-    `[play-treasury] created ${account.address} · fund it with USDG and ETH for gas`,
+    `[play-treasury] created ${account.address} · faucet it so refunds can pay gas`,
   );
   return created;
 }
@@ -152,35 +148,24 @@ export type SitTxError = {
 };
 
 /**
- * Confirm a sit payment: a successful USDG `transfer` of the entry amount
- * from the player to the play treasury. Native ETH is gas only.
+ * Confirm a sit payment: successful native transfer of the entry fee from the
+ * player to the play treasury on the active Robinhood chain.
  * Client already waited for the receipt; keep this tight so seating is not laggy.
  */
-function deliveredUsdg(
-  receipt: { logs: readonly { address: Hex; data: Hex; topics: readonly Hex[] }[] },
-  token: Hex,
-  from: string,
-  to: string,
-  amount: bigint,
+/** Empty calldata is a legacy sit. New sits embed the lobby table id. */
+export function sitPaymentMatchesTable(
+  input: Hex | null | undefined,
+  tableId: string,
 ) {
-  return receipt.logs.some((log) => {
-    if (log.address.toLowerCase() !== token.toLowerCase()) return false;
-    try {
-      const event = decodeEventLog({
-        abi: erc20Abi,
-        data: log.data,
-        topics: log.topics as unknown as [Hex, ...Hex[]],
-      });
-      return (
-        event.eventName === "Transfer" &&
-        event.args.from.toLowerCase() === from &&
-        event.args.to.toLowerCase() === to &&
-        event.args.value === amount
-      );
-    } catch {
-      return false;
-    }
-  });
+  if (!input || input === "0x") return true;
+  try {
+    const text = hexToString(input).replace(/\0/g, "").trim().toUpperCase();
+    if (!text) return true;
+    const wanted = tableId.toUpperCase();
+    return text === wanted;
+  } catch {
+    return false;
+  }
 }
 
 export async function verifySitTransaction(input: {
@@ -188,20 +173,9 @@ export async function verifySitTransaction(input: {
   from: Hex;
   tableId?: string;
 }): Promise<{ ok: true } | { ok: false; error: SitTxError }> {
-  const token = getUsdgAddress();
-  if (!token) {
-    return {
-      ok: false,
-      error: {
-        code: "TX_MISMATCH",
-        message: "USDG is not configured for this network.",
-      },
-    };
-  }
   const client = publicClient();
   const expectedTo = getTreasury().address.toLowerCase();
   const expectedFrom = input.from.toLowerCase();
-  void input.tableId;
 
   let tx: Awaited<ReturnType<typeof client.getTransaction>> | null = null;
   let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null =
@@ -269,41 +243,33 @@ export async function verifySitTransaction(input: {
 
   const to = tx.to?.toLowerCase();
   const from = tx.from.toLowerCase();
-  if (to !== token.toLowerCase() || from !== expectedFrom || (tx.value ?? BigInt(0)) !== BigInt(0)) {
+  if (to !== expectedTo || from !== expectedFrom) {
     return {
       ok: false,
       error: {
         code: "TX_MISMATCH",
-        message: "Sit must be a USDG transfer from this wallet, with no native value.",
+        message:
+          "Sit transaction does not pay the play treasury from this wallet.",
       },
     };
   }
 
-  let recipient = "";
-  let amount = BigInt(-1);
-  try {
-    const decoded = decodeFunctionData({ abi: erc20Abi, data: tx.input });
-    if (decoded.functionName !== "transfer") throw new Error("not transfer");
-    recipient = decoded.args[0].toLowerCase();
-    amount = decoded.args[1];
-  } catch {
-    recipient = "";
-  }
-  if (recipient !== expectedTo || amount !== PLAY_SIT_VALUE) {
+  if (tx.value !== PLAY_SIT_VALUE) {
     return {
       ok: false,
       error: {
         code: "TX_MISMATCH",
-        message: `Sit must transfer exactly ${PLAY_ENTRY_AMOUNT} USDG to the play treasury.`,
+        message: `Sit must send exactly ${PLAY_ENTRY_FEE_ETH} ETH.`,
       },
     };
   }
-  if (!deliveredUsdg(receipt, token, expectedFrom, expectedTo, PLAY_SIT_VALUE)) {
+
+  if (input.tableId && !sitPaymentMatchesTable(tx.input, input.tableId)) {
     return {
       ok: false,
       error: {
         code: "TX_MISMATCH",
-        message: "The USDG transfer did not arrive in the play treasury.",
+        message: "Sit payment is for a different table.",
       },
     };
   }
@@ -325,11 +291,10 @@ type ExplorerTx = {
   timeStamp?: string;
   isError?: string;
   txreceipt_status?: string;
-  contractAddress?: string;
 };
 
-async function treasuryTokenRows(token: Hex): Promise<ExplorerTx[]> {
-  const url = `${getBoardExplorerUrl()}/api?module=account&action=tokentx&contractaddress=${token}&address=${getTreasury().address}&sort=desc&page=1&offset=80`;
+async function treasuryExplorerRows(): Promise<ExplorerTx[]> {
+  const url = `${getBoardExplorerUrl()}/api?module=account&action=txlist&address=${getTreasury().address}&sort=desc&page=1&offset=80`;
   try {
     const response = await boardRpcFetch(url, {
       signal: AbortSignal.timeout(4_000),
@@ -342,11 +307,9 @@ async function treasuryTokenRows(token: Hex): Promise<ExplorerTx[]> {
   }
 }
 
-/** Successful unused-candidate USDG sits to the treasury, oldest first. */
+/** Successful unused-candidate sit payments to the treasury, oldest first. */
 export async function listSuccessfulSitHashes(from: Hex): Promise<Hex[]> {
-  const token = getUsdgAddress();
-  if (!token) return [];
-  const rows = await treasuryTokenRows(token);
+  const rows = await treasuryExplorerRows();
   const fromKey = from.toLowerCase();
   const treasuryKey = getTreasury().address.toLowerCase();
   const value = PLAY_SIT_VALUE.toString();
@@ -356,10 +319,9 @@ export async function listSuccessfulSitHashes(from: Hex): Promise<Hex[]> {
         row.hash &&
         row.from?.toLowerCase() === fromKey &&
         row.to?.toLowerCase() === treasuryKey &&
-        row.contractAddress?.toLowerCase() === token.toLowerCase() &&
         row.value === value &&
-        row.isError !== "1" &&
-        row.txreceipt_status !== "0",
+        row.isError === "0" &&
+        row.txreceipt_status === "1",
     )
     .map((row) => row.hash!.toLowerCase() as Hex)
     .reverse();
@@ -373,9 +335,7 @@ export async function sitWasRefunded(input: {
   hash: Hex;
   from: Hex;
 }): Promise<boolean> {
-  const token = getUsdgAddress();
-  if (!token) return false;
-  const rows = await treasuryTokenRows(token);
+  const rows = await treasuryExplorerRows();
   const sit = rows.find(
     (row) => row.hash?.toLowerCase() === input.hash.toLowerCase(),
   );
@@ -403,31 +363,15 @@ export type RefundSitResult =
 
 export type SignedPlayTransfer = { raw: Hex; hash: Hex; nonce: number };
 
-/** Validate a signed USDG transfer, not caller-provided or stale journal metadata. */
+/** Validate signed bytes, not caller-provided or stale journal metadata. */
 export async function assertPlayTransfer(transfer: SignedPlayTransfer, to?: Hex, amount?: string) {
-  const token = getUsdgAddress();
   const serializedTransaction = transfer.raw as TransactionSerialized;
   const tx = parseTransaction(serializedTransaction);
   const sender = await recoverTransactionAddress({ serializedTransaction });
-  let recipient = "";
-  let units = BigInt(-1);
-  const calldata = (tx as { data?: Hex }).data ?? "0x";
-  try {
-    const decoded = decodeFunctionData({ abi: erc20Abi, data: calldata });
-    if (decoded.functionName === "transfer") {
-      recipient = decoded.args[0].toLowerCase();
-      units = decoded.args[1];
-    }
-  } catch {
-    recipient = "";
-  }
-  const expectedUnits = amount === undefined ? null : usdgUnits(amount);
-  if (!token || keccak256(transfer.raw) !== transfer.hash || tx.nonce !== transfer.nonce ||
+  if (keccak256(transfer.raw) !== transfer.hash || tx.nonce !== transfer.nonce ||
       tx.chainId !== getBoardChainId() || sender.toLowerCase() !== getTreasury().address.toLowerCase() ||
-      tx.to?.toLowerCase() !== token.toLowerCase() || (tx.value ?? BigInt(0)) !== BigInt(0) ||
-      !recipient ||
-      (to && recipient !== to.toLowerCase()) ||
-      (expectedUnits !== null && units !== expectedUnits)) {
+      (to && tx.to?.toLowerCase() !== to.toLowerCase()) ||
+      (amount && tx.value !== parseEther(amount))) {
     throw new Error("Signed payment intent does not match its network, treasury, recipient or amount. Manual review required.");
   }
 }
@@ -442,16 +386,9 @@ export async function preparePlayTransfer(
   amount: string,
   intentId: string,
 ): Promise<SignedPlayTransfer> {
-  const token = getUsdgAddress();
-  if (!token) throw new Error("USDG is not configured for this network.");
   const account = privateKeyToAccount(getTreasury().privateKey);
   const client = publicClient();
-  const units = usdgUnits(amount);
-  const data = encodeFunctionData({
-    abi: erc20Abi,
-    functionName: "transfer",
-    args: [to, units],
-  });
+  const value = parseEther(amount);
   const wallet = createWalletClient({
     account,
     chain: getBoardChain(),
@@ -476,32 +413,23 @@ export async function preparePlayTransfer(
       const nonce = Math.max(chainNonce, record.nextNonce ?? chainNonce);
       const prepared = await wallet.prepareTransactionRequest({
         account,
-        to: token,
-        data,
-        value: BigInt(0),
+        to,
+        value,
         nonce,
       });
-      const [gasBalance, tokenBalance] = await Promise.all([
-        client.getBalance({ address: account.address }),
-        client.readContract({
-          address: token,
-          abi: erc20Abi,
-          functionName: "balanceOf",
-          args: [account.address],
-        }),
-      ]);
+      const balance = await client.getBalance({ address: account.address });
       const cost =
+        value +
         prepared.gas *
-        (prepared.maxFeePerGas ?? prepared.gasPrice ?? BigInt(0));
-      if (gasBalance < cost || tokenBalance < units)
+          (prepared.maxFeePerGas ?? prepared.gasPrice ?? BigInt(0));
+      if (balance < cost)
         throw new Error(
-          "The house has insufficient USDG or gas for this payout.",
+          "The house has insufficient funds for the payout and gas.",
         );
       const raw = await account.signTransaction({
         chainId: getBoardChainId(),
-        to: token,
-        data,
-        value: BigInt(0),
+        to,
+        value,
         nonce,
         gas: prepared.gas,
         ...(prepared.maxFeePerGas != null
@@ -545,42 +473,33 @@ export async function playTransferReceipt(
 
 export async function getPlayTreasuryStatus() {
   const client = publicClient();
-  const token = getUsdgAddress();
   try {
     const balance = await client.getBalance({ address: getTreasury().address });
-    const tokenBalance = token
-      ? await client.readContract({
-          address: token,
-          abi: erc20Abi,
-          functionName: "balanceOf",
-          args: [getTreasury().address],
-        })
-      : BigInt(0);
     const fees = await client.estimateFeesPerGas();
     const zero = BigInt(0);
-    const fallbackGas = BigInt(80_000);
+    const fallbackGas = BigInt(21_000);
     const maxFee = fees.maxFeePerGas ?? fees.gasPrice ?? zero;
     const gasCost = fallbackGas * maxFee;
     return {
       address: getTreasury().address,
       balanceWei: balance.toString(),
       balanceEth: formatEther(balance),
-      tokenBalance: formatUnits(tokenBalance, USDG_DECIMALS),
-      canRefund: Boolean(token) && balance >= gasCost && tokenBalance >= PLAY_SIT_VALUE,
+      canRefund: balance >= PLAY_SIT_VALUE + gasCost,
     };
   } catch {
     return {
       address: getTreasury().address,
       balanceWei: "0",
       balanceEth: "0",
-      tokenBalance: "0",
       canRefund: false,
     };
   }
 }
 
 /**
- * Return the 1 USDG sit fee. The house wallet must also hold ETH for gas.
+ * Return the 0.002 ETH sit fee. The house wallet must also hold gas; if it
+ * only holds the sit amount, this fails with INSUFFICIENT_FUNDS so the table
+ * service can unseat the player and retry later.
  */
 export async function refundSit(
   to: Hex,
@@ -589,7 +508,7 @@ export async function refundSit(
   try {
     const transfer = await preparePlayTransfer(
       to,
-      PLAY_ENTRY_AMOUNT,
+      PLAY_ENTRY_FEE_ETH,
       `refund:${intentId}`,
     );
     const receipt = await playTransferReceipt(transfer.hash);

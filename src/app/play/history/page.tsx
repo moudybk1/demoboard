@@ -52,7 +52,7 @@ export default function PaidHistoryPage() {
       </li>)}</ul> : <p>No paid matches for this wallet.</p>}
       <h2 className="mt-8 text-xl">Entry refunds</h2>
       {history.refunds.length ? <ul className="mt-3 space-y-4">{history.refunds.map((refund) => <li key={refund.id} className="border border-cream/30 p-4">
-        <p>1 USDG · {refund.status} · {new Date(refund.createdAt).toISOString()}</p>
+        <p>0.002 ETH · {refund.status} · {new Date(refund.createdAt).toISOString()}</p>
         {refund.txHash ? <a className="text-gold underline" href={`${getBoardExplorerUrl()}/tx/${refund.txHash}`} target="_blank" rel="noreferrer">Refund transaction</a> : null}
         {refund.error ? <p>{refund.error}</p> : null}
       </li>)}</ul> : <p>No refunds for this wallet.</p>}

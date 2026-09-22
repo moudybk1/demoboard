@@ -5,7 +5,7 @@
 export const TOKEN_INFO = {
   symbol: "BOARD",
   chain: "Robinhood Chain",
-  role: "BOARD is separate from paid Ludo. Ludo entries, refunds and winner payouts use USDG.",
+  role: "BOARD is separate from paid Ludo. Ludo entries, refunds and winner payouts use native ETH.",
   feeNote:
     "The operator treasury retains 2% of a settled Ludo pot. No automatic token buyback or burn is implemented.",
 };
@@ -23,7 +23,7 @@ export const ROADMAP: RoadmapItem[] = [
     id: "tables",
     phase: "Now",
     title: "Ludo-first testing",
-    body: "Server-authoritative Ludo with four paying humans and USDG settlement. Mainnet entry is gated. Monopoly is disabled: Work in progress.",
+    body: "Server-authoritative Ludo with four paying humans and native ETH settlement. Mainnet entry is gated. Monopoly is disabled: Work in progress.",
     status: "live",
   },
   {
@@ -37,7 +37,7 @@ export const ROADMAP: RoadmapItem[] = [
     id: "season",
     phase: "Later",
     title: "Seasons & leaderboards",
-    body: "Planned ranked play and cosmetic boards. These features do not change the current USDG payout rules or promise automatic token burns.",
+    body: "Planned ranked play and cosmetic boards. These features do not change the current ETH payout rules or promise automatic token burns.",
     status: "later",
   },
 ];

@@ -10,8 +10,8 @@ import {
 } from "@/server/services/play-match-engine";
 import { withPlayDocument } from "@/server/lib/play-store";
 import { ServiceError } from "@/server/lib/service-error";
-import { PLAY_ENTRY_AMOUNT, PLAY_ENTRY_FEE } from "@/lib/game/play-player";
-import { usdgUnits } from "@/lib/wallet/usdg";
+import { PLAY_ENTRY_FEE, PLAY_ENTRY_FEE_ETH } from "@/lib/game/play-player";
+import { parseEther } from "viem";
 import {
   isPlayBot,
   isPlayLobbySlotId,
@@ -475,7 +475,7 @@ export function getPlayConfig() {
   return {
     treasury: getPlayTreasuryAddress(),
     entryFee: PLAY_ENTRY_FEE,
-    entryFeeWei: usdgUnits(PLAY_ENTRY_AMOUNT).toString(),
+    entryFeeWei: parseEther(PLAY_ENTRY_FEE_ETH).toString(),
   };
 }
 
@@ -786,7 +786,7 @@ export async function sitPlayTable(input: {
 }
 
 /**
- * Seat a wallet that already paid 1 USDG but never got a room.
+ * Seat a wallet that already paid 0.002 ETH but never got a room.
  * One payment opens the table. Any extra successful payments are refunded.
  */
 export async function claimUnpaidSit(input: {

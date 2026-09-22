@@ -43,7 +43,7 @@ export function getBoardChainLabel() {
     : ROBINHOOD_CHAIN_LABEL;
 }
 
-/** Optional BOARD ERC-20. Paid play uses USDG; this address is for token pages. */
+/** Optional BOARD ERC-20. Play sits with native ETH; this is for token pages. */
 export function getBoardTokenAddress(): `0x${string}` | null {
   const raw = process.env.NEXT_PUBLIC_BOARD_TOKEN_ADDRESS?.trim();
   if (!raw || !/^0x[a-fA-F0-9]{40}$/.test(raw)) return null;

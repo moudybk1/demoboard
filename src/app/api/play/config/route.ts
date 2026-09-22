@@ -20,13 +20,13 @@ export async function GET() {
       ...config,
       ...readiness,
       entriesAllowed: readiness.entriesAllowed && treasury.canRefund,
-      entryBlockReason: readiness.entryBlockReason ?? (treasury.canRefund ? null : "Paid entries paused: the treasury needs USDG and ETH for gas."),
+      entryBlockReason: readiness.entryBlockReason ?? (treasury.canRefund ? null : "Paid entries paused: treasury gas reserve is insufficient."),
       symbol: PLAY_STAKE_SYMBOL,
       chainId: getBoardChainId(),
       chainLabel: getBoardChainLabel(),
       faucet: ROBINHOOD_TESTNET_FAUCET,
       entryFee: PLAY_ENTRY_FEE,
-      treasuryBalance: treasury.tokenBalance,
+      treasuryBalance: treasury.balanceEth,
       canRefund: treasury.canRefund,
     });
   } catch (error) {
