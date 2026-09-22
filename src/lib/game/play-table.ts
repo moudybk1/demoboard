@@ -72,9 +72,12 @@ export type PlaySeatRecord = {
   address: string;
   seat: number;
   leaveToken: string;
+  /** Sit payment that proves this seat on any server instance. */
+  txHash?: string;
 };
 
 const SEAT_KEY = "board.play.seat";
+const TABLE_KEY = "board.play.table";
 
 export function savePlaySeat(record: PlaySeatRecord) {
   if (typeof window === "undefined") return;
@@ -92,7 +95,13 @@ export function readPlaySeat(): PlaySeatRecord | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PlaySeatRecord;
     if (!parsed?.tableId || !parsed.address || !parsed.leaveToken) return null;
-    return parsed;
+    return {
+      tableId: parsed.tableId,
+      address: parsed.address,
+      seat: parsed.seat,
+      leaveToken: parsed.leaveToken,
+      txHash: typeof parsed.txHash === "string" ? parsed.txHash : undefined,
+    };
   } catch {
     return null;
   }
@@ -102,8 +111,33 @@ export function clearPlaySeat() {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(SEAT_KEY);
+    window.sessionStorage.removeItem(TABLE_KEY);
   } catch {
     // ignore
+  }
+}
+
+/** Table returned by a successful sit, so the room can open if another instance has not caught up. */
+export function savePlayTableSnapshot(table: PlayTableView) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(TABLE_KEY, JSON.stringify(table));
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+export function readPlayTableSnapshot(tableId: string): PlayTableView | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(TABLE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PlayTableView;
+    if (!parsed?.id || parsed.id.toUpperCase() !== tableId.toUpperCase()) return null;
+    if (!Array.isArray(parsed.seats)) return null;
+    return parsed;
+  } catch {
+    return null;
   }
 }
 

@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseEther } from "viem";
+import { parseEther, stringToHex } from "viem";
 import { usePublicClient, useSendTransaction, useSwitchChain } from "wagmi";
 
 import { useBoardTokenBalance } from "@/hooks/use-board-token-balance";
+import { readResponseJson } from "@/lib/fetch-json";
 import { PLAY_ENTRY_FEE_ETH, savePlayPlayer } from "@/lib/game/play-player";
-import { clearPlaySeat, readPlaySeat, savePlaySeat } from "@/lib/game/play-table";
+import {
+  clearPlaySeat,
+  readPlaySeat,
+  savePlaySeat,
+  savePlayTableSnapshot,
+  type PlayTableView,
+} from "@/lib/game/play-table";
 import { rememberPreviewGame, type PreviewGame } from "@/lib/preview-game";
 
 export type SitPhase = "idle" | "sending" | "confirming" | "seating";
@@ -45,31 +52,37 @@ export function usePlaySit() {
 
     const existing = readPlaySeat();
     if (existing && existing.address.toLowerCase() === address.toLowerCase()) {
-      let stillSeated = false;
-      try {
-        const live = await fetch(`/api/play/tables/${existing.tableId}`, {
-          cache: "no-store",
-        });
-        if (live.ok) {
-          const payload = (await live.json()) as {
-            table?: { seats?: Array<{ address: string }> };
-          };
-          stillSeated = Boolean(
-            payload.table?.seats?.some(
-              (row) => row.address.toLowerCase() === address.toLowerCase(),
-            ),
-          );
-        }
-      } catch {
-        stillSeated = false;
-      }
-      if (!stillSeated) {
-        clearPlaySeat();
-      } else if (existing.tableId.toUpperCase() === tableId.toUpperCase()) {
+      const sameTable = existing.tableId.toUpperCase() === tableId.toUpperCase();
+      if (sameTable && existing.txHash) {
         rememberPreviewGame(game);
         router.push(`/room/${existing.tableId}`);
         return;
+      }
+      if (!sameTable) {
+        clearPlaySeat();
       } else {
+        let stillSeated = false;
+        try {
+          const live = await fetch(`/api/play/tables/${existing.tableId}`, {
+            cache: "no-store",
+          });
+          const payload = (await readResponseJson(live)) as {
+            table?: { seats?: Array<{ address: string }> };
+          } | null;
+          stillSeated = Boolean(
+            live.ok &&
+              payload?.table?.seats?.some(
+                (row) => row.address.toLowerCase() === address.toLowerCase(),
+              ),
+          );
+        } catch {
+          stillSeated = false;
+        }
+        if (stillSeated) {
+          rememberPreviewGame(game);
+          router.push(`/room/${existing.tableId}`);
+          return;
+        }
         clearPlaySeat();
       }
     }
@@ -92,17 +105,18 @@ export function usePlaySit() {
 
       setSitPhase("sending");
       const configResponse = await fetch("/api/play/config");
-      const config = (await configResponse.json()) as {
+      const config = (await readResponseJson(configResponse)) as {
         treasury?: `0x${string}`;
         error?: string;
-      };
-      if (!configResponse.ok || !config.treasury) {
-        throw new Error(config.error ?? "Play treasury is not ready.");
+      } | null;
+      if (!configResponse.ok || !config?.treasury) {
+        throw new Error(config?.error ?? "Play treasury is not ready.");
       }
 
       const hash = await sendTransactionAsync({
         to: config.treasury,
         value: parseEther(PLAY_ENTRY_FEE_ETH),
+        data: stringToHex(tableId),
         chainId: wallet.expectedChainId,
       });
 
@@ -130,7 +144,7 @@ export function usePlaySit() {
         refunded = seated.refunded;
         const retryable =
           seated.code === "BAD_TX" ||
-          /not found on Robinhood Chain yet/i.test(seated.error);
+          /empty response|not found on Robinhood Chain yet/i.test(seated.error);
         if (!retryable || attempt === 3) break;
         await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
       }
@@ -153,6 +167,8 @@ export function usePlaySit() {
           tableId: string;
           seat: number;
           leaveToken: string;
+          txHash?: string;
+          table?: PlayTableView;
         }
       | {
           ok: false;
@@ -172,20 +188,31 @@ export function usePlaySit() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const payload = (await response.json()) as {
-        table?: { id: string };
+      const payload = (await readResponseJson(response)) as {
+        table?: PlayTableView;
         seat?: number;
         leaveToken?: string;
+        txHash?: string;
         error?: string;
         code?: string;
         refund?: boolean;
-      };
+      } | null;
+      if (!payload) {
+        return {
+          ok: false,
+          code: "BAD_TX",
+          error: "Seat request returned an empty response.",
+          refunded: false,
+        };
+      }
       if (response.ok && payload.table && payload.leaveToken && payload.seat != null) {
         return {
           ok: true,
           tableId: payload.table.id,
           seat: payload.seat,
           leaveToken: payload.leaveToken,
+          txHash: payload.txHash ?? body.txHash,
+          table: payload.table,
         };
       }
       return {
@@ -207,7 +234,9 @@ export function usePlaySit() {
         address: player,
         seat: seated.seat,
         leaveToken: seated.leaveToken,
+        txHash: seated.txHash,
       });
+      if (seated.table) savePlayTableSnapshot(seated.table);
       rememberPreviewGame(game);
       void wallet.refetch();
       router.push(`/room/${seated.tableId}`);

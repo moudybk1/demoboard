@@ -29,19 +29,37 @@ export class HttpError extends Error {
  * The response shape is the caller's declared type: this is the untyped
  * network boundary, so callers should only read fields the API documents.
  */
+/** Parse a body that may be empty or truncated without throwing. */
+export async function readResponseJson(response: Response): Promise<unknown> {
+  const raw = await response.text();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchJson<T>(
   input: string,
   init?: RequestInit,
 ): Promise<T> {
   const response = await fetch(input, { credentials: "include", ...init });
+  const body = await readResponseJson(response);
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
     throw new HttpError(
       readErrorMessage(body) ?? `Request failed (${response.status})`,
       response.status,
     );
   }
 
-  return response.json();
+  if (body === null) {
+    throw new HttpError(
+      `Empty response (${response.status}).`,
+      response.status,
+    );
+  }
+
+  return body as T;
 }

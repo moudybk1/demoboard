@@ -10,6 +10,7 @@ import { LeaveMatchModal } from "@/components/room/leave-match-modal";
 import { RoomHeader } from "@/components/room/room-header";
 import { WaitingRoom } from "@/components/play/waiting-room";
 import { forfeitPlayMatch } from "@/lib/game/forfeit-match";
+import { readResponseJson } from "@/lib/fetch-json";
 import {
   MATCH_TURN_SECONDS,
   type TurnClockInfo,
@@ -23,7 +24,13 @@ import {
   monopolyPrizePool,
   type MonopolyRoomState,
 } from "@/lib/mock/monopoly";
-import type { PlayTableView } from "@/lib/game/play-table";
+import {
+  clearPlaySeat,
+  readPlaySeat,
+  readPlayTableSnapshot,
+  savePlayTableSnapshot,
+  type PlayTableView,
+} from "@/lib/game/play-table";
 
 const IDLE_CLOCK: TurnClockInfo = {
   seconds: MATCH_TURN_SECONDS,
@@ -43,6 +50,8 @@ export function GameRoom({ roomId }: { roomId: string }) {
   const [clock, setClock] = useState<TurnClockInfo>(IDLE_CLOCK);
   const leavingRef = useRef(false);
   const [ready, setReady] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const tableRef = useRef<PlayTableView | null>(null);
 
   useEffect(() => {
     setReady(true);
@@ -75,28 +84,88 @@ export function GameRoom({ roomId }: { roomId: string }) {
     let cancelled = false;
     let source: EventSource | null = null;
 
+    function publish(next: PlayTableView) {
+      const viewer = readPlaySeat()?.address.toLowerCase() ?? null;
+      const prev = tableRef.current;
+      const hadViewer = Boolean(
+        viewer &&
+          prev?.seats.some((seat) => seat.address.toLowerCase() === viewer),
+      );
+      const hasViewer = Boolean(
+        viewer &&
+          next.seats.some((seat) => seat.address.toLowerCase() === viewer),
+      );
+      const merged = hadViewer && !hasViewer ? prev! : next;
+      tableRef.current = merged;
+      setTable(merged);
+    }
+
     async function load() {
-      const response = await fetch(`/api/play/tables/${roomId}`, {
-        cache: "no-store",
-      });
+      const snapFallback = readPlayTableSnapshot(roomId);
+      try {
+      const seat = readPlaySeat();
+      const proof =
+        seat && seat.tableId.toUpperCase() === roomId.toUpperCase() ? seat : null;
+      const response = proof
+        ? await fetch(`/api/play/tables/${roomId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({
+              address: proof.address,
+              txHash: proof.txHash,
+              leaveToken: proof.leaveToken,
+            }),
+          })
+        : await fetch(`/api/play/tables/${roomId}`, { cache: "no-store" });
       if (cancelled) return;
-      if (response.status === 404) {
+      const payload = (await readResponseJson(response)) as {
+        table?: PlayTableView;
+        note?: string | null;
+        blocked?: boolean;
+      } | null;
+      if (payload?.blocked) {
+        clearPlaySeat();
+        if (payload.table) publish(payload.table);
+        setNote(payload.note ?? "That sit payment can no longer open a seat.");
+        setMissing(!payload.table);
+        return;
+      }
+      const snapshot = readPlayTableSnapshot(roomId);
+      const viewer = proof?.address.toLowerCase() ?? null;
+      const serverHasViewer = Boolean(
+        viewer &&
+          payload?.table?.seats.some(
+            (seat) => seat.address.toLowerCase() === viewer,
+          ),
+      );
+      const snapHasViewer = Boolean(
+        viewer &&
+          snapshot?.seats.some((seat) => seat.address.toLowerCase() === viewer),
+      );
+      if (!payload?.table && !snapHasViewer) {
         setMissing(true);
         return;
       }
-      if (!response.ok) return;
-      const payload = (await response.json()) as { table: PlayTableView };
-      setTable(payload.table);
+      const next = serverHasViewer || !snapHasViewer ? payload!.table! : snapshot!;
+      if (serverHasViewer && payload?.table) savePlayTableSnapshot(payload.table);
+      publish(next);
+      setNote(serverHasViewer || snapHasViewer ? null : (payload?.note ?? null));
       if (cancelled || source) return;
       source = new EventSource(`/api/play/tables/${roomId}/stream`);
       source.addEventListener("table", (event) => {
         try {
           const frame = JSON.parse(event.data) as { table?: PlayTableView };
-          if (frame.table) setTable(frame.table);
+          if (frame.table) publish(frame.table);
         } catch {
           // ignore malformed frames
         }
       });
+      } catch {
+        if (cancelled) return;
+        if (snapFallback) publish(snapFallback);
+        else setMissing(true);
+      }
     }
 
     void load();
@@ -157,7 +226,15 @@ export function GameRoom({ roomId }: { roomId: string }) {
           seats={table.maxPlayers}
           waiting
         />
-        <WaitingRoom table={table} onTable={setTable} />
+        <WaitingRoom
+          table={table}
+          note={note}
+          onTable={(next) => {
+            tableRef.current = next;
+            setTable(next);
+            savePlayTableSnapshot(next);
+          }}
+        />
       </>
     );
   }

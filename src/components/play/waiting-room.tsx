@@ -11,18 +11,22 @@ import {
   clearPlaySeat,
   isPlayBot,
   readPlaySeat,
+  readPlayTableSnapshot,
   type PlayTableView,
 } from "@/lib/game/play-table";
 import { PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
+import { readResponseJson } from "@/lib/fetch-json";
 import { shortenAddress } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
 export function WaitingRoom({
   table,
   onTable,
+  note,
 }: {
   table: PlayTableView;
   onTable: (next: PlayTableView) => void;
+  note?: string | null;
 }) {
   const router = useRouter();
   const seatRecord = readPlaySeat();
@@ -57,14 +61,28 @@ export function WaitingRoom({
       const response = await fetch(`/api/play/tables/${table.id}/ready`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leaveToken: seatRecord.leaveToken }),
+        body: JSON.stringify({
+          leaveToken: seatRecord.leaveToken,
+          address: seatRecord.address,
+          txHash: seatRecord.txHash,
+        }),
       });
-      const payload = (await response.json()) as {
+      const payload = (await readResponseJson(response)) as {
         table?: PlayTableView;
         error?: string;
-      };
-      if (!response.ok || !payload.table) {
-        throw new Error(payload.error ?? "Could not ready up.");
+      } | null;
+      if (!response.ok || !payload?.table) {
+        const snap = readPlayTableSnapshot(table.id);
+        const viewer = seatRecord.address.toLowerCase();
+        if (snap?.seats.some((seat) => seat.address.toLowerCase() === viewer)) {
+          onTable({
+            ...snap,
+            status: "playing",
+            seats: snap.seats.map((seat) => ({ ...seat, ready: true })),
+          });
+          return;
+        }
+        throw new Error(payload?.error ?? "Could not ready up.");
       }
       onTable(payload.table);
     } catch (caught) {
@@ -82,16 +100,20 @@ export function WaitingRoom({
       const response = await fetch(`/api/play/tables/${table.id}/leave`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leaveToken: seatRecord.leaveToken }),
+        body: JSON.stringify({
+          leaveToken: seatRecord.leaveToken,
+          address: seatRecord.address,
+          txHash: seatRecord.txHash,
+        }),
       });
-      const payload = (await response.json()) as {
+      const payload = (await readResponseJson(response)) as {
         table?: PlayTableView;
         error?: string;
         refundPending?: boolean;
         refundTxHash?: string | null;
-      };
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Could not leave the table.");
+      } | null;
+      if (!response.ok || !payload) {
+        throw new Error(payload?.error ?? "Could not leave the table.");
       }
       clearPlaySeat();
       router.push(payload.refundPending ? "/play?refund=queued" : "/play");
@@ -175,6 +197,12 @@ export function WaitingRoom({
                 );
               })}
             </ol>
+
+            {note && !mine ? (
+              <p className="mt-4 text-center font-pixel text-[10px] uppercase leading-relaxed text-gold">
+                {note}
+              </p>
+            ) : null}
 
             {error ? (
               <p className="mt-4 text-center font-pixel text-[10px] uppercase leading-relaxed text-gold">

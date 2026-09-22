@@ -174,7 +174,12 @@ export function AppBootLoader() {
       finished = true;
 
       try {
-        if (document.fonts?.ready) await document.fonts.ready;
+        if (document.fonts?.ready) {
+          await Promise.race([
+            document.fonts.ready,
+            new Promise((resolve) => setTimeout(resolve, 800)),
+          ]);
+        }
       } catch {
         // ignore
       }

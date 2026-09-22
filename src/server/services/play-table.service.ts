@@ -23,8 +23,10 @@ import {
   getPlayTreasuryAddress,
   listSuccessfulSitHashes,
   refundSit,
+  sitWasRefunded,
   verifySitTransaction,
 } from "@/server/lib/play-chain";
+import { paidLeaveToken } from "@/server/lib/play-seat-token";
 import { publishPlayTable } from "@/server/realtime/play-hub";
 
 const STORE_PATH = playDataPath("play-tables.json");
@@ -425,6 +427,7 @@ export type SitResult =
       seat: number;
       leaveToken: string;
       alreadySeated: boolean;
+      txHash: Hex | null;
     }
   | {
       ok: false;
@@ -471,6 +474,7 @@ export async function sitPlayTable(input: {
             seat: found.seat.seat,
             leaveToken: found.seat.leaveToken,
             alreadySeated: true,
+            txHash: found.seat.sitTxHash,
           },
         };
       }
@@ -500,7 +504,11 @@ export async function sitPlayTable(input: {
     return early.result;
   }
 
-  const verified = await verifySitTransaction({ hash: txHash, from: address });
+  const verified = await verifySitTransaction({
+    hash: txHash,
+    from: address,
+    tableId: wantedId,
+  });
   if (!verified.ok) {
     console.error("[play-sit] verify failed", txHash, verified.error.code, verified.error.message);
     return {
@@ -526,6 +534,7 @@ export async function sitPlayTable(input: {
           seat: found.seat.seat,
           leaveToken: found.seat.leaveToken,
           alreadySeated: true,
+          txHash: found.seat.sitTxHash ?? txHash,
         };
       }
       unseat(found.table, found.seat, leftoverFromLeftMatch(found.table, address));
@@ -606,7 +615,7 @@ export async function sitPlayTable(input: {
     let seat = 1;
     while (taken.has(seat) && seat <= MAX_PLAYERS_PER_ROOM) seat += 1;
 
-    const leaveToken = newLeaveToken();
+    const leaveToken = paidLeaveToken(txHash);
     table.seats.push({
       address,
       username: shortenAddress(address),
@@ -626,6 +635,7 @@ export async function sitPlayTable(input: {
       seat,
       leaveToken,
       alreadySeated: false,
+      txHash,
     };
   });
 
@@ -671,6 +681,7 @@ export async function claimUnpaidSit(input: {
       seat: found.seat.seat,
       leaveToken: found.seat.leaveToken,
       alreadySeated: true,
+      txHash: found.seat.sitTxHash,
     };
   });
   if (already) return already;
@@ -713,10 +724,139 @@ export type TableActionResult =
       message: string;
     };
 
+function normalizeAddress(raw: string | null | undefined): Hex | null {
+  if (!raw) return null;
+  const value = raw.trim().toLowerCase();
+  return /^0x[a-f0-9]{40}$/.test(value) ? (value as Hex) : null;
+}
+
+function normalizeTx(raw: string | null | undefined): Hex | null {
+  if (!raw) return null;
+  const value = raw.trim().toLowerCase();
+  return /^0x[a-f0-9]{64}$/.test(value) ? (value as Hex) : null;
+}
+
+/**
+ * Put a paid wallet back into a waiting lobby slot on this instance.
+ * The payment was already checked. Refuses a full table or a spent sit
+ * that this instance already closed out.
+ */
+function adoptVerifiedSeat(tableId: string, address: Hex, txHash: Hex) {
+  const table = tables.get(tableId);
+  if (!table || table.status !== "waiting") return "closed" as const;
+  if (table.seats.some((row) => row.address.toLowerCase() === address)) {
+    return "ok" as const;
+  }
+  const token = paidLeaveToken(txHash);
+  if (usedTx.has(txHash) && !table.seats.some((row) => row.leaveToken === token)) {
+    return "used" as const;
+  }
+  if (table.seats.length >= MAX_PLAYERS_PER_ROOM) return "full" as const;
+  const seat = nextFreeSeat(table);
+  if (seat == null) return "full" as const;
+  table.seats.push({
+    address,
+    username: shortenAddress(address),
+    seat,
+    sitTxHash: txHash,
+    leaveToken: token,
+    ready: false,
+    refundTxHash: null,
+  });
+  fillHouseNpcs(table);
+  usedTx.add(txHash);
+  bump(table);
+  return "ok" as const;
+}
+
+async function ensurePaidSeat(input: {
+  tableId: string;
+  leaveToken?: string;
+  address?: string;
+  txHash?: string;
+}) {
+  const tableId = input.tableId.toUpperCase();
+  const txHash = normalizeTx(input.txHash);
+  const address = normalizeAddress(input.address);
+  const token = input.leaveToken?.trim().toLowerCase() ?? "";
+  if (!txHash || !address || !token) return "skipped" as const;
+  if (paidLeaveToken(txHash) !== token) return "skipped" as const;
+  const table = tables.get(tableId);
+  if (
+    table?.seats.some(
+      (row) => row.leaveToken === token || row.address.toLowerCase() === address,
+    )
+  ) {
+    return "ok" as const;
+  }
+  const verified = await verifySitTransaction({
+    hash: txHash,
+    from: address,
+    tableId,
+  });
+  if (!verified.ok) return "unverified" as const;
+  if (await sitWasRefunded({ hash: txHash, from: address })) return "refunded" as const;
+  return withLock(async () => adoptVerifiedSeat(tableId, address, txHash));
+}
+
+export type ResumePlayTableResult = {
+  table: PlayTableView | null;
+  note: string | null;
+  /** Payment was refunded or already spent. Do not reopen a saved local seat. */
+  blocked: boolean;
+};
+
+/** Rebuild a paid seat on whichever instance handled this request. */
+export async function resumePlayTable(input: {
+  tableId: string;
+  leaveToken?: string;
+  address?: string;
+  txHash?: string;
+}): Promise<ResumePlayTableResult> {
+  const tableId = input.tableId.toUpperCase();
+  if (!isPlayLobbySlotId(tableId) && !tables.has(tableId)) {
+    return { table: null, note: null, blocked: false };
+  }
+  const outcome = await ensurePaidSeat(input);
+  const table = tables.get(tableId);
+  const note =
+    outcome === "unverified"
+      ? "Your sit payment is not on Robinhood Chain yet. Reload in a moment."
+      : outcome === "refunded"
+        ? "That sit fee was refunded. Sit again from the lobby."
+        : outcome === "full"
+          ? "That table is full. Pick another lobby."
+          : outcome === "closed"
+            ? "That table is already in play. Pick another lobby."
+            : outcome === "used"
+              ? "That sit payment was already used. Sit again from the lobby."
+              : null;
+  return {
+    table: table ? asView(table) : null,
+    note,
+    blocked: outcome === "refunded" || outcome === "used",
+  };
+}
+
 export async function readyPlayTable(input: {
   tableId: string;
   leaveToken: string;
+  address?: string;
+  txHash?: string;
 }): Promise<TableActionResult> {
+  const primed = await ensurePaidSeat(input);
+  if (primed === "full" || primed === "closed" || primed === "used") {
+    return {
+      ok: false,
+      code: primed === "full" ? "NOT_WAITING" : "FORBIDDEN",
+      message:
+        primed === "full"
+          ? "That table is full. Pick another lobby."
+          : primed === "closed"
+            ? "That table is already in play. Pick another lobby."
+            : "That sit payment was already used. Sit again from the lobby.",
+    };
+  }
   return withLock(async () => {
     const table = tables.get(input.tableId.toUpperCase());
     if (!table) {
@@ -750,7 +890,10 @@ export async function readyPlayTable(input: {
 export async function leavePlayTable(input: {
   tableId: string;
   leaveToken: string;
+  address?: string;
+  txHash?: string;
 }): Promise<TableActionResult> {
+  await ensurePaidSeat(input);
   const prepared = await withLock(async () => {
     const table = tables.get(input.tableId.toUpperCase());
     if (!table) {

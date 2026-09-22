@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const x402Stub = "./src/lib/wallet/x402-stub.ts";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   transpilePackages: ["@rainbow-me/rainbowkit"],
   turbopack: {
     resolveAlias: {

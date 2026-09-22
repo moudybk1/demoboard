@@ -19,6 +19,8 @@ function readHex(body: unknown, key: string, bytes: 20 | 32): Hex {
   return raw.toLowerCase() as Hex;
 }
 
+export const maxDuration = 20;
+
 /** POST /api/play/sit · verify the 0.002 ETH sit tx and take a waiting seat. */
 export async function POST(request: Request) {
   try {
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
       seat: result.seat,
       leaveToken: result.leaveToken,
       alreadySeated: result.alreadySeated,
+      txHash: result.txHash,
     });
   } catch (error) {
     return errorResponse(error, "POST /api/play/sit");

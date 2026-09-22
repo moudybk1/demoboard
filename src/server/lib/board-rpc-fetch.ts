@@ -36,7 +36,11 @@ export function boardRpcFetch(
         ? input.href
         : input.url,
   );
-  if (!needsPublicDns(url.hostname)) return fetch(input, init);
+  // Vercel's resolvers are fine. The public-DNS pin is only for networks
+  // that answer Robinhood hosts with the wrong address.
+  if (!needsPublicDns(url.hostname) || process.env.VERCEL) {
+    return fetch(input, init);
+  }
 
   const method =
     init?.method ??
@@ -47,7 +51,7 @@ export function boardRpcFetch(
 
   return resolve4(url.hostname).then(
     (ip) =>
-      new Promise((resolve, reject) => {
+      new Promise<Response>((resolve, reject) => {
         const headers: Record<string, string> = { host: url.hostname };
         const incoming = new Headers(
           init?.headers ??
@@ -72,9 +76,13 @@ export function boardRpcFetch(
             const chunks: Buffer[] = [];
             res.on("data", (chunk: Buffer) => chunks.push(chunk));
             res.on("end", () => {
+              const contentType = res.headers["content-type"];
               resolve(
                 new Response(Buffer.concat(chunks), {
                   status: res.statusCode ?? 500,
+                  headers: contentType
+                    ? { "content-type": contentType }
+                    : { "content-type": "application/json" },
                 }),
               );
             });
@@ -102,5 +110,8 @@ export function boardRpcFetch(
         }
         req.end();
       }),
-  );
+  ).catch((error) => {
+    console.error("[board-rpc] public DNS fetch failed, using default fetch", error);
+    return fetch(input, init);
+  });
 }

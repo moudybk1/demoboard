@@ -4,6 +4,7 @@ import {
   createPublicClient,
   createWalletClient,
   formatEther,
+  hexToString,
   http,
   parseEther,
   type Hex,
@@ -127,9 +128,25 @@ export type SitTxError = {
  * player to the play treasury on the active Robinhood chain.
  * Client already waited for the receipt; keep this tight so seating is not laggy.
  */
+/** Empty calldata is a legacy sit. New sits embed the lobby table id. */
+export function sitPaymentMatchesTable(
+  input: Hex | null | undefined,
+  tableId: string,
+) {
+  if (!input || input === "0x") return true;
+  try {
+    const text = hexToString(input).replace(/\0/g, "").trim();
+    if (!text) return true;
+    return text.toUpperCase() === tableId.toUpperCase();
+  } catch {
+    return false;
+  }
+}
+
 export async function verifySitTransaction(input: {
   hash: Hex;
   from: Hex;
+  tableId?: string;
 }): Promise<{ ok: true } | { ok: false; error: SitTxError }> {
   const client = publicClient();
   const expectedTo = treasury.address.toLowerCase();
@@ -139,11 +156,17 @@ export async function verifySitTransaction(input: {
   let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null =
     null;
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  // Stay inside a serverless timeout. The client retries seating.
+  const started = Date.now();
+  const budgetMs = 8_000;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const remaining = budgetMs - (Date.now() - started);
+    if (remaining < 500) break;
+    const attemptMs = Math.min(3_000, remaining);
     try {
       const [nextTx, nextReceipt] = await Promise.all([
-        withTimeout(client.getTransaction({ hash: input.hash }), 6_000),
-        withTimeout(client.getTransactionReceipt({ hash: input.hash }), 6_000),
+        withTimeout(client.getTransaction({ hash: input.hash }), attemptMs),
+        withTimeout(client.getTransactionReceipt({ hash: input.hash }), attemptMs),
       ]);
       tx = nextTx;
       receipt = nextReceipt;
@@ -151,7 +174,8 @@ export async function verifySitTransaction(input: {
     } catch {
       // RPC timeout or not indexed yet
     }
-    await sleep(250);
+    if (Date.now() - started > budgetMs) break;
+    await sleep(300);
   }
 
   if (!tx || !receipt) {
@@ -204,6 +228,16 @@ export async function verifySitTransaction(input: {
     };
   }
 
+  if (input.tableId && !sitPaymentMatchesTable(tx.input, input.tableId)) {
+    return {
+      ok: false,
+      error: {
+        code: "TX_MISMATCH",
+        message: "Sit payment is for a different table.",
+      },
+    };
+  }
+
   return { ok: true };
 }
 
@@ -212,17 +246,28 @@ type ExplorerTx = {
   from?: string;
   to?: string;
   value?: string;
+  timeStamp?: string;
   isError?: string;
   txreceipt_status?: string;
 };
 
+async function treasuryExplorerRows(): Promise<ExplorerTx[]> {
+  const url = `${getBoardExplorerUrl()}/api?module=account&action=txlist&address=${treasury.address}&sort=desc&page=1&offset=80`;
+  try {
+    const response = await boardRpcFetch(url, {
+      signal: AbortSignal.timeout(4_000),
+    });
+    if (!response.ok) return [];
+    const payload = (await response.json()) as { result?: ExplorerTx[] };
+    return Array.isArray(payload.result) ? payload.result : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Successful unused-candidate sit payments to the treasury, oldest first. */
 export async function listSuccessfulSitHashes(from: Hex): Promise<Hex[]> {
-  const url = `${getBoardExplorerUrl()}/api?module=account&action=txlist&address=${treasury.address}&sort=desc&page=1&offset=30`;
-  const response = await boardRpcFetch(url);
-  if (!response.ok) return [];
-  const payload = (await response.json()) as { result?: ExplorerTx[] };
-  const rows = Array.isArray(payload.result) ? payload.result : [];
+  const rows = await treasuryExplorerRows();
   const fromKey = from.toLowerCase();
   const treasuryKey = treasury.address.toLowerCase();
   const value = PLAY_SIT_VALUE.toString();
@@ -238,6 +283,36 @@ export async function listSuccessfulSitHashes(from: Hex): Promise<Hex[]> {
     )
     .map((row) => row.hash!.toLowerCase() as Hex)
     .reverse();
+}
+
+/**
+ * True when the house already sent this sit fee back. A missing explorer
+ * response is treated as not refunded so a seated player can still rejoin.
+ */
+export async function sitWasRefunded(input: {
+  hash: Hex;
+  from: Hex;
+}): Promise<boolean> {
+  const rows = await treasuryExplorerRows();
+  const sit = rows.find(
+    (row) => row.hash?.toLowerCase() === input.hash.toLowerCase(),
+  );
+  if (!sit?.timeStamp) return false;
+  const sitTime = Number(sit.timeStamp);
+  if (!Number.isFinite(sitTime)) return false;
+  const player = input.from.toLowerCase();
+  const house = treasury.address.toLowerCase();
+  const value = PLAY_SIT_VALUE.toString();
+  return rows.some(
+    (row) =>
+      row.hash?.toLowerCase() !== input.hash.toLowerCase() &&
+      row.from?.toLowerCase() === house &&
+      row.to?.toLowerCase() === player &&
+      row.value === value &&
+      row.isError === "0" &&
+      row.txreceipt_status === "1" &&
+      Number(row.timeStamp) >= sitTime,
+  );
 }
 
 export type RefundSitResult =
