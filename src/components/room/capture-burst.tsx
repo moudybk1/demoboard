@@ -27,6 +27,10 @@ export function CaptureBurst({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const color = ludoSeatColor(event.victimSeat);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   useEffect(() => {
     const node = ref.current;
@@ -38,11 +42,13 @@ export function CaptureBurst({
       .matches;
 
     if (reduced) {
-      onDone();
+      onDoneRef.current();
       return;
     }
 
-    const timeline = gsap.timeline({ onComplete: onDone });
+    const finish = () => onDoneRef.current();
+    if (label) gsap.set(label, { xPercent: -50 });
+    const timeline = gsap.timeline({ onComplete: finish });
     timeline.fromTo(
       node,
       { scale: 0.3, opacity: 0 },
@@ -52,14 +58,24 @@ export function CaptureBurst({
     if (label) {
       timeline.fromTo(
         label,
-        { y: 6, opacity: 0, scale: 0.8 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.18, ease: "back.out(2)" },
+        { xPercent: -50, y: 6, opacity: 0, scale: 0.8 },
+        {
+          xPercent: -50,
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.18,
+          ease: "back.out(2)",
+        },
         0.05,
       );
     }
-    timeline.to(
+    timeline.fromTo(
       shards,
+      { xPercent: -50, yPercent: -50, x: 0, y: 0, opacity: 1, scale: 1 },
       {
+        xPercent: -50,
+        yPercent: -50,
         x: (index) => Math.cos((index / shards.length) * Math.PI * 2) * 36,
         y: (index) => Math.sin((index / shards.length) * Math.PI * 2) * 36,
         opacity: 0,
@@ -76,7 +92,7 @@ export function CaptureBurst({
     return () => {
       timeline.kill();
     };
-  }, [event.id, onDone]);
+  }, [event.id]);
 
   return (
     <div
@@ -92,7 +108,7 @@ export function CaptureBurst({
     >
       <span
         data-label
-        className="absolute left-1/2 top-[-1.4rem] -translate-x-1/2 font-pixel text-xs uppercase text-gold text-shadow-pixel"
+        className="absolute left-1/2 top-[-1.4rem] font-pixel text-xs uppercase text-gold text-shadow-pixel"
       >
         Captured!
       </span>

@@ -140,9 +140,70 @@ export function pawnCell(
   return null;
 }
 
+function walkOrthogonal(
+  from: [number, number],
+  to: [number, number],
+  rowFirst: boolean,
+): [number, number][] {
+  const cells: [number, number][] = [];
+  let row = from[0];
+  let col = from[1];
+
+  const stepRow = () => {
+    while (row !== to[0]) {
+      row += Math.sign(to[0] - row);
+      cells.push([row, col]);
+    }
+  };
+  const stepCol = () => {
+    while (col !== to[1]) {
+      col += Math.sign(to[1] - col);
+      cells.push([row, col]);
+    }
+  };
+
+  if (rowFirst) {
+    stepRow();
+    stepCol();
+  } else {
+    stepCol();
+    stepRow();
+  }
+  return cells;
+}
+
+function outsideYard(seat: number, cells: [number, number][]) {
+  const bounds = YARD_BOUNDS[seat];
+  if (!bounds) return cells.length;
+  return cells.filter(
+    ([row, col]) =>
+      row < bounds.rows[0] ||
+      row > bounds.rows[1] ||
+      col < bounds.cols[0] ||
+      col > bounds.cols[1],
+  ).length;
+}
+
+/** Orthogonal steps from a seat's entry square into its yard pad. */
+function yardApproach(
+  seat: number,
+  entry: [number, number],
+  pad: [number, number],
+): [number, number][] {
+  const rowFirst = walkOrthogonal(entry, pad, true);
+  const colFirst = walkOrthogonal(entry, pad, false);
+  const outsideRow = outsideYard(seat, rowFirst);
+  const outsideCol = outsideYard(seat, colFirst);
+  if (outsideRow !== outsideCol) {
+    return outsideRow < outsideCol ? rowFirst : colFirst;
+  }
+  return rowFirst;
+}
+
 /**
- * Cells a captured pawn walks, from the square it was taken on back to its
- * yard pad. Long trips skip cells so the return stays readable.
+ * Cells a captured pawn walks, from the square it was taken on back along
+ * the track and into its yard pad. Every step is adjacent so the piece does
+ * not cut across the board.
  */
 export function captureReturnPath(
   seat: number,
@@ -151,7 +212,6 @@ export function captureReturnPath(
   const home = yardPadCells(seat)[pawn.index];
   if (pawn.status !== "track") return [home];
 
-  const stride = pawn.steps > 24 ? 3 : pawn.steps > 12 ? 2 : 1;
   const cells: [number, number][] = [];
   const push = (cell: [number, number]) => {
     const prev = cells[cells.length - 1];
@@ -159,11 +219,12 @@ export function captureReturnPath(
     cells.push(cell);
   };
 
-  for (let step = pawn.steps - stride; step > 0; step -= stride) {
+  for (let step = pawn.steps - 1; step >= 0; step -= 1) {
     push(trackCellForSeat(seat, step));
   }
-  push(trackCellForSeat(seat, 0));
-  push(home);
+  for (const cell of yardApproach(seat, trackCellForSeat(seat, 0), home)) {
+    push(cell);
+  }
   return cells;
 }
 

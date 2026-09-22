@@ -79,6 +79,18 @@ function LudoPawnToken({
   const color = ludoSeatColor(pawn.seat);
   const finished = pawn.status === "finished";
   const returning = returnPath != null && returnPath.length > 0;
+  // Latest callbacks, read by the timelines. A fresh function each render must
+  // not restart a hop or a capture walk.
+  const onMoveCompleteRef = useRef(onMoveComplete);
+  const onReturnCompleteRef = useRef(onReturnComplete);
+  useEffect(() => {
+    onMoveCompleteRef.current = onMoveComplete;
+  }, [onMoveComplete]);
+  useEffect(() => {
+    onReturnCompleteRef.current = onReturnComplete;
+  }, [onReturnComplete]);
+  const moveKey = movePath?.map((cell) => cell.join(",")).join("|") ?? "";
+  const returnKey = returnPath?.map((cell) => cell.join(",")).join("|") ?? "";
 
   // Place + idle bob.
   useEffect(() => {
@@ -129,7 +141,7 @@ function LudoPawnToken({
     const finish = () => {
       if (settled) return;
       settled = true;
-      onMoveComplete();
+      onMoveCompleteRef.current();
     };
 
     if (movePath.length === 0) {
@@ -183,7 +195,9 @@ function LudoPawnToken({
     return () => {
       timeline.kill();
     };
-  }, [moving, movePath, onMoveComplete]);
+    // moveKey is the cell list. A new array with the same cells must not replay the hop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moving, moveKey]);
 
   // Walk a captured pawn back along the track into its yard.
   useEffect(() => {
@@ -194,7 +208,7 @@ function LudoPawnToken({
     const finish = () => {
       if (settled) return;
       settled = true;
-      onReturnComplete();
+      onReturnCompleteRef.current();
     };
 
     const end = cellCenter(
@@ -203,10 +217,35 @@ function LudoPawnToken({
     );
 
     if (prefersReducedMotion()) {
-      gsap.set(node, { left: `${end.x}%`, top: `${end.y}%`, y: 0, scale: 1 });
+      gsap.set(node, {
+        xPercent: -50,
+        yPercent: -50,
+        left: `${end.x}%`,
+        top: `${end.y}%`,
+        x: 0,
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+      });
       finish();
       return;
     }
+
+    const stepMs =
+      returnPath.length > 16
+        ? Math.max(0.036, Math.min(RETURN_MS, 1.4 / returnPath.length))
+        : RETURN_MS;
+    const soundEvery = stepMs < 0.05 ? 4 : 2;
+
+    gsap.killTweensOf(node);
+    gsap.set(node, {
+      xPercent: -50,
+      yPercent: -50,
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+    });
 
     const timeline = gsap.timeline({ onComplete: finish });
 
@@ -216,7 +255,7 @@ function LudoPawnToken({
         .to(node, {
           left: `${point.x}%`,
           top: `${point.y}%`,
-          duration: RETURN_MS,
+          duration: stepMs,
           ease: "none",
         })
         .to(
@@ -225,24 +264,32 @@ function LudoPawnToken({
             scaleX: 1.12,
             scaleY: 1.28,
             y: -4,
-            duration: RETURN_MS / 2,
+            duration: stepMs / 2,
             ease: "power2.out",
             yoyo: true,
             repeat: 1,
             onStart: () => {
-              if (index % 2 === 0) playHopSound();
+              if (index % soundEvery === 0) playHopSound();
             },
           },
-          `-=${RETURN_MS}`,
+          `-=${stepMs}`,
         );
     });
 
-    timeline.to(node, { scale: 1, y: 0, duration: 0.1, ease: "back.out(3)" });
+    timeline.to(node, {
+      scaleX: 1,
+      scaleY: 1,
+      y: 0,
+      duration: 0.1,
+      ease: "back.out(3)",
+    });
 
     return () => {
       timeline.kill();
     };
-  }, [returnPath, onReturnComplete]);
+    // returnKey is the cell list. Parent re-renders must not replay the walk home.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [returnKey]);
 
   return (
     <button
