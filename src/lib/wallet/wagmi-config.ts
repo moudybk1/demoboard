@@ -78,29 +78,25 @@ function buildConnectors() {
   ];
 }
 
-const primary = getBoardChain();
-const secondary =
-  getBoardChainEnv() === "testnet" ? robinhood : robinhoodTestnet;
-
-const primaryRpc = getBoardRpcUrl();
-const secondaryRpc =
-  getBoardChainEnv() === "testnet"
-    ? "https://rpc.mainnet.chain.robinhood.com"
-    : "https://rpc.testnet.chain.robinhood.com";
+const chain = getBoardChain();
+const rpcUrl = getBoardRpcUrl();
+const env = getBoardChainEnv();
 
 /**
  * Shared wagmi config (safe for server cookie hydration + RainbowKit).
- * WalletConnect QR is shown by RainbowKit (`showQrModal: false` on the connector).
+ * Only the active board chain is listed so RainbowKit cannot offer the other
+ * Robinhood network (testnet vs mainnet) as a switch target.
  */
 export const wagmiConfig = createConfig({
-  chains: [primary, secondary],
+  chains: [chain],
   connectors: buildConnectors(),
   transports: {
-    [robinhood.id]: http(
-      getBoardChainEnv() === "mainnet" ? primaryRpc : secondaryRpc,
-    ),
+    // Both keys satisfy wagmi's union typing; only `chain` is selectable.
     [robinhoodTestnet.id]: http(
-      getBoardChainEnv() === "testnet" ? primaryRpc : secondaryRpc,
+      env === "testnet" ? rpcUrl : "https://rpc.testnet.chain.robinhood.com",
+    ),
+    [robinhood.id]: http(
+      env === "mainnet" ? rpcUrl : "https://rpc.mainnet.chain.robinhood.com",
     ),
   },
   ssr: true,

@@ -11,16 +11,35 @@ import { getPlayConfig } from "@/server/services/play-table.service";
 
 /** GET /api/play/config · treasury + sit fee for the play client. */
 export async function GET() {
-  const config = getPlayConfig();
-  const treasury = await getPlayTreasuryStatus();
-  return NextResponse.json({
-    ...config,
-    symbol: PLAY_STAKE_SYMBOL,
-    chainId: getBoardChainId(),
-    chainLabel: getBoardChainLabel(),
-    faucet: ROBINHOOD_TESTNET_FAUCET,
-    entryFee: PLAY_ENTRY_FEE,
-    treasuryBalance: treasury.balanceEth,
-    canRefund: treasury.canRefund,
-  });
+  try {
+    const config = getPlayConfig();
+    const treasury = await getPlayTreasuryStatus();
+    return NextResponse.json({
+      ...config,
+      symbol: PLAY_STAKE_SYMBOL,
+      chainId: getBoardChainId(),
+      chainLabel: getBoardChainLabel(),
+      faucet: ROBINHOOD_TESTNET_FAUCET,
+      entryFee: PLAY_ENTRY_FEE,
+      treasuryBalance: treasury.balanceEth,
+      canRefund: treasury.canRefund,
+    });
+  } catch (error) {
+    console.error("[play-config]", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Could not load play config.",
+        symbol: PLAY_STAKE_SYMBOL,
+        chainId: getBoardChainId(),
+        chainLabel: getBoardChainLabel(),
+        faucet: ROBINHOOD_TESTNET_FAUCET,
+        entryFee: PLAY_ENTRY_FEE,
+        treasury: null,
+        treasuryBalance: "0",
+        canRefund: false,
+      },
+      { status: 500 },
+    );
+  }
 }

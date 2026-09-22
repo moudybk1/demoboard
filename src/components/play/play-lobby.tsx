@@ -102,10 +102,24 @@ export function PlayLobby({
         const response = await fetch(`/api/play/lobby${query}`, {
           cache: "no-store",
         });
-        const payload = (await response.json()) as {
-          games?: PlayLobbyGame[];
-          error?: string;
-        };
+        const raw = await response.text();
+        let payload: { games?: PlayLobbyGame[]; error?: string } = {};
+        if (raw) {
+          try {
+            payload = JSON.parse(raw) as {
+              games?: PlayLobbyGame[];
+              error?: string;
+            };
+          } catch {
+            throw new Error(
+              response.ok
+                ? "Lobby returned invalid JSON."
+                : `Lobby unavailable (${response.status}).`,
+            );
+          }
+        } else if (!response.ok) {
+          throw new Error(`Lobby unavailable (${response.status}).`);
+        }
         if (!response.ok || !payload.games) {
           throw new Error(payload.error ?? "Could not load the lobby.");
         }

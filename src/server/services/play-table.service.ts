@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { randomBytes } from "node:crypto";
 import type { Hex } from "viem";
 
@@ -18,6 +18,7 @@ import {
 import { shortenAddress } from "@/lib/wallet/chains";
 import type { GameType } from "@/lib/types";
 import { MAX_PLAYERS_PER_ROOM } from "@/lib/types";
+import { playDataPath } from "@/server/lib/play-data-path";
 import {
   getPlayTreasuryAddress,
   listSuccessfulSitHashes,
@@ -26,7 +27,7 @@ import {
 } from "@/server/lib/play-chain";
 import { publishPlayTable } from "@/server/realtime/play-hub";
 
-const STORE_PATH = join(process.cwd(), ".data", "play-tables.json");
+const STORE_PATH = playDataPath("play-tables.json");
 
 type PlaySeat = {
   address: string;
@@ -153,8 +154,12 @@ function persistStore() {
     usedTx: [...usedTx],
     pendingRefunds: [...pendingRefunds],
   };
-  mkdirSync(dirname(STORE_PATH), { recursive: true });
-  writeFileSync(STORE_PATH, `${JSON.stringify(payload)}\n`);
+  try {
+    mkdirSync(dirname(STORE_PATH), { recursive: true });
+    writeFileSync(STORE_PATH, `${JSON.stringify(payload)}\n`);
+  } catch (error) {
+    console.error("[play-tables] could not persist store", error);
+  }
 }
 
 loadStore();

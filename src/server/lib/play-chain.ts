@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import {
   createPublicClient,
   createWalletClient,
@@ -12,6 +12,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import { PLAY_ENTRY_FEE_ETH } from "@/lib/game/play-player";
 import { boardRpcFetch } from "@/server/lib/board-rpc-fetch";
+import { playDataPath } from "@/server/lib/play-data-path";
 import {
   getBoardChain,
   getBoardChainId,
@@ -19,7 +20,7 @@ import {
   getBoardRpcUrl,
 } from "@/lib/wallet/chains";
 
-const TREASURY_PATH = join(process.cwd(), ".data", "play-treasury.json");
+const TREASURY_PATH = playDataPath("play-treasury.json");
 
 export const PLAY_SIT_VALUE = parseEther(PLAY_ENTRY_FEE_ETH);
 
@@ -63,7 +64,17 @@ function loadTreasury(): TreasuryFile {
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
   const created = { address: account.address, privateKey };
-  writeTreasuryFile(created);
+  try {
+    writeTreasuryFile(created);
+  } catch (error) {
+    // Vercel / serverless filesystems are read-only. Without
+    // PLAY_TREASURY_PRIVATE_KEY the house wallet cannot persist; sit refunds
+    // will fail until the env key is set.
+    console.error(
+      "[play-treasury] could not persist treasury file · set PLAY_TREASURY_PRIVATE_KEY",
+      error,
+    );
+  }
   console.info(
     `[play-treasury] created ${account.address} · faucet it so refunds can pay gas`,
   );
