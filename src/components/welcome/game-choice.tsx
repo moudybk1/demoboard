@@ -10,6 +10,7 @@ import {
   playPathForGame,
   rememberPreviewGame,
 } from "@/lib/preview-game";
+import { playAppHref } from "@/lib/play-app-url";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,7 +25,7 @@ export function GameChoice({ className }: { className?: string }) {
       )}
     >
       {WELCOME_GAMES.map((game, index) => {
-        const href = playPathForGame(game.id);
+        const href = playAppHref(playPathForGame(game.id));
         const Demo = game.id === "monopoly" ? MonopolyDemo : LudoDemo;
         const isMonopoly = game.id === "monopoly";
         const enabled = isGameEnabled(game.id);

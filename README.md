@@ -27,6 +27,13 @@ That URL unlocks the tables and is the one to paste into the GitHub repo **Websi
 - Drizzle ORM + Postgres (optional locally. Falls back to mocks)
 - wagmi + viem for wallet connection on Robinhood Chain
 
+## Separate game deployment
+
+The public website can hand off every Play CTA to a separately deployed game
+client. Set `NEXT_PUBLIC_PLAY_APP_URL` to that deployment's origin (for example,
+`https://play.example.com`). If it is unset, links continue to use this repo's
+local `/play` route as a rollback during migration.
+
 ## Getting started
 
 ```bash

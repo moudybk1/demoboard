@@ -3,6 +3,7 @@
  */
 
 import { COMMUNITY_LINKS } from "@/lib/community-links";
+import { playAppHref } from "@/lib/play-app-url";
 
 export type WelcomeCta = {
   label: string;
@@ -32,7 +33,7 @@ export const WELCOME_HERO = {
   ctas: [
     {
       label: "Play now",
-      href: "/play",
+      href: playAppHref(),
       variant: "primary",
     },
     {
@@ -113,7 +114,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     title: "Pick a game",
     body: "Monopoly or Ludo. Four seats, one winner.",
     status: "upcoming",
-    href: "/play",
+    href: playAppHref(),
   },
   {
     id: "lobby",
@@ -121,7 +122,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     title: "Sit the table",
     body: "You plus three rivals. Match starts immediately.",
     status: "upcoming",
-    href: "/play",
+    href: playAppHref(),
   },
   {
     id: "win",
@@ -129,12 +130,12 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     title: "Crown the board",
     body: "Last standing in Monopoly, first home in Ludo.",
     status: "upcoming",
-    href: "/play",
+    href: playAppHref(),
   },
 ];
 
 export const ONBOARDING_ACTIONS: WelcomeCta[] = [
-  { label: "Play now", href: "/play", variant: "primary" },
+  { label: "Play now", href: playAppHref(), variant: "primary" },
 ];
 
 /**

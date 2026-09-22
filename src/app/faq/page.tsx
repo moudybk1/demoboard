@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { ProductShell } from "@/components/layout/product-shell";
 import { PixelCard } from "@/components/ui/pixel-card";
-import { LudoRulesContent } from "@/components/play/ludo-rules-content";
+import { DemoFaqContent } from "@/components/welcome/demo-faq-content";
 
 export const metadata: Metadata = {
   title: "FAQ | BOARD",
@@ -30,7 +30,7 @@ export default function FaqPage() {
         className="w-full"
         faceClassName="px-5 py-7 sm:px-8 sm:py-10 lg:px-12 lg:py-12"
       >
-        <LudoRulesContent />
+        <DemoFaqContent />
       </PixelCard>
     </ProductShell>
   );

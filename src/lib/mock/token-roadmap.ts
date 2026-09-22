@@ -55,26 +55,29 @@ export type EconomyLane = {
 };
 
 export const TOKEN_ECONOMY = {
-  eyebrow: "Ludo payments",
-  title: "Know where your entry goes.",
-  lead: "Paid Ludo requires four paying humans. Entries and payouts use native ETH, not the BOARD token.",
+  eyebrow: "Token economy",
+  title: "Play. Trade. Build the ecosystem.",
+  lead: "BOARD's fee structure is designed to support continued development while creating ongoing utility for the token.",
   closing:
-    "Refunds return the full entry amount. Players pay entry gas; the operator pays refund and payout gas separately.",
+    "Every game played and every trade contributes back to the BOARD ecosystem.",
   lanes: [
     {
       id: "gameplay",
-      title: "Paid Ludo pot",
-      body: "Four 0.002 ETH entries form a 0.008 ETH pot. The winner receives 0.00784 ETH; the treasury retains 0.00016 ETH.",
+      title: "Gameplay",
+      body: "Every game entry carries a 2% protocol fee.",
       splits: [
-        { label: "Winner", percent: 98 },
-        { label: "Treasury", percent: 2 },
+        { label: "Development", percent: 30 },
+        { label: "Buyback and Burn", percent: 70 },
       ],
     },
     {
       id: "dex",
-      title: "Custody and settlement",
-      body: "Entries go to an operator-controlled treasury, not a game escrow contract. Payouts need a successful transaction receipt. Automatic buybacks and burns are not implemented.",
-      splits: [],
+      title: "DEX trading",
+      body: "Fees generated from BOARD trading on supported DEXs are allocated back into the ecosystem.",
+      splits: [
+        { label: "Development", percent: 50 },
+        { label: "Buyback", percent: 50 },
+      ],
     },
   ] satisfies EconomyLane[],
 } as const;

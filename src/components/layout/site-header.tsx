@@ -14,6 +14,7 @@ import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { BalanceWidget } from "@/components/wallet/balance-widget";
 import { useAuthMe } from "@/hooks/use-auth-me";
 import { useDemoAccess } from "@/hooks/use-demo-access";
+import { playAppHref } from "@/lib/play-app-url";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -30,17 +31,16 @@ export function SiteHeader({ className }: { className?: string }) {
   const { authenticated, loading } = useAuthMe();
   const { unlocked } = useDemoAccess();
   const navLinks = NAV_LINKS;
-  const [menuOpen, setMenuOpen] = useState(false);
+  const playHref = playAppHref();
+  const playActive = playHref.startsWith("/") && isActivePath(pathname, "/play");
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const menuOpen = menuPath === pathname;
   const panelId = useId();
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key === "Escape") setMenuPath(null);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -127,7 +127,7 @@ export function SiteHeader({ className }: { className?: string }) {
                     aria-haspopup="true"
                     data-nav-menu-toggle
                     onClick={() => {
-                      setMenuOpen((value) => !value);
+                      setMenuPath(menuOpen ? null : pathname);
                     }}
                   >
                     <span className="sr-only">
@@ -150,15 +150,13 @@ export function SiteHeader({ className }: { className?: string }) {
                   </button>
 
                   <PixelButtonLink
-                    href="/play"
+                    href={playHref}
                     variant="primary"
                     size="sm"
-                    aria-current={
-                      isActivePath(pathname, "/play") ? "page" : undefined
-                    }
+                    aria-current={playActive ? "page" : undefined}
                     className={cn(
                       "rounded-full px-3 whitespace-nowrap shadow-pixel-sm sm:px-4",
-                      isActivePath(pathname, "/play") &&
+                      playActive &&
                         "bg-void text-gold hover:bg-void hover:text-gold",
                     )}
                   >
