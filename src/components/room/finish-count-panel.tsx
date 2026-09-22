@@ -58,7 +58,7 @@ export function FinishCountPanel({
                 </span>
                 <span
                   className={cn(
-                    "font-pixel text-[10px] tabular-nums",
+                    "font-sans text-xs font-bold tabular-nums tracking-tight",
                     isLeader ? "text-gold" : "text-muted",
                   )}
                 >

@@ -8,8 +8,8 @@ export const ROBINHOOD_CHAIN_LABEL = "Robinhood Chain";
 export const ROBINHOOD_TESTNET_FAUCET = "https://faucet.testnet.chain.robinhood.com/";
 
 export function getBoardChainEnv(): BoardChainEnv {
-  const raw = (process.env.NEXT_PUBLIC_CHAIN_ENV ?? "mainnet").toLowerCase();
-  return raw === "testnet" ? "testnet" : "mainnet";
+  const raw = (process.env.NEXT_PUBLIC_CHAIN_ENV ?? "testnet").toLowerCase();
+  return raw === "mainnet" ? "mainnet" : "testnet";
 }
 
 /** Active Robinhood Chain definition for wagmi / viem. */

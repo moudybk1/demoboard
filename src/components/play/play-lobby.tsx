@@ -9,7 +9,7 @@ import { SeatDots } from "@/components/lobby/seat-dots";
 import { PlayArena, PlaySign } from "@/components/play/play-arena";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { ludoPawnSprite, pawnSprite } from "@/lib/game/pawn-sprite";
-import { PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
+import { formatPlayEth, PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import {
   PLAY_LOBBY_SLOTS,
   type PlayLobbyGame,
@@ -20,7 +20,7 @@ import {
   rememberPreviewGame,
   type PreviewGame,
 } from "@/lib/preview-game";
-import { formatBoard, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   getBoardChainLabel,
   ROBINHOOD_TESTNET_FAUCET,
@@ -360,8 +360,8 @@ export function PlayLobby({
                       {world.punch}
                     </p>
                   </div>
-                  <p className="shrink-0 font-pixel text-[10px] uppercase text-gold">
-                    Sit {formatBoard(PLAY_ENTRY_FEE)} {PLAY_STAKE_SYMBOL}
+                  <p className="shrink-0 font-sans text-[12px] font-bold tabular-nums tracking-tight text-gold">
+                    Sit {formatPlayEth(PLAY_ENTRY_FEE)} {PLAY_STAKE_SYMBOL}
                   </p>
                 </div>
                 <ul className="divide-y-[3px] divide-void">
@@ -629,7 +629,7 @@ const LobbyTableRow = memo(function LobbyTableRow({
   } else {
     action = (
       <span className="font-pixel text-[10px] uppercase text-gold">
-        Need {formatBoard(entryFee)} {ticker}
+        Need {formatPlayEth(entryFee)} {ticker}
       </span>
     );
   }
@@ -664,13 +664,16 @@ const LobbyTableRow = memo(function LobbyTableRow({
           {loading ? "…" : `${table.seated}/${table.maxPlayers} sitting`}
           <span className="sm:hidden">
             {" "}
-            · {formatBoard(table.entryFee)} {PLAY_STAKE_SYMBOL}
+            ·{" "}
+            <span className="font-sans font-bold tabular-nums tracking-tight text-gold normal-case">
+              {formatPlayEth(table.entryFee)} {PLAY_STAKE_SYMBOL}
+            </span>
           </span>
         </p>
       </div>
 
-      <p className="hidden shrink-0 font-pixel text-xs font-bold tabular-nums text-gold sm:block">
-        {formatBoard(table.entryFee)} {PLAY_STAKE_SYMBOL}
+      <p className="hidden shrink-0 font-sans text-sm font-bold tabular-nums tracking-tight text-gold sm:block">
+        {formatPlayEth(table.entryFee)} {PLAY_STAKE_SYMBOL}
       </p>
 
       <div className="hidden shrink-0 sm:block">

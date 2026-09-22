@@ -209,7 +209,7 @@ function Tile({
           </span>
 
           {tile.price !== undefined && (
-            <span className="font-pixel text-[clamp(3px,0.5vh,5px)] leading-tight text-gold-deep">
+            <span className="mt-px font-sans text-[clamp(6px,0.85vh,9px)] font-bold tabular-nums leading-none tracking-tight text-gold-deep">
               {tile.price}
             </span>
           )}

@@ -9,7 +9,7 @@ import { PixelCard } from "@/components/ui/pixel-card";
 import { usePlatformWallet } from "@/hooks/use-platform-wallet";
 import {
   getBoardChainId,
-  ROBINHOOD_CHAIN_LABEL,
+  getBoardChainLabel,
   shortenAddress,
 } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
  */
 export function NetworkStatusBanner({ className }: { className?: string }) {
   const expectedChainId = getBoardChainId();
+  const chainLabel = getBoardChainLabel();
   const { address, isConnected, chainId } = useAccount();
   const { switchChain, isPending } = useSwitchChain();
   const { data, loading } = usePlatformWallet();
@@ -44,9 +45,9 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
       : "No wallet connected";
 
   const warning = !isConnected
-    ? "Connect a Robinhood Chain wallet before depositing or withdrawing."
+    ? `Connect a ${chainLabel} wallet before depositing or withdrawing.`
     : wrongNetwork
-      ? `Your wallet is on the wrong network. Switch to ${ROBINHOOD_CHAIN_LABEL} (chain ID ${expectedChainId}).`
+      ? `Your wallet is on the wrong network. Switch to ${chainLabel} (chain ID ${expectedChainId}).`
       : !linked
         ? "Wallet connected · sign in to link it to your BOARD profile."
         : null;
@@ -84,7 +85,7 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
               tone === "bad" && "text-danger",
             )}
           >
-            {wrongNetwork ? "Wrong network" : ROBINHOOD_CHAIN_LABEL}
+            {wrongNetwork ? "Wrong network" : chainLabel}
           </p>
         </div>
         <p className="mt-2 text-xs text-muted">{walletLabel}</p>
@@ -100,7 +101,7 @@ export function NetworkStatusBanner({ className }: { className?: string }) {
           </p>
         ) : (
           <p className="mt-3 text-sm text-muted">
-            Ready to deposit or withdraw on {ROBINHOOD_CHAIN_LABEL}.
+            Ready to deposit or withdraw on {chainLabel}.
           </p>
         )}
       </PixelCard>

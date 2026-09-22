@@ -76,7 +76,7 @@ Optional:
 
 - [ ] `DATABASE_URL` pointing at production Postgres
 - [ ] `NEXT_PUBLIC_APP_URL` set to the live domain
-- [ ] `NEXT_PUBLIC_CHAIN_ENV` = `mainnet` (or `testnet` for staging)
+- [ ] `NEXT_PUBLIC_CHAIN_ENV` = `testnet` (default) or `mainnet` for production
 - [ ] Dedicated RPC URL if public RPC rate limits bite
 - [ ] `PAYMENT_WEBHOOK_SECRET` set; indexer calling `/api/webhooks/payments`
 - [ ] `ALLOW_MOCK_WALLET_VERIFY` unset / false in production

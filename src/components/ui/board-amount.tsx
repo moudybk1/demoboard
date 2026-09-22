@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn, formatBoard, formatBoardCompact } from "@/lib/utils";
 
-const amount = cva("font-pixel font-bold tabular-nums", {
+const amount = cva("font-sans font-bold tabular-nums tracking-tight", {
   variants: {
     size: {
       xs: "text-xs",
@@ -31,9 +31,8 @@ const TICKER_SIZE = {
 } as const;
 
 /**
- * Canonical way to render a BOARD token amount. Keeps grouping, decimals, and
- * the ticker consistent everywhere, and always exposes the exact value to
- * screen readers even when the visible text is abbreviated.
+ * Canonical way to render a BOARD / ETH amount. Digits use Outfit so values
+ * like 0.002 stay readable; the ticker keeps the pixel voice.
  */
 export function BoardAmount({
   value,
@@ -76,8 +75,8 @@ export function BoardAmount({
       {showTicker && (
         <span
           className={cn(
-            "font-pixel font-semibold opacity-70",
             amount({ size, tone }),
+            "font-pixel font-semibold opacity-70",
             TICKER_SIZE[size ?? "md"],
           )}
         >

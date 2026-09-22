@@ -69,11 +69,11 @@ function PlayerCard({
           <div className="mt-0.5 flex items-center justify-between gap-1">
             <BoardAmount
               value={player.cash}
-              size="xs"
+              size="sm"
               tone="default"
               showTicker={false}
             />
-            <span className="flex items-center gap-0.5 font-pixel text-[10px] text-faint">
+            <span className="flex items-center gap-0.5 font-sans text-[11px] font-semibold tabular-nums text-faint">
               <Landmark className="size-2" aria-hidden />
               {player.owned}
             </span>

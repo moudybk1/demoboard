@@ -1,6 +1,6 @@
 import {
   getBoardChainId,
-  ROBINHOOD_CHAIN_LABEL,
+  getBoardChainLabel,
 } from "@/lib/wallet/chains";
 
 /**
@@ -24,7 +24,7 @@ export function buildWalletVerifyMessage(input: {
     `${domain} wants you to prove ownership of this wallet for BOARD.`,
     "",
     `Wallet: ${address}`,
-    `Chain: ${ROBINHOOD_CHAIN_LABEL} (${chainId})`,
+    `Chain: ${getBoardChainLabel()} (${chainId})`,
     `Nonce: ${input.nonce}`,
     "",
     "Sign this message to link your wallet. This does not spend tokens.",
