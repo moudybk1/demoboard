@@ -824,7 +824,7 @@ html[data-reduced-motion="true"] .board-sun-face {
   animation: none !important;
 }
 
-/* Footer flat-rule parade — sits ABOVE the border line */
+/* Footer flat-rule parade. Sits ABOVE the border line */
 .footer-parade {
   position: absolute;
   inset-inline: 0;

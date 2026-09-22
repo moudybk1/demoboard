@@ -15,7 +15,11 @@ import { LudoPlayerRail } from "@/components/room/ludo-player-rail";
 import { RoomTurnClock } from "@/components/room/room-turn-clock";
 import { WinnerScreen } from "@/components/room/winner-screen";
 import { randomDie, type DieValue } from "@/lib/game/dice";
-import { cellCenter, pawnsForBoard } from "@/lib/game/ludo-geometry";
+import {
+  captureReturnPath,
+  cellCenter,
+  pawnsForBoard,
+} from "@/lib/game/ludo-geometry";
 import { MATCH_TURN_SECONDS, type TurnClockInfo } from "@/lib/game/match-clock";
 import {
   chooseNpcMove,
@@ -69,6 +73,9 @@ export const LudoRoom = memo(function LudoRoom({
   const [movingId, setMovingId] = useState<string | null>(null);
   const [movePath, setMovePath] = useState<[number, number][] | null>(null);
   const [capture, setCapture] = useState<CaptureEvent | null>(null);
+  const [returnPaths, setReturnPaths] = useState<
+    Record<string, [number, number][]>
+  >({});
   /** True after a roll is consumed by a move (or voided); must end or bonus-roll. */
   const [rollSpent, setRollSpent] = useState(false);
 
@@ -253,6 +260,7 @@ export const LudoRoom = memo(function LudoRoom({
       if (captures.length > 0) {
         const first = captures[0];
         const point = cellCenter(first.cell[0], first.cell[1]);
+        const trips: Record<string, [number, number][]> = {};
         setCapture({
           id: `${first.victimPawnId}-${Date.now()}`,
           x: point.x,
@@ -264,8 +272,15 @@ export const LudoRoom = memo(function LudoRoom({
           const victim = snapshot.players.find(
             (player) => player.position === hit.victimSeat,
           );
+          const pawn = victim?.pawns.find(
+            (entry) => entry.id === hit.victimPawnId,
+          );
+          if (pawn) {
+            trips[pawn.id] = captureReturnPath(hit.victimSeat, pawn);
+          }
           addLog(seat, `${who} captured ${victim?.username ?? "a rival"}'s pawn!`);
         }
+        setReturnPaths((prev) => ({ ...prev, ...trips }));
       }
 
       const updatedMover = nextState.players.find((p) => p.position === seat);
@@ -327,6 +342,15 @@ export const LudoRoom = memo(function LudoRoom({
     },
     [applyMoveToState],
   );
+
+  const handleReturnComplete = useCallback((pawnId: string) => {
+    setReturnPaths((prev) => {
+      if (!prev[pawnId]) return prev;
+      const next = { ...prev };
+      delete next[pawnId];
+      return next;
+    });
+  }, []);
 
   const startHop = useCallback((move: MovePreview) => {
     pendingMove.current = move;
@@ -538,8 +562,10 @@ export const LudoRoom = memo(function LudoRoom({
                 }
                 movingId={movingId}
                 movePath={movePath}
+                returnPaths={returnPaths}
                 onSelect={handleSelect}
                 onMoveComplete={handleHopComplete}
+                onReturnComplete={handleReturnComplete}
               />
               {capture && !finished && (
                 <CaptureBurst
@@ -603,11 +629,12 @@ export const LudoRoom = memo(function LudoRoom({
               Hide
             </span>
           </summary>
-          <ActivityLog entries={state.log} className="max-h-48" />
+          <ActivityLog entries={state.log} palette="ludo" className="max-h-48" />
         </details>
 
         <ActivityLog
           entries={state.log}
+          palette="ludo"
           className="hidden max-h-none lg:flex"
         />
       </aside>

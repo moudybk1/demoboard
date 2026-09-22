@@ -7,7 +7,7 @@ import {
   readJsonBody,
   readOptionalString,
 } from "@/server/lib/api-response";
-import { sitPlayTable } from "@/server/services/play-table.service";
+import { sitPlayTable, claimUnpaidSit } from "@/server/services/play-table.service";
 import type { Hex } from "viem";
 
 function readHex(body: unknown, key: string, bytes: 20 | 32): Hex {
@@ -28,9 +28,16 @@ export async function POST(request: Request) {
       throw new InvalidBodyError("game must be monopoly or ludo.", 400);
     }
     const address = readHex(body, "address", 20);
-    const txHash = readHex(body, "txHash", 32);
     const tableId = readOptionalString(body, "tableId") ?? undefined;
-    const result = await sitPlayTable({ game, tableId, address, txHash });
+    const rawTx = readOptionalString(body, "txHash");
+    const result = rawTx
+      ? await sitPlayTable({
+          game,
+          tableId,
+          address,
+          txHash: readHex(body, "txHash", 32),
+        })
+      : await claimUnpaidSit({ game, tableId, address });
     if (!result.ok) return failureResponse(result);
     return NextResponse.json({
       table: result.table,

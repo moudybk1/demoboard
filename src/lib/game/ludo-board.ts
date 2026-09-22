@@ -1,9 +1,19 @@
-import { SEAT_COLORS } from "@/lib/game/seats";
-
 /**
  * Classic 15×15 Ludo layout. Four coloured yards sit in the corners; a cross
  * of path cells meets in the centre where the home lanes finish.
  */
+
+/** Ludo-only seat paints. Monopoly keeps the shared seat palette. */
+export const LUDO_COLORS = [
+  { hex: "#22a84a", shadeHex: "#146b2e", label: "Green" },
+  { hex: "#e23b3b", shadeHex: "#9b1c1c", label: "Red" },
+  { hex: "#2f6fe4", shadeHex: "#1a3f8f", label: "Blue" },
+  { hex: "#f5c518", shadeHex: "#a67c00", label: "Yellow" },
+] as const;
+
+export function ludoSeatColor(seat: number) {
+  return LUDO_COLORS[(seat - 1) % LUDO_COLORS.length];
+}
 
 export const LUDO_SIZE = 15;
 
@@ -30,10 +40,10 @@ export const YARD_BOUNDS: Record<
   number,
   { rows: [number, number]; cols: [number, number] }
 > = {
-  1: { rows: [9, 14], cols: [0, 5] }, // bottom-left · Gold
-  2: { rows: [0, 5], cols: [0, 5] }, // top-left · Teal
-  3: { rows: [0, 5], cols: [9, 14] }, // top-right · Violet
-  4: { rows: [9, 14], cols: [9, 14] }, // bottom-right · Red
+  1: { rows: [9, 14], cols: [0, 5] }, // bottom-left · Green
+  2: { rows: [0, 5], cols: [0, 5] }, // top-left · Red
+  3: { rows: [0, 5], cols: [9, 14] }, // top-right · Blue
+  4: { rows: [9, 14], cols: [9, 14] }, // bottom-right · Yellow
 };
 
 /** Four start pads inside each 6×6 yard, relative to the yard origin. */
@@ -220,9 +230,9 @@ export const LUDO_CELLS: LudoCell[] = (() => {
 })();
 
 export function yardHex(seat: number) {
-  return SEAT_COLORS[(seat - 1) % SEAT_COLORS.length].hex;
+  return ludoSeatColor(seat).hex;
 }
 
 export function yardShade(seat: number) {
-  return SEAT_COLORS[(seat - 1) % SEAT_COLORS.length].shadeHex;
+  return ludoSeatColor(seat).shadeHex;
 }

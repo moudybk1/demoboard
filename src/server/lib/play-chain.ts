@@ -11,9 +11,11 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import { PLAY_ENTRY_FEE_ETH } from "@/lib/game/play-player";
+import { boardRpcFetch } from "@/server/lib/board-rpc-fetch";
 import {
   getBoardChain,
   getBoardChainId,
+  getBoardExplorerUrl,
   getBoardRpcUrl,
 } from "@/lib/wallet/chains";
 
@@ -77,12 +79,31 @@ export function getPlayTreasuryAddress(): Hex {
 function publicClient() {
   return createPublicClient({
     chain: getBoardChain(),
-    transport: http(getBoardRpcUrl()),
+    transport: http(getBoardRpcUrl(), {
+      fetchFn: boardRpcFetch,
+      timeout: 8_000,
+      retryCount: 1,
+      retryDelay: 200,
+    }),
   });
 }
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("rpc_timeout")), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export type SitTxError = {
@@ -93,6 +114,7 @@ export type SitTxError = {
 /**
  * Confirm a sit payment: successful native transfer of the entry fee from the
  * player to the play treasury on the active Robinhood chain.
+ * Client already waited for the receipt; keep this tight so seating is not laggy.
  */
 export async function verifySitTransaction(input: {
   hash: Hex;
@@ -102,17 +124,23 @@ export async function verifySitTransaction(input: {
   const expectedTo = treasury.address.toLowerCase();
   const expectedFrom = input.from.toLowerCase();
 
-  let tx = null;
-  let receipt = null;
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  let tx: Awaited<ReturnType<typeof client.getTransaction>> | null = null;
+  let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null =
+    null;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
-      tx = await client.getTransaction({ hash: input.hash });
-      receipt = await client.getTransactionReceipt({ hash: input.hash });
+      const [nextTx, nextReceipt] = await Promise.all([
+        withTimeout(client.getTransaction({ hash: input.hash }), 6_000),
+        withTimeout(client.getTransactionReceipt({ hash: input.hash }), 6_000),
+      ]);
+      tx = nextTx;
+      receipt = nextReceipt;
       if (tx && receipt) break;
     } catch {
-      // not yet indexed
+      // RPC timeout or not indexed yet
     }
-    await sleep(400);
+    await sleep(250);
   }
 
   if (!tx || !receipt) {
@@ -166,6 +194,39 @@ export async function verifySitTransaction(input: {
   }
 
   return { ok: true };
+}
+
+type ExplorerTx = {
+  hash?: string;
+  from?: string;
+  to?: string;
+  value?: string;
+  isError?: string;
+  txreceipt_status?: string;
+};
+
+/** Successful unused-candidate sit payments to the treasury, oldest first. */
+export async function listSuccessfulSitHashes(from: Hex): Promise<Hex[]> {
+  const url = `${getBoardExplorerUrl()}/api?module=account&action=txlist&address=${treasury.address}&sort=desc&page=1&offset=30`;
+  const response = await boardRpcFetch(url);
+  if (!response.ok) return [];
+  const payload = (await response.json()) as { result?: ExplorerTx[] };
+  const rows = Array.isArray(payload.result) ? payload.result : [];
+  const fromKey = from.toLowerCase();
+  const treasuryKey = treasury.address.toLowerCase();
+  const value = PLAY_SIT_VALUE.toString();
+  return rows
+    .filter(
+      (row) =>
+        row.hash &&
+        row.from?.toLowerCase() === fromKey &&
+        row.to?.toLowerCase() === treasuryKey &&
+        row.value === value &&
+        row.isError === "0" &&
+        row.txreceipt_status === "1",
+    )
+    .map((row) => row.hash!.toLowerCase() as Hex)
+    .reverse();
 }
 
 export type RefundSitResult =
@@ -234,7 +295,11 @@ export async function refundSit(to: Hex): Promise<RefundSitResult> {
     const wallet = createWalletClient({
       account,
       chain: getBoardChain(),
-      transport: http(getBoardRpcUrl()),
+      transport: http(getBoardRpcUrl(), {
+        fetchFn: boardRpcFetch,
+        timeout: 12_000,
+        retryCount: 1,
+      }),
     });
     const hash = await wallet.sendTransaction({
       account,
@@ -246,7 +311,14 @@ export async function refundSit(to: Hex): Promise<RefundSitResult> {
         : {}),
       chain: getBoardChain(),
     });
-    await public_.waitForTransactionReceipt({ hash });
+    try {
+      await withTimeout(
+        public_.waitForTransactionReceipt({ hash, timeout: 20_000 }),
+        22_000,
+      );
+    } catch {
+      // Broadcast succeeded; receipt lag should not fail the refund claim.
+    }
     return { ok: true, hash };
   } catch (error) {
     const message =

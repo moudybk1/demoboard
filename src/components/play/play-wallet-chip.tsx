@@ -64,7 +64,7 @@ export function PlayWalletChip() {
     wallet.amount === null
       ? wallet.loading
         ? "…"
-        : "—"
+        : "…"
       : formatPlayEth(wallet.amount);
 
   async function copyAddress() {

@@ -1,3 +1,4 @@
+import { LUDO_COLORS } from "@/lib/game/ludo-board";
 import { SEAT_COLORS } from "@/lib/game/seats";
 import { cn } from "@/lib/utils";
 
@@ -9,10 +10,12 @@ export function SeatDots({
   filled,
   total,
   className,
+  palette,
 }: {
   filled: number;
   total: number;
   className?: string;
+  palette?: "ludo";
 }) {
   return (
     <div
@@ -26,12 +29,22 @@ export function SeatDots({
           className={cn(
             "size-3 pixel-corners border-[2px]",
             index < filled
-              ? cn(
-                  "border-void/40",
-                  SEAT_COLORS[index % SEAT_COLORS.length].bg,
-                )
+              ? palette === "ludo"
+                ? "border-void/40"
+                : cn(
+                    "border-void/40",
+                    SEAT_COLORS[index % SEAT_COLORS.length].bg,
+                  )
               : "border-edge-bright bg-transparent",
           )}
+          style={
+            index < filled && palette === "ludo"
+              ? {
+                  backgroundColor:
+                    LUDO_COLORS[index % LUDO_COLORS.length].hex,
+                }
+              : undefined
+          }
         />
       ))}
     </div>

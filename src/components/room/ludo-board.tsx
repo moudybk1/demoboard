@@ -3,12 +3,12 @@ import { memo, type CSSProperties } from "react";
 import {
   LUDO_CELLS,
   LUDO_SIZE,
+  ludoSeatColor,
   yardHex,
   yardShade,
   type LudoCell,
 } from "@/lib/game/ludo-board";
 import { pawnGlyph } from "@/lib/game/pawn-sprite";
-import { seatColor } from "@/lib/game/seats";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,7 +55,7 @@ export function LudoBoard({
 }
 
 const YardBadge = memo(function YardBadge({ seat }: { seat: number }) {
-  const color = seatColor(seat);
+  const color = ludoSeatColor(seat);
   // Place badge in the inner corner of each yard (away from the track).
   const placement: Record<number, string> = {
     1: "bottom-[2.5%] left-[2.5%]",
@@ -70,9 +70,11 @@ const YardBadge = memo(function YardBadge({ seat }: { seat: number }) {
       className={cn(
         "pointer-events-none absolute z-[1] grid size-[7%] place-items-center border-2 border-void/50 bg-void/40 font-pixel text-[clamp(6px,1.1vh,12px)]",
         placement[seat],
-        color.text,
       )}
-      style={{ boxShadow: `2px 2px 0 0 ${color.shadeHex}` }}
+      style={{
+        color: color.hex,
+        boxShadow: `2px 2px 0 0 ${color.shadeHex}`,
+      }}
     >
       {pawnGlyph(seat)}
     </div>

@@ -4,14 +4,15 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
 import { PixelArt } from "@/components/game/pixel-art";
+import { ludoSeatColor } from "@/lib/game/ludo-board";
 import { cellCenter, type LudoPawnView } from "@/lib/game/ludo-geometry";
-import { pawnGlyph, pawnSprite } from "@/lib/game/pawn-sprite";
+import { ludoPawnSprite, pawnGlyph } from "@/lib/game/pawn-sprite";
 import { playHopSound } from "@/lib/game/sfx";
-import { seatColor } from "@/lib/game/seats";
 import { prefersReducedMotion } from "@/lib/motion/gsap-config";
 import { cn } from "@/lib/utils";
 
 const STEP_MS = 0.14;
+const RETURN_MS = 0.07;
 
 /**
  * Living Ludo pawns. Selectable pawns light up after a roll; choosing one
@@ -22,15 +23,19 @@ export function LudoPawnLayer({
   selectableIds,
   movingId,
   movePath,
+  returnPaths,
   onSelect,
   onMoveComplete,
+  onReturnComplete,
 }: {
   pawns: LudoPawnView[];
   selectableIds: string[];
   movingId: string | null;
   movePath: [number, number][] | null;
+  returnPaths: Record<string, [number, number][]>;
   onSelect: (pawnId: string) => void;
   onMoveComplete: () => void;
+  onReturnComplete: (pawnId: string) => void;
 }) {
   return (
     <div className="absolute inset-0 z-10">
@@ -41,8 +46,10 @@ export function LudoPawnLayer({
           selectable={selectableIds.includes(pawn.id)}
           moving={movingId === pawn.id}
           movePath={movingId === pawn.id ? movePath : null}
+          returnPath={returnPaths[pawn.id] ?? null}
           onSelect={() => onSelect(pawn.id)}
           onMoveComplete={onMoveComplete}
+          onReturnComplete={() => onReturnComplete(pawn.id)}
         />
       ))}
     </div>
@@ -54,24 +61,29 @@ function LudoPawnToken({
   selectable,
   moving,
   movePath,
+  returnPath,
   onSelect,
   onMoveComplete,
+  onReturnComplete,
 }: {
   pawn: LudoPawnView;
   selectable: boolean;
   moving: boolean;
   movePath: [number, number][] | null;
+  returnPath: [number, number][] | null;
   onSelect: () => void;
   onMoveComplete: () => void;
+  onReturnComplete: () => void;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
-  const color = seatColor(pawn.seat);
+  const color = ludoSeatColor(pawn.seat);
   const finished = pawn.status === "finished";
+  const returning = returnPath != null && returnPath.length > 0;
 
   // Place + idle bob.
   useEffect(() => {
     const node = ref.current;
-    if (!node || moving) return;
+    if (!node || moving || returning) return;
 
     gsap.set(node, {
       xPercent: -50,
@@ -106,7 +118,7 @@ function LudoPawnToken({
       idle.kill();
       pulse.kill();
     };
-  }, [pawn.point.x, pawn.point.y, selectable, moving]);
+  }, [pawn.point.x, pawn.point.y, selectable, moving, returning]);
 
   // Hop along the move path.
   useEffect(() => {
@@ -173,6 +185,65 @@ function LudoPawnToken({
     };
   }, [moving, movePath, onMoveComplete]);
 
+  // Walk a captured pawn back along the track into its yard.
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || !returnPath || returnPath.length === 0) return;
+
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      onReturnComplete();
+    };
+
+    const end = cellCenter(
+      returnPath[returnPath.length - 1][0],
+      returnPath[returnPath.length - 1][1],
+    );
+
+    if (prefersReducedMotion()) {
+      gsap.set(node, { left: `${end.x}%`, top: `${end.y}%`, y: 0, scale: 1 });
+      finish();
+      return;
+    }
+
+    const timeline = gsap.timeline({ onComplete: finish });
+
+    returnPath.forEach(([row, col], index) => {
+      const point = cellCenter(row, col);
+      timeline
+        .to(node, {
+          left: `${point.x}%`,
+          top: `${point.y}%`,
+          duration: RETURN_MS,
+          ease: "none",
+        })
+        .to(
+          node,
+          {
+            scaleX: 1.12,
+            scaleY: 1.28,
+            y: -4,
+            duration: RETURN_MS / 2,
+            ease: "power2.out",
+            yoyo: true,
+            repeat: 1,
+            onStart: () => {
+              if (index % 2 === 0) playHopSound();
+            },
+          },
+          `-=${RETURN_MS}`,
+        );
+    });
+
+    timeline.to(node, { scale: 1, y: 0, duration: 0.1, ease: "back.out(3)" });
+
+    return () => {
+      timeline.kill();
+    };
+  }, [returnPath, onReturnComplete]);
+
   return (
     <button
       type="button"
@@ -181,7 +252,7 @@ function LudoPawnToken({
       onClick={onSelect}
       className={cn(
         "absolute w-[4.6%]",
-        moving && "will-change-transform",
+        (moving || returning) && "z-30 will-change-transform",
         selectable
           ? "pointer-events-auto cursor-pointer"
           : "pointer-events-none",
@@ -194,15 +265,13 @@ function LudoPawnToken({
     >
       <div className="relative drop-shadow-[0_2px_0_rgba(7,9,15,0.9)]">
         <PixelArt
-          sprite={pawnSprite(pawn.seat)}
+          sprite={ludoPawnSprite(pawn.seat)}
           label={`${pawn.username} ${color.label} ${pawnGlyph(pawn.seat)} pawn ${pawn.pawnIndex + 1}`}
         />
         <span
           aria-hidden
-          className={cn(
-            "absolute -bottom-0.5 -right-0.5 grid size-[45%] place-items-center border border-void bg-ink font-pixel text-[clamp(4px,0.55vh,7px)] leading-none",
-            color.text,
-          )}
+          className="absolute -bottom-0.5 -right-0.5 grid size-[45%] place-items-center border border-void bg-ink font-pixel text-[clamp(4px,0.55vh,7px)] leading-none"
+          style={{ color: color.hex }}
         >
           {pawn.pawnIndex + 1}
         </span>

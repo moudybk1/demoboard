@@ -3,6 +3,7 @@ import {
   PixelPanelHeader,
   PixelPanelTitle,
 } from "@/components/ui/pixel-panel";
+import { ludoSeatColor } from "@/lib/game/ludo-board";
 import { seatColor } from "@/lib/game/seats";
 import type { MonopolyLogEntry } from "@/lib/mock/monopoly";
 import type { LudoLogEntry } from "@/lib/mock/ludo";
@@ -14,9 +15,11 @@ type LogEntry = MonopolyLogEntry | LudoLogEntry;
 export function ActivityLog({
   entries,
   className,
+  palette,
 }: {
   entries: LogEntry[];
   className?: string;
+  palette?: "ludo";
 }) {
   return (
     <PixelPanel className={cn("flex flex-col", className)}>
@@ -36,8 +39,15 @@ export function ActivityLog({
                 "mt-1 size-2 shrink-0 border border-void/40",
                 entry.seat === null
                   ? "bg-edge-bright"
-                  : seatColor(entry.seat).bg,
+                  : palette === "ludo"
+                    ? undefined
+                    : seatColor(entry.seat).bg,
               )}
+              style={
+                entry.seat !== null && palette === "ludo"
+                  ? { backgroundColor: ludoSeatColor(entry.seat).hex }
+                  : undefined
+              }
             />
             <span className="text-[11px] leading-relaxed text-muted">
               {entry.message}

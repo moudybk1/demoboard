@@ -3,8 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
-import { seatColor } from "@/lib/game/seats";
-import { cn } from "@/lib/utils";
+import { ludoSeatColor } from "@/lib/game/ludo-board";
 
 export type CaptureEvent = {
   id: string;
@@ -27,7 +26,7 @@ export function CaptureBurst({
   onDone: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const color = seatColor(event.victimSeat);
+  const color = ludoSeatColor(event.victimSeat);
 
   useEffect(() => {
     const node = ref.current;
@@ -98,19 +97,15 @@ export function CaptureBurst({
         Captured!
       </span>
       <span
-        className={cn(
-          "absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 border-2 border-void",
-          color.bg,
-        )}
+        className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 border-2 border-void"
+        style={{ backgroundColor: color.hex }}
       />
       {Array.from({ length: 12 }, (_, index) => (
         <span
           key={index}
           data-shard
-          className={cn(
-            "absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 border border-void/50",
-            color.bg,
-          )}
+          className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 border border-void/50"
+          style={{ backgroundColor: color.hex }}
         />
       ))}
     </div>

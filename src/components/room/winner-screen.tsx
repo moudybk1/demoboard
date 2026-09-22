@@ -9,6 +9,7 @@ import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { PrizeSplit } from "@/components/wins/prize-split";
 import { StartMatchButton } from "@/components/lobby/start-match-button";
+import { ludoSeatColor } from "@/lib/game/ludo-board";
 import { seatColor } from "@/lib/game/seats";
 import { PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import { PRIZE_FEE_RATE, type GameType } from "@/lib/types";
@@ -36,7 +37,8 @@ export function WinnerScreen({
   game?: GameType;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const color = seatColor(winner.seat);
+  const color =
+    game === "ludo" ? ludoSeatColor(winner.seat) : seatColor(winner.seat);
   const fee = winner.pot * PRIZE_FEE_RATE;
   // Matches economy.service feeDestination: 30% / 35% / 35%.
   const treasury = fee * 0.3;
@@ -116,7 +118,7 @@ export function WinnerScreen({
           <div
             className={cn(
               "flex flex-col items-center gap-3 border-b-2 border-gold/40 px-5 py-6",
-              color.bg,
+              "bg" in color ? color.bg : undefined,
             )}
             style={{ backgroundColor: `${color.hex}22` }}
           >
@@ -137,8 +139,9 @@ export function WinnerScreen({
               id="winner-title"
               className={cn(
                 "font-pixel text-xl font-bold text-shadow-pixel sm:text-2xl",
-                color.text,
+                "text" in color ? color.text : undefined,
               )}
+              style={"text" in color ? undefined : { color: color.hex }}
             >
               {winner.isYou ? "You win!" : `${winner.username} wins!`}
             </h2>

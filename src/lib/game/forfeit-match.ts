@@ -2,7 +2,7 @@ import { clearMatch } from "@/lib/game/match-storage";
 import { clearPlaySeat, readPlaySeat } from "@/lib/game/play-table";
 
 /**
- * Leave a match in progress. The sit fee stays with the house — no refund.
+ * Leave a match in progress. The sit fee stays with the house. No refund.
  * `tableId` and `address` come from the open room so a missing session seat
  * still unseats the wallet on the server.
  */

@@ -70,8 +70,7 @@ export function ComingSoonModal({
           className="mx-auto mt-4 max-w-[34ch] text-base leading-relaxed text-muted"
         >
           Wallet connect is almost ready. We&apos;re putting the finishing
-          touches on so you can jump in and play for real. Hang tight —
-          we&apos;re really close.
+          touches on so you can jump in and play for real.
         </p>
         <PixelButton
           type="button"

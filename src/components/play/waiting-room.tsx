@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { BoardAmount } from "@/components/ui/board-amount";
 import { PixelArt } from "@/components/game/pixel-art";
-import { pawnSprite } from "@/lib/game/pawn-sprite";
+import { ludoPawnSprite, pawnSprite } from "@/lib/game/pawn-sprite";
 import {
   clearPlaySeat,
   isPlayBot,
@@ -141,7 +141,13 @@ export function WaitingRoom({
                     )}
                   >
                     <span className="w-8 shrink-0">
-                      <PixelArt sprite={pawnSprite(seat)} />
+                      <PixelArt
+                        sprite={
+                          table.game === "ludo"
+                            ? ludoPawnSprite(seat)
+                            : pawnSprite(seat)
+                        }
+                      />
                     </span>
                     <div className="min-w-0">
                       <p className="font-pixel text-[10px] uppercase text-gold">
@@ -162,7 +168,7 @@ export function WaitingRoom({
                             : player.ready
                               ? "Ready"
                               : "Not ready"
-                          : "—"}
+                          : "…"}
                       </p>
                     </div>
                   </li>

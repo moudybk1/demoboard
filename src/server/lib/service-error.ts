@@ -62,5 +62,6 @@ export function statusForCode(
   NOT_WAITING: 409,
   NOT_PLAYING: 409,
   LEFT_TABLE: 409,
+  NO_PAYMENT: 404,
   REFUND_FAILED: 503,
 };

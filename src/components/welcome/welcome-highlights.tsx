@@ -4,7 +4,7 @@ import { GameChoice } from "@/components/welcome/game-choice";
 import { cn } from "@/lib/utils";
 
 /**
- * Game pick on the hero sky — rivalry header + tabletop felt stage for the cards.
+ * Game pick on the hero sky. Rivalry header + tabletop felt stage for the cards.
  */
 export function WelcomeHighlights({ className }: { className?: string }) {
   return (

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Game-client HUD. Wallet + social top-right, speaker bottom-left.
- * The hanging wooden sign on the arena is the identity — no website logo.
+ * The hanging wooden sign on the arena is the identity. No website logo.
  */
 export function PlayChrome() {
   return (

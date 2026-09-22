@@ -28,7 +28,7 @@ const WALKERS = [
   { seat: 4, delay: "-20s", duration: "32s", hop: "0.2s" },
 ] as const;
 
-/** Decorative lobby backdrop. Memoized — never depends on live table state. */
+/** Decorative lobby backdrop. Memoized. Never depends on live table state. */
 export const PlayArena = memo(function PlayArena({
   accent = "gold",
 }: {
@@ -136,76 +136,20 @@ export function PlaySign({
   label: string;
   compact?: boolean;
 }) {
-  return (
-    <div
-      data-play-sign
-      className={cn(
-        "relative w-full",
-        compact ? "max-w-[14rem] sm:max-w-[16rem]" : "max-w-[18rem] sm:max-w-[22rem]",
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "absolute left-[28%] top-0 w-[5px] bg-void",
-          compact ? "h-5 sm:h-6" : "h-7 sm:h-8",
-        )}
-      />
-      <span
-        aria-hidden
-        className={cn(
-          "absolute right-[28%] top-0 w-[5px] bg-void",
-          compact ? "h-5 sm:h-6" : "h-7 sm:h-8",
-        )}
-      />
-      <PlaySparkle className="absolute -left-2 top-8" />
-      <PlaySparkle className="absolute -right-3 top-4" />
+  const text = /^(PLAY|BOARD)$/i.test(label) ? "BOARD" : label;
 
-      <div
+  return (
+    <div data-play-sign className="relative flex w-full justify-center px-4">
+      <h1
         className={cn(
-          "relative mx-auto w-full",
-          compact ? "mt-5 sm:mt-6" : "mt-7 sm:mt-8",
+          "text-center font-pixel font-bold leading-none text-parchment",
+          compact
+            ? "text-[clamp(2.75rem,9vw,3.75rem)]"
+            : "text-[clamp(4rem,14vw,6.5rem)]",
         )}
       >
-        <div className="pixel-card-shadow-lg">
-          <div className="pixel-notch border-[4px] border-void bg-[#8a3200] p-[3px]">
-            <div
-              className={cn(
-                "pixel-notch relative overflow-hidden",
-                compact ? "px-3 py-2 sm:px-4" : "px-4 py-2.5 sm:px-5 sm:py-3",
-              )}
-              style={{
-                backgroundImage: `
-                  repeating-linear-gradient(
-                    90deg,
-                    #e39a3a 0 12px,
-                    #d4892a 12px 14px,
-                    #c77822 14px 26px
-                  )
-                `,
-              }}
-            >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-cream/35"
-              />
-              <h1
-                className="text-center font-pixel font-bold leading-none tracking-wide text-gold"
-                style={{
-                  fontSize: compact
-                    ? "clamp(1.5rem, 6vw, 2.2rem)"
-                    : label.length > 6
-                      ? "clamp(1.7rem, 7vw, 2.7rem)"
-                      : "clamp(2.2rem, 9vw, 3.4rem)",
-                  textShadow: "3px 3px 0 #c45a00, 5px 5px 0 #1a0c06",
-                }}
-              >
-                {label}
-              </h1>
-            </div>
-          </div>
-        </div>
-      </div>
+        {text}
+      </h1>
     </div>
   );
 }

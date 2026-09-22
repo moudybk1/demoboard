@@ -35,7 +35,7 @@ export const PRIZE_RULES_INTRO = {
   title: "Prizes & fees",
   punch: "Simple rules. Transparent fees. One winner.",
   support:
-    "Every room brings together four players with the same entry amount. All entries form the match pool, and once the match is settled, the winner receives the remaining reward after the 2% protocol fee. This closed demo does not stake or pay out real $BOARD — the numbers below describe the live economy.",
+    "Every room brings together four players with the same entry amount. All entries form the match pool, and once the match is settled, the winner receives the remaining reward after the 2% protocol fee. This closed demo does not stake or pay out real $BOARD. The numbers below describe the live economy.",
 };
 
 export const PRIZE_RULES: PrizeRule[] = [
@@ -95,9 +95,9 @@ export const PRIZE_RULES: PrizeRule[] = [
       {
         type: "list",
         items: [
-          "30% — Development. Supports ongoing game development, infrastructure, operations, and future features.",
-          "35% — Buyback. Allocated to $BOARD buybacks.",
-          "35% — Burn. Allocated to permanently removing $BOARD from circulation.",
+          "30% Development. Supports ongoing game development, infrastructure, operations, and future features.",
+          "35% Buyback. Allocated to $BOARD buybacks.",
+          "35% Burn. Allocated to permanently removing $BOARD from circulation.",
         ],
       },
       {

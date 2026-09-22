@@ -140,6 +140,33 @@ export function pawnCell(
   return null;
 }
 
+/**
+ * Cells a captured pawn walks, from the square it was taken on back to its
+ * yard pad. Long trips skip cells so the return stays readable.
+ */
+export function captureReturnPath(
+  seat: number,
+  pawn: LudoPawn,
+): [number, number][] {
+  const home = yardPadCells(seat)[pawn.index];
+  if (pawn.status !== "track") return [home];
+
+  const stride = pawn.steps > 24 ? 3 : pawn.steps > 12 ? 2 : 1;
+  const cells: [number, number][] = [];
+  const push = (cell: [number, number]) => {
+    const prev = cells[cells.length - 1];
+    if (prev && prev[0] === cell[0] && prev[1] === cell[1]) return;
+    cells.push(cell);
+  };
+
+  for (let step = pawn.steps - stride; step > 0; step -= stride) {
+    push(trackCellForSeat(seat, step));
+  }
+  push(trackCellForSeat(seat, 0));
+  push(home);
+  return cells;
+}
+
 export function pawnPoint(seat: number, pawn: LudoPawn): BoardPoint | null {
   const cell = pawnCell(seat, pawn);
   if (!cell) return null;

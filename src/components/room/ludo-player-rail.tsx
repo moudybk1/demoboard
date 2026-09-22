@@ -1,7 +1,7 @@
 import { Flag, Home } from "lucide-react";
 
 import { PixelPanel } from "@/components/ui/pixel-panel";
-import { seatColor } from "@/lib/game/seats";
+import { ludoSeatColor } from "@/lib/game/ludo-board";
 import { pawnsFinished, pawnsOnBoard, type LudoPlayer } from "@/lib/mock/ludo";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +44,7 @@ function LudoPlayerCard({
   player: LudoPlayer;
   active: boolean;
 }) {
-  const color = seatColor(player.position);
+  const color = ludoSeatColor(player.position);
   const done = player.status === "finished";
   const out = player.status === "eliminated";
   const finished = pawnsFinished(player);
@@ -57,16 +57,25 @@ function LudoPlayerCard({
       className={cn(
         "flex h-full flex-col gap-2 p-2.5 sm:gap-3 sm:p-3",
         "transition-colors",
-        active && !done && !out && cn(color.border, "bg-surface-hover"),
+        active && !done && !out && "bg-surface-hover",
         (done || out) && "opacity-70",
       )}
+      style={
+        active && !done && !out
+          ? { boxShadow: `inset 0 0 0 2px ${color.hex}` }
+          : undefined
+      }
     >
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className={cn("size-3 shrink-0 border-2 border-void/40", color.bg)}
+          className="size-3 shrink-0 border-2 border-void/40"
+          style={{ backgroundColor: color.hex }}
         />
-        <span className={cn("truncate font-pixel text-xs sm:text-[10px]", color.text)}>
+        <span
+          className="truncate font-pixel text-xs sm:text-[10px]"
+          style={{ color: color.hex }}
+        >
           {player.username}
         </span>
         {player.isYou && (
@@ -103,12 +112,16 @@ function LudoPlayerCard({
             className={cn(
               "size-3 border-2",
               pawn.status === "yard" && "border-edge-bright bg-transparent",
-              pawn.status === "track" && cn("border-void/40", color.bg),
-              pawn.status === "home" &&
-                cn("border-gold/60", color.bg, "opacity-80"),
+              pawn.status === "track" && "border-void/40",
+              pawn.status === "home" && "border-gold/60 opacity-80",
               pawn.status === "finished" &&
                 "border-gold bg-gold shadow-[0_0_0_1px_var(--color-gold-deep)]",
             )}
+            style={
+              pawn.status === "track" || pawn.status === "home"
+                ? { backgroundColor: color.hex }
+                : undefined
+            }
           />
         ))}
       </div>

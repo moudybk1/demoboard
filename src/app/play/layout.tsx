@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Dedicated play site. Full viewport game client — not the marketing chrome.
+ * Dedicated play site. Full viewport game client. Not the marketing chrome.
  */
 export default function PlayLayout({ children }: LayoutProps<"/play">) {
   return (

@@ -8,7 +8,7 @@ import { PixelArt } from "@/components/game/pixel-art";
 import { SeatDots } from "@/components/lobby/seat-dots";
 import { PlayArena, PlaySign } from "@/components/play/play-arena";
 import { PixelButton } from "@/components/ui/pixel-button";
-import { pawnSprite } from "@/lib/game/pawn-sprite";
+import { ludoPawnSprite, pawnSprite } from "@/lib/game/pawn-sprite";
 import { PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import {
   PLAY_LOBBY_SLOTS,
@@ -284,14 +284,14 @@ export function PlayLobby({
         {forfeitNotice === "afk" ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
             You were kicked for missing three rolls. Your entry fee is not refunded.
-            Sit again to play — the entry fee is charged again.
+            Sit again to play. The entry fee is charged again.
           </p>
         ) : null}
 
         {forfeitNotice === "leave" ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
             You left the match. Your entry fee is not refunded. Sit again to
-            play — the entry fee is charged again.
+            play. The entry fee is charged again.
           </p>
         ) : null}
 
@@ -492,10 +492,10 @@ const GamePickStill = memo(function GamePickStill({
         </div>
       ) : (
         <div className="absolute inset-[8%] grid grid-cols-2 grid-rows-2 gap-1 border-[3px] border-void bg-[#2a0c18] p-1">
-          <span className="bg-[#c45a32]" />
-          <span className="bg-[#3ec9b0]" />
-          <span className="bg-[#6cff9f]" />
-          <span className="bg-[#ff7a59]" />
+          <span className="bg-[#e23b3b]" />
+          <span className="bg-[#2f6fe4]" />
+          <span className="bg-[#22a84a]" />
+          <span className="bg-[#f5c518]" />
         </div>
       )}
       {([1, 2, 3, 4] as const).map((seat) => (
@@ -509,7 +509,7 @@ const GamePickStill = memo(function GamePickStill({
             seat === 4 && "top-[10%] left-[10%]",
           )}
         >
-          <PixelArt sprite={pawnSprite(seat)} />
+          <PixelArt sprite={monopoly ? pawnSprite(seat) : ludoPawnSprite(seat)} />
         </span>
       ))}
     </div>
@@ -646,7 +646,11 @@ const LobbyTableRow = memo(function LobbyTableRow({
               className={cn("w-3.5 sm:w-4", !filled && "opacity-30")}
               title={filled ? `Seat ${seat} taken` : `Seat ${seat} open`}
             >
-              <PixelArt sprite={pawnSprite(seat)} />
+              <PixelArt
+                sprite={
+                  table.game === "ludo" ? ludoPawnSprite(seat) : pawnSprite(seat)
+                }
+              />
             </span>
           );
         })}
@@ -670,7 +674,11 @@ const LobbyTableRow = memo(function LobbyTableRow({
       </p>
 
       <div className="hidden shrink-0 sm:block">
-        <SeatDots filled={table.seated} total={table.maxPlayers} />
+        <SeatDots
+          filled={table.seated}
+          total={table.maxPlayers}
+          palette={table.game === "ludo" ? "ludo" : undefined}
+        />
       </div>
 
       <div className="shrink-0">{action}</div>

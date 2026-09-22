@@ -1,6 +1,6 @@
 /**
  * Access cookie for wallet, account, and payout screens. Play, lobby, and
- * rooms are public — matches start without this gate.
+ * rooms are public. Matches start without this gate.
  *
  * Edge-safe: no Node builtins. The access code itself is checked only in the
  * enter route handler.

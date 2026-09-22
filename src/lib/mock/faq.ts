@@ -16,7 +16,7 @@ export type FaqItem = {
 export const FAQ_INTRO = {
   title: "FAQ",
   support: "Questions before your first roll? Start here.",
-  lead: "Everything you need to know about BOARD, gameplay, $BOARD, fees, rewards, and how the ecosystem works. This closed demo uses invitation codes and demo balances — live staking is not available yet.",
+  lead: "Everything you need to know about BOARD, gameplay, $BOARD, fees, rewards, and how the ecosystem works. This closed demo uses invitation codes and demo balances. Live staking is not available yet.",
 } as const;
 
 export const FAQ_ITEMS: FaqItem[] = [
@@ -58,8 +58,8 @@ export const FAQ_ITEMS: FaqItem[] = [
       {
         type: "list",
         items: [
-          "Property Battle — Buy properties, collect rent, build your position, and outlast your rivals.",
-          "Ludo — Move your pawns, capture opponents, and race to bring all of your pieces home first.",
+          "Property Battle: Buy properties, collect rent, build your position, and outlast your rivals.",
+          "Ludo: Move your pawns, capture opponents, and race to bring all of your pieces home first.",
         ],
       },
       {
@@ -147,9 +147,9 @@ export const FAQ_ITEMS: FaqItem[] = [
       {
         type: "list",
         items: [
-          "30% — Development. Supports continued game development, infrastructure, operations, and new features.",
-          "35% — Buyback. Allocated to $BOARD buybacks.",
-          "35% — Burn. Allocated to permanently removing $BOARD from circulation.",
+          "30% Development. Supports continued game development, infrastructure, operations, and new features.",
+          "35% Buyback. Allocated to $BOARD buybacks.",
+          "35% Burn. Allocated to permanently removing $BOARD from circulation.",
         ],
       },
       {
@@ -169,8 +169,8 @@ export const FAQ_ITEMS: FaqItem[] = [
       {
         type: "list",
         items: [
-          "50% — Development. Supports product development and the continued growth of BOARD.",
-          "50% — Buyback. Allocated to $BOARD buybacks.",
+          "50% Development. Supports product development and the continued growth of BOARD.",
+          "50% Buyback. Allocated to $BOARD buybacks.",
         ],
       },
       {
@@ -314,7 +314,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "In live competitive rooms, yes — only the winning outcome receives the reward according to that room's rules.",
+        text: "In live competitive rooms, yes. Only the winning outcome receives the reward according to that room's rules.",
       },
       {
         type: "p",

@@ -20,6 +20,7 @@ import type { GameType } from "@/lib/types";
 import { MAX_PLAYERS_PER_ROOM } from "@/lib/types";
 import {
   getPlayTreasuryAddress,
+  listSuccessfulSitHashes,
   refundSit,
   verifySitTransaction,
 } from "@/server/lib/play-chain";
@@ -377,13 +378,6 @@ function extraSitHash(seat: PlaySeat, txHash: Hex): Hex | null {
   return txHash;
 }
 
-async function settleRefund(address: Hex) {
-  await withChainLock(async () => {
-    const refund = await refundSit(address);
-    if (!refund.ok) queueRefund(address);
-  });
-}
-
 async function refundVerifiedExtra(address: Hex, txHash: Hex) {
   const verified = await verifySitTransaction({ hash: txHash, from: address });
   if (!verified.ok) return false;
@@ -391,7 +385,8 @@ async function refundVerifiedExtra(address: Hex, txHash: Hex) {
     usedTx.add(txHash);
     persistStore();
   });
-  await settleRefund(address);
+  queueRefund(address);
+  void flushPendingRefunds();
   return true;
 }
 
@@ -435,7 +430,8 @@ export type SitResult =
         | "ALREADY_SEATED"
         | "NOT_FOUND"
         | "NOT_WAITING"
-        | "LEFT_TABLE";
+        | "LEFT_TABLE"
+        | "NO_PAYMENT";
       message: string;
       refund?: boolean;
     };
@@ -493,18 +489,15 @@ export async function sitPlayTable(input: {
   });
 
   if (early.kind !== "pay") {
-    let refunded = false;
     if (early.extraTx) {
-      refunded = await refundVerifiedExtra(address, early.extraTx);
-    }
-    if (early.kind === "blocked" && early.result.code === "ALREADY_SEATED") {
-      return { ...early.result, refund: refunded };
+      void refundVerifiedExtra(address, early.extraTx);
     }
     return early.result;
   }
 
   const verified = await verifySitTransaction({ hash: txHash, from: address });
   if (!verified.ok) {
+    console.error("[play-sit] verify failed", txHash, verified.error.code, verified.error.message);
     return {
       ok: false,
       code: "BAD_TX",
@@ -514,15 +507,8 @@ export async function sitPlayTable(input: {
   }
 
   const result = await withLock(async (): Promise<SitResult> => {
-    if (usedTx.has(txHash)) {
-      return {
-        ok: false,
-        code: "TX_USED",
-        message: "This sit transaction was already used.",
-        refund: false,
-      };
-    }
-
+    // Prefer reconnect before TX_USED so a lost response after a successful
+    // seat still reopens the room on retry without charging again.
     const found = findActiveSeat(address);
     if (found) {
       const sameTable = !wantedId || found.table.id === wantedId;
@@ -539,6 +525,15 @@ export async function sitPlayTable(input: {
       }
       unseat(found.table, found.seat, leftoverFromLeftMatch(found.table, address));
       bump(found.table);
+    }
+
+    if (usedTx.has(txHash)) {
+      return {
+        ok: false,
+        code: "TX_USED",
+        message: "This sit transaction was already used.",
+        refund: false,
+      };
     }
 
     const table = wantedId
@@ -629,8 +624,10 @@ export async function sitPlayTable(input: {
     };
   });
 
+  // Never block the player on refund RPC. Queue and flush in the background.
   if (result.ok && result.alreadySeated) {
-    await settleRefund(address);
+    queueRefund(address);
+    void flushPendingRefunds();
     return result;
   }
 
@@ -640,9 +637,61 @@ export async function sitPlayTable(input: {
   }
 
   if (result.refund) {
-    await settleRefund(address);
+    queueRefund(address);
+    void flushPendingRefunds();
   }
 
+  return result;
+}
+
+/**
+ * Seat a wallet that already paid 0.002 ETH but never got a room.
+ * One payment opens the table. Any extra successful payments are refunded.
+ */
+export async function claimUnpaidSit(input: {
+  game: GameType;
+  tableId?: string;
+  address: Hex;
+}): Promise<SitResult> {
+  const address = input.address.toLowerCase() as Hex;
+  const wantedId = input.tableId?.toUpperCase();
+  const already = await withLock(async () => {
+    const found = findActiveSeat(address);
+    if (!found) return null;
+    const sameTable = !wantedId || found.table.id === wantedId;
+    if (!sameTable) return null;
+    return {
+      ok: true as const,
+      table: asView(found.table),
+      seat: found.seat.seat,
+      leaveToken: found.seat.leaveToken,
+      alreadySeated: true,
+    };
+  });
+  if (already) return already;
+
+  const hashes = await listSuccessfulSitHashes(address);
+  const open = hashes.filter((hash) => !usedTx.has(hash));
+  if (open.length === 0) {
+    return {
+      ok: false,
+      code: "NO_PAYMENT",
+      message: "No confirmed sit payment found for this wallet.",
+      refund: false,
+    };
+  }
+  const [primary, ...extras] = open;
+  const result = await sitPlayTable({
+    game: input.game,
+    tableId: input.tableId,
+    address,
+    txHash: primary!,
+  });
+  if (result.ok) {
+    for (const extra of extras) {
+      void refundVerifiedExtra(address, extra);
+    }
+  }
   return result;
 }
 

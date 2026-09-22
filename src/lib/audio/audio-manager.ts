@@ -34,7 +34,7 @@ const SFX: Record<SfxId, SfxRecipe[]> = {
     { type: "triangle", freq: 420, duration: 0.045, gain: 0.045, delay: 0.008 },
   ],
   ui_hover: [{ type: "triangle", freq: 520, duration: 0.04, gain: 0.12 }],
-  // Preview only — live rolls use startDiceRoll / finishDiceRoll.
+  // Preview only. Live rolls use startDiceRoll / finishDiceRoll.
   dice_roll: [],
   pawn_step: [],
   buy: [
@@ -484,7 +484,7 @@ class AudioManager {
   }
 
   /**
-   * Wooden token tap on felt — short, unpitched, slightly varied so a path
+   * Wooden token tap on felt. Short, unpitched, slightly varied so a path
    * of hops does not machine-gun one identical sample.
    */
   private spawnPawnStep() {

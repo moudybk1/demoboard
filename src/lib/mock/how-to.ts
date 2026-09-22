@@ -24,7 +24,7 @@ export const HOW_TO_INTRO = {
   title: "How to play",
   punch: "Five steps. Four players. One winner.",
   support:
-    "Choose your game, learn the flow, and get ready to compete. Wallet connect is almost here — we're really close to play.",
+    "Choose your game, learn the flow, and get ready to compete. Wallet connect is almost here. We're really close to play.",
 };
 
 export const HOW_TO_STEPS: HowToStep[] = [

@@ -5,7 +5,7 @@ import {
   PixelPanelHeader,
   PixelPanelTitle,
 } from "@/components/ui/pixel-panel";
-import { seatColor } from "@/lib/game/seats";
+import { ludoSeatColor } from "@/lib/game/ludo-board";
 import { pawnsFinished, type LudoPlayer } from "@/lib/mock/ludo";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,7 @@ export function FinishCountPanel({
       <ul className="flex list-none flex-col gap-3 p-3">
         {ordered.map((player) => {
           const finished = pawnsFinished(player);
-          const color = seatColor(player.position);
+          const color = ludoSeatColor(player.position);
           const isLeader = finished > 0 && finished === leader;
 
           return (
@@ -45,16 +45,12 @@ export function FinishCountPanel({
                 <span className="flex items-center gap-2 min-w-0">
                   <i
                     aria-hidden
-                    className={cn(
-                      "size-2.5 shrink-0 border border-void/40",
-                      color.bg,
-                    )}
+                    className="size-2.5 shrink-0 border border-void/40"
+                    style={{ backgroundColor: color.hex }}
                   />
                   <span
-                    className={cn(
-                      "truncate font-pixel text-xs",
-                      color.text,
-                    )}
+                    className="truncate font-pixel text-xs"
+                    style={{ color: color.hex }}
                   >
                     {player.username}
                     {player.isYou ? " (you)" : ""}
@@ -81,9 +77,14 @@ export function FinishCountPanel({
                     className={cn(
                       "h-2 border-2",
                       index < finished
-                        ? cn("border-void/40", color.bg)
+                        ? "border-void/40"
                         : "border-edge bg-transparent",
                     )}
+                    style={
+                      index < finished
+                        ? { backgroundColor: color.hex }
+                        : undefined
+                    }
                   />
                 ))}
               </div>

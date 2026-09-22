@@ -9,7 +9,11 @@ import { LudoBoard } from "@/components/room/ludo-board";
 import { MonopolyBoard } from "@/components/room/monopoly-board";
 import { pawnPoint as monopolyPawnPoint, pathForward } from "@/lib/game/board-geometry";
 import { PIP_LAYOUT, randomDie, type DieValue } from "@/lib/game/dice";
-import { cellCenter, pawnPoint as ludoPawnPoint } from "@/lib/game/ludo-geometry";
+import {
+  captureReturnPath,
+  cellCenter,
+  pawnPoint as ludoPawnPoint,
+} from "@/lib/game/ludo-geometry";
 import {
   findCaptures,
   previewMove,
@@ -17,7 +21,7 @@ import {
   type MovePreview,
 } from "@/lib/game/ludo-rules";
 import { BOARD_SIZE, BOARD_TILES } from "@/lib/game/monopoly-board";
-import { pawnSprite } from "@/lib/game/pawn-sprite";
+import { ludoPawnSprite, pawnSprite } from "@/lib/game/pawn-sprite";
 import type { LudoPawn, LudoRoomState } from "@/lib/mock/ludo";
 import { prefersReducedMotion } from "@/lib/motion/gsap-config";
 import { playWhileVisible } from "@/lib/motion/play-while-visible";
@@ -499,6 +503,19 @@ export function LudoDemo({ className }: { className?: string }) {
 
       const staged = patchPawn(state, seat, move.pawnId, move.next);
       const captures = findCaptures(staged, seat, move.next);
+      const returns = captures.flatMap((cap) => {
+        const pawn = staged.players
+          .find((player) => player.position === cap.victimSeat)
+          ?.pawns.find((entry) => entry.id === cap.victimPawnId);
+        if (!pawn) return [];
+        return [
+          {
+            id: cap.victimPawnId,
+            seat: cap.victimSeat,
+            path: captureReturnPath(cap.victimSeat, pawn),
+          },
+        ];
+      });
       state = applyDemoMove(state, seat, move);
 
       if (pawn.status === "yard" && roll === 6) shout("OUT!");
@@ -514,53 +531,25 @@ export function LudoDemo({ className }: { className?: string }) {
       if (captures.length) {
         master.add(() => {
           shout("CAPTURED!");
-          for (const cap of captures) {
-            const victim = pawnEls.get(cap.victimPawnId);
-            const victimPawn = state.players
-              .find((p) => p.position === cap.victimSeat)
-              ?.pawns.find((p) => p.id === cap.victimPawnId);
-            if (!victim || !victimPawn) continue;
-            const pad = ludoPawnPoint(cap.victimSeat, victimPawn);
-            const hit = move.path[move.path.length - 1];
-            if (hit) {
-              const at = cellCenter(hit[0], hit[1]);
-              setBurst({
-                id: `${cap.victimPawnId}-${Date.now()}`,
-                x: at.x,
-                y: at.y,
-                victimSeat: cap.victimSeat,
-              });
-            }
-            if (!pad) continue;
-            stopBob(victim);
-            gsap.to(victim, {
-              scale: 0.2,
-              opacity: 0.2,
-              duration: 0.18,
-              ease: "power2.in",
-              onComplete: () => {
-                gsap.set(victim, {
-                  left: `${pad.x}%`,
-                  top: `${pad.y}%`,
-                  scale: 1,
-                  opacity: 1,
-                });
-                gsap.fromTo(
-                  victim,
-                  { scale: 0.4, y: -12 },
-                  {
-                    scale: 1,
-                    y: 0,
-                    duration: 0.28,
-                    ease: "back.out(2.2)",
-                    onComplete: () => startBob(victim),
-                  },
-                );
-              },
+          const hit = move.path[move.path.length - 1];
+          const cap = captures[0];
+          if (hit && cap) {
+            const at = cellCenter(hit[0], hit[1]);
+            setBurst({
+              id: `${cap.victimPawnId}-${Date.now()}`,
+              x: at.x,
+              y: at.y,
+              victimSeat: cap.victimSeat,
             });
           }
         });
-        master.to({}, { duration: 0.55 });
+        for (const trip of returns) {
+          const victim = pawnEls.get(trip.id);
+          if (!victim) continue;
+          master.add(() => stopBob(victim));
+          hopPath(victim, trip.path);
+          master.add(() => startBob(victim));
+        }
       } else {
         master.to({}, { duration: 0.22 });
       }
@@ -651,7 +640,7 @@ export function LudoDemo({ className }: { className?: string }) {
                 className="absolute z-20 w-[7.5%] will-change-transform drop-shadow-[1px_1px_0_rgba(45,23,12,0.7)]"
                 style={{ left: "50%", top: "50%" }}
               >
-                <PixelArt sprite={pawnSprite(pawn.seat)} />
+                <PixelArt sprite={ludoPawnSprite(pawn.seat)} />
               </div>
             ))}
             {burst ? (
