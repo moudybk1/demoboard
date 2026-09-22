@@ -287,8 +287,8 @@ export function PlayLobby({
 
         {refundQueued ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
-            You left the table. Your 0.002 ETH refund is queued and will retry
-            when the house wallet has gas.
+            You left the table. Your 1 USDG refund is queued and will retry
+            when the house wallet has USDG and gas.
           </p>
         ) : null}
 

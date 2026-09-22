@@ -1,28 +1,34 @@
-import { formatEther, parseEther } from "viem";
-import { useAccount, useBalance } from "wagmi";
+import { erc20Abi, formatUnits } from "viem";
+import { useAccount, useReadContract } from "wagmi";
 
 import {
+  PLAY_ENTRY_AMOUNT,
   PLAY_ENTRY_FEE,
-  PLAY_ENTRY_FEE_ETH,
   PLAY_STAKE_SYMBOL,
 } from "@/lib/game/play-player";
 import { getBoardChainEnv, getBoardChainId } from "@/lib/wallet/chains";
+import { getUsdgAddress, USDG_DECIMALS, usdgUnits } from "@/lib/wallet/usdg";
 
 export { PLAY_ENTRY_FEE };
 
-const ENTRY_FEE_WEI = parseEther(PLAY_ENTRY_FEE_ETH);
+const ENTRY_UNITS = usdgUnits(PLAY_ENTRY_AMOUNT);
 
 /**
- * Native ETH balance on Robinhood Chain for the connected wallet.
+ * USDG balance on Robinhood Chain for the connected wallet.
+ * The entry transfer still spends a little native ETH as gas.
  */
 export function useBoardTokenBalance() {
   const { address, isConnected, chainId } = useAccount();
   const expectedChainId = getBoardChainId();
   const onNetwork = isConnected && chainId === expectedChainId;
-  const enabled = Boolean(onNetwork && address);
+  const token = getUsdgAddress();
+  const enabled = Boolean(onNetwork && address && token);
 
-  const { data, isLoading, isFetching, refetch, error } = useBalance({
-    address,
+  const { data, isLoading, isFetching, refetch, error } = useReadContract({
+    address: token ?? undefined,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
     chainId: expectedChainId,
     query: {
       enabled,
@@ -30,7 +36,7 @@ export function useBoardTokenBalance() {
     },
   });
 
-  const amount = data ? Number(formatEther(data.value)) : null;
+  const amount = data !== undefined ? Number(formatUnits(data, USDG_DECIMALS)) : null;
 
   return {
     address: address ?? null,
@@ -42,11 +48,17 @@ export function useBoardTokenBalance() {
     symbol: PLAY_STAKE_SYMBOL,
     entryFee: PLAY_ENTRY_FEE,
     loading: enabled && (isLoading || isFetching) && amount === null,
-    error: error ? (error instanceof Error ? error.message : "Balance error") : null,
-    canEnter: Boolean(onNetwork && data && data.value >= ENTRY_FEE_WEI),
+    error: !token
+      ? "USDG is not configured for this network."
+      : error
+        ? error instanceof Error
+          ? error.message
+          : "Balance error"
+        : null,
+    canEnter: Boolean(onNetwork && token && data !== undefined && data >= ENTRY_UNITS),
     shortfall:
-      data && data.value < ENTRY_FEE_WEI
-        ? Number(formatEther(ENTRY_FEE_WEI - data.value))
+      data !== undefined && data < ENTRY_UNITS
+        ? Number(formatUnits(ENTRY_UNITS - data, USDG_DECIMALS))
         : 0,
     refetch,
   };

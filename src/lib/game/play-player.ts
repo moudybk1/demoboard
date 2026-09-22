@@ -1,18 +1,18 @@
 import { shortenAddress } from "@/lib/wallet/chains";
 
-/** Native ETH sit fee on Robinhood Chain Testnet. */
-export const PLAY_ENTRY_FEE = 0.002;
+/** USDG entry on Robinhood Chain. Gas for the transfer is still native ETH. */
+export const PLAY_ENTRY_FEE = 1;
 
-export const PLAY_ENTRY_FEE_ETH = "0.002";
+export const PLAY_ENTRY_AMOUNT = "1";
 
-export const PLAY_STAKE_SYMBOL = "ETH";
+export const PLAY_STAKE_SYMBOL = "USDG";
 
 /**
- * Sit-fee ETH amounts. Always keeps enough fraction digits that 0.002 and
- * 0.008 stay distinct. Pixel titles are not used for this string.
+ * Sit-fee amounts. Whole USDG stays a whole number; smaller pots keep
+ * enough fraction digits to stay distinct. Pixel titles are not used.
  */
 export function formatPlayEth(amount: number) {
-  const digits = Math.abs(amount) >= 1 ? 2 : 3;
+  const digits = Number.isInteger(amount) ? 0 : Math.abs(amount) >= 1 ? 2 : 3;
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: 4,

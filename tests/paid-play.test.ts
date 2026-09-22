@@ -5,10 +5,14 @@ import postgres from "postgres";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  decodeFunctionData,
+  encodeAbiParameters,
+  encodeFunctionData,
+  erc20Abi,
   keccak256,
-  parseEther,
+  pad,
   parseTransaction,
-  stringToHex,
+  parseUnits,
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -20,6 +24,7 @@ import {
 import type { LiveMatch } from "../src/lib/game/live-match";
 import { enabledPlayGame, isGameEnabled } from "../src/lib/game-availability";
 
+const TEST_USDG = "0x0000000000000000000000000000000000000d66" as Hex;
 const account = privateKeyToAccount(`0x${"11".repeat(32)}`);
 const rival = privateKeyToAccount(`0x${"22".repeat(32)}`);
 const seats = [account, rival].map((p, i) => ({
@@ -48,6 +53,47 @@ const entryTransactions = new Map<
   string,
   { from: string; to: string; input: Hex; value: Hex; chainId: Hex }
 >();
+const TRANSFER_TOPIC =
+  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" as Hex;
+
+function usdgSit(from: string, treasury: string, chainId: number, amount = "1") {
+  return {
+    from,
+    to: TEST_USDG,
+    value: "0x0" as Hex,
+    input: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: "transfer",
+      args: [treasury as Hex, parseUnits(amount, 6)],
+    }),
+    chainId: `0x${chainId.toString(16)}` as Hex,
+  };
+}
+
+function transferLogs(hash: string) {
+  const tx = entryTransactions.get(hash);
+  if (!tx) return [];
+  try {
+    const decoded = decodeFunctionData({ abi: erc20Abi, data: tx.input });
+    if (decoded.functionName !== "transfer") return [];
+    const [to, value] = decoded.args;
+    return [
+      {
+        address: tx.to,
+        topics: [TRANSFER_TOPIC, pad(tx.from as Hex), pad(to)],
+        data: encodeAbiParameters([{ type: "uint256" }], [value]),
+        logIndex: "0x0",
+        transactionIndex: "0x0",
+        transactionHash: hash,
+        blockHash: `0x${"00".repeat(32)}`,
+        blockNumber: "0x10",
+        removed: false,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
 const originalFetch = globalThis.fetch;
 const testPort = Number(process.env.BOARD_TEST_PG_PORT);
 const databaseMode = Number.isInteger(testPort) && testPort > 1024 && testPort < 65536;
@@ -59,6 +105,7 @@ before(async () => {
   process.chdir(root);
   delete process.env.DATABASE_URL;
   process.env.NEXT_PUBLIC_CHAIN_ENV = "testnet";
+  process.env.NEXT_PUBLIC_USDG_ADDRESS = TEST_USDG;
   if (databaseMode) {
     const url = `postgresql://127.0.0.1:${testPort}`;
     testAdmin = postgres(`${url}/postgres`, { max: 1 });
@@ -106,7 +153,10 @@ before(async () => {
         result = "0x0";
         break;
       case "eth_getBalance":
-        result = `0x${parseEther("100").toString(16)}`;
+        result = `0x${parseUnits("100", 18).toString(16)}`;
+        break;
+      case "eth_call":
+        result = `0x${parseUnits("1000000", 6).toString(16).padStart(64, "0")}`;
         break;
       case "eth_estimateGas":
         result = "0x5208";
@@ -151,7 +201,7 @@ before(async () => {
                 cumulativeGasUsed: "0x5208",
                 gasUsed: "0x5208",
                 effectiveGasPrice: "0x3b9aca00",
-                logs: [],
+                logs: transferLogs(hash),
                 type: "0x2",
               };
         break;
@@ -307,13 +357,13 @@ test("Server deadlines advance disconnected humans and bots without browser stat
   assert.equal(botMatch.state.activeSeat, 2);
 });
 
-test("A winner produces an exact ETH settlement from funded seats only", () => {
+test("A winner produces an exact USDG settlement from funded seats only", () => {
   const match = fixture("monopoly");
   applyMatchAction(match, rival.address, "forfeit");
   assert.equal(match.winnerSeat, 1);
   assert.equal(match.settlement?.status, "pending");
-  assert.equal(match.settlement?.grossPot, "0.004");
-  assert.equal(match.settlement?.netPayout, "0.00392");
+  assert.equal(match.settlement?.grossPot, "2");
+  assert.equal(match.settlement?.netPayout, "1.96");
   assert.throws(
     () => applyMatchAction(match, account.address, "roll"),
     /finished/,
@@ -431,8 +481,15 @@ test("Settlement retries and concurrent calls reuse one signed transaction and c
   assert.ok(sent.length >= 1);
   assert.equal(new Set(sent).size, 1);
   const transaction = parseTransaction(sent[0]);
-  assert.equal(transaction.to?.toLowerCase(), account.address.toLowerCase());
-  assert.equal(transaction.value, parseEther("0.00392"));
+  assert.equal(transaction.to?.toLowerCase(), TEST_USDG.toLowerCase());
+  assert.equal(transaction.value ?? BigInt(0), BigInt(0));
+  const decoded = decodeFunctionData({
+    abi: erc20Abi,
+    data: (transaction as { data?: Hex }).data ?? "0x",
+  });
+  assert.equal(decoded.functionName, "transfer");
+  assert.equal(decoded.args[0].toLowerCase(), account.address.toLowerCase());
+  assert.equal(decoded.args[1], parseUnits("1.96", 6));
   receiptStatus = "success";
   const confirmed = await settlement.settlePaidMatch(match);
   assert.equal(confirmed.settlement?.status, "confirmed");
@@ -468,13 +525,10 @@ test("Paid Ludo waits for four distinct paying humans and never inserts house bo
   const chain = await import("../src/server/lib/play-chain");
   const { getBoardChainId } = await import("../src/lib/wallet/chains");
   const txHash = `0x${"33".repeat(32)}` as Hex;
-  entryTransactions.set(txHash, {
-    from: account.address,
-    to: chain.getPlayTreasuryAddress(),
-    value: `0x${parseEther("0.002").toString(16)}`,
-    input: stringToHex("LUD-1"),
-    chainId: `0x${getBoardChainId().toString(16)}`,
-  });
+  entryTransactions.set(
+    txHash,
+    usdgSit(account.address, chain.getPlayTreasuryAddress(), getBoardChainId()),
+  );
   receiptStatus = "success";
   const entry = {
     game: "ludo" as const,
@@ -539,22 +593,19 @@ test("Paid Ludo waits for four distinct paying humans and never inserts house bo
   assert.equal(match.state.players.length, 4);
   assert.ok(match.state.players.every((p) => !p.id.startsWith("bot-")));
   for (const player of match.state.players.slice(1)) applyMatchAction(match, player.id, "forfeit");
-  assert.equal(match.settlement?.grossPot, "0.008");
-  assert.equal(match.settlement?.feeAmount, "0.00016");
-  assert.equal(match.settlement?.netPayout, "0.00784");
+  assert.equal(match.settlement?.grossPot, "4");
+  assert.equal(match.settlement?.feeAmount, "0.08");
+  assert.equal(match.settlement?.netPayout, "3.92");
 });
 
 test("Wrong-table and reverted entry payments never open a seat", async () => {
   const chain = await import("../src/server/lib/play-chain");
   const hash = `0x${"55".repeat(32)}` as Hex;
   const { getBoardChainId } = await import("../src/lib/wallet/chains");
-  entryTransactions.set(hash, {
-    from: account.address,
-    to: chain.getPlayTreasuryAddress(),
-    value: `0x${parseEther("0.002").toString(16)}`,
-    input: stringToHex("LUD-1suffix"),
-    chainId: `0x${getBoardChainId().toString(16)}`,
-  });
+  entryTransactions.set(
+    hash,
+    usdgSit(account.address, chain.getPlayTreasuryAddress(), getBoardChainId(), "0.001"),
+  );
   receiptStatus = "success";
   assert.equal(
     (
@@ -650,13 +701,10 @@ test("A verified late Monopoly payment is queued for refund, never seated or reu
   const hash = `0x${"77".repeat(32)}` as Hex;
   const chain = await import("../src/server/lib/play-chain");
   const { getBoardChainId } = await import("../src/lib/wallet/chains");
-  entryTransactions.set(hash, {
-    from: payer.address,
-    to: chain.getPlayTreasuryAddress(),
-    value: `0x${parseEther("0.002").toString(16)}`,
-    input: stringToHex("MNP-2"),
-    chainId: `0x${getBoardChainId().toString(16)}`,
-  });
+  entryTransactions.set(
+    hash,
+    usdgSit(payer.address, chain.getPlayTreasuryAddress(), getBoardChainId()),
+  );
   receiptStatus = "success";
   const input = { game: "monopoly" as const, tableId: "MNP-2", address: payer.address, txHash: hash };
   const result = await service.sitPlayTable(input);
@@ -723,7 +771,7 @@ test("seat recovery is authenticated and cannot create a new seat or discover pa
 test("configuration does not trigger refund broadcasts and mainnet fails closed", async () => {
   const count = sent.length;
   const config = service.getPlayConfig();
-  assert.equal(config.entryFeeWei, parseEther("0.002").toString());
+  assert.equal(config.entryFeeWei, parseUnits("1", 6).toString());
   assert.equal(sent.length, count);
   const { getPlayEntryReadiness } = await import("../src/server/lib/play-readiness");
   process.env.NEXT_PUBLIC_CHAIN_ENV = "mainnet";
@@ -765,7 +813,7 @@ test("ready and resume never adopt a supplied receipt/token into a new seat", as
   const hash = `0x${"aa".repeat(32)}` as Hex;
   const chain = await import("../src/server/lib/play-chain");
   const { getBoardChainId } = await import("../src/lib/wallet/chains");
-  entryTransactions.set(hash, { from: account.address, to: chain.getPlayTreasuryAddress(), input: stringToHex("LUD-4"), value: `0x${parseEther("0.002").toString(16)}`, chainId: `0x${getBoardChainId().toString(16)}` });
+  entryTransactions.set(hash, usdgSit(account.address, chain.getPlayTreasuryAddress(), getBoardChainId()));
   const input = { tableId: "LUD-4", address: account.address, txHash: hash, leaveToken: paidLeaveToken(hash) };
   receiptStatus = "success";
   const ready = await service.readyPlayTable(input);

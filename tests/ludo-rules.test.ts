@@ -82,7 +82,7 @@ test("timeout catch-up works with zero browsers and preserves a single last-surv
   tickMatch(match, 1_000_000);
   assert.notEqual(match.winnerSeat, null);
   assert.equal(match.state.players.filter((p) => p.status !== "eliminated").length, 1);
-  assert.equal(match.settlement?.netPayout, "0.00784");
+  assert.equal(match.settlement?.netPayout, "3.92");
   const ended = structuredClone(match);
   tickMatch(match, 2_000_000);
   assert.deepEqual(match, ended);
