@@ -28,6 +28,7 @@ import {
   clearPlaySeat,
   readPlaySeat,
   readPlayTableSnapshot,
+  savePlaySeat,
   savePlayTableSnapshot,
   type PlayTableView,
 } from "@/lib/game/play-table";
@@ -173,6 +174,76 @@ export function GameRoom({ roomId }: { roomId: string }) {
     return () => {
       cancelled = true;
       source?.close();
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    const seat = readPlaySeat();
+    const snapshot = readPlayTableSnapshot(roomId);
+    if (!seat?.txHash || !snapshot) return;
+    if (seat.tableId.toUpperCase() !== roomId.toUpperCase()) return;
+    let cancelled = false;
+
+    async function confirm() {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        if (cancelled) return;
+        try {
+          const response = await fetch("/api/play/sit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              game: snapshot!.game,
+              tableId: roomId,
+              address: seat!.address,
+              txHash: seat!.txHash,
+            }),
+          });
+          const payload = (await readResponseJson(response)) as {
+            table?: PlayTableView;
+            seat?: number;
+            leaveToken?: string;
+            txHash?: string;
+            code?: string;
+            error?: string;
+          } | null;
+          if (
+            response.ok &&
+            payload?.table &&
+            payload.leaveToken &&
+            payload.seat != null
+          ) {
+            savePlaySeat({
+              tableId: payload.table.id,
+              address: seat!.address,
+              seat: payload.seat,
+              leaveToken: payload.leaveToken,
+              txHash: payload.txHash ?? seat!.txHash,
+            });
+            savePlayTableSnapshot(payload.table);
+            if (!cancelled) {
+              tableRef.current = payload.table;
+              setTable(payload.table);
+              setNote(null);
+            }
+            return;
+          }
+          const retryable =
+            !payload ||
+            payload.code === "BAD_TX" ||
+            /empty response|not found on Robinhood Chain yet/i.test(
+              payload.error ?? "",
+            );
+          if (!retryable) return;
+        } catch {
+          // try again
+        }
+        await new Promise((resolve) => setTimeout(resolve, 900 * (attempt + 1)));
+      }
+    }
+
+    void confirm();
+    return () => {
+      cancelled = true;
     };
   }, [roomId]);
 

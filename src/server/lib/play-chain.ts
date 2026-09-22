@@ -135,9 +135,10 @@ export function sitPaymentMatchesTable(
 ) {
   if (!input || input === "0x") return true;
   try {
-    const text = hexToString(input).replace(/\0/g, "").trim();
+    const text = hexToString(input).replace(/\0/g, "").trim().toUpperCase();
     if (!text) return true;
-    return text.toUpperCase() === tableId.toUpperCase();
+    const wanted = tableId.toUpperCase();
+    return text === wanted || text.includes(wanted);
   } catch {
     return false;
   }
@@ -163,17 +164,27 @@ export async function verifySitTransaction(input: {
     const remaining = budgetMs - (Date.now() - started);
     if (remaining < 500) break;
     const attemptMs = Math.min(3_000, remaining);
-    try {
-      const [nextTx, nextReceipt] = await Promise.all([
-        withTimeout(client.getTransaction({ hash: input.hash }), attemptMs),
-        withTimeout(client.getTransactionReceipt({ hash: input.hash }), attemptMs),
-      ]);
-      tx = nextTx;
-      receipt = nextReceipt;
-      if (tx && receipt) break;
-    } catch {
-      // RPC timeout or not indexed yet
+    if (!tx) {
+      try {
+        tx = await withTimeout(
+          client.getTransaction({ hash: input.hash }),
+          attemptMs,
+        );
+      } catch {
+        // not indexed yet
+      }
     }
+    if (tx && !receipt) {
+      try {
+        receipt = await withTimeout(
+          client.getTransactionReceipt({ hash: input.hash }),
+          attemptMs,
+        );
+      } catch {
+        // receipt can lag the transaction
+      }
+    }
+    if (tx && receipt) break;
     if (Date.now() - started > budgetMs) break;
     await sleep(300);
   }

@@ -9,6 +9,7 @@ import { useBoardTokenBalance } from "@/hooks/use-board-token-balance";
 import { readResponseJson } from "@/lib/fetch-json";
 import { PLAY_ENTRY_FEE_ETH, savePlayPlayer } from "@/lib/game/play-player";
 import {
+  buildLocalWaitingTable,
   clearPlaySeat,
   readPlaySeat,
   savePlaySeat,
@@ -121,38 +122,51 @@ export function usePlaySit() {
       });
 
       setSitPhase("confirming");
+      const localTable = buildLocalWaitingTable({ tableId, game, address });
+      savePlayPlayer(address);
+      savePlaySeat({
+        tableId: localTable.id,
+        address,
+        seat: 1,
+        leaveToken: hash,
+        txHash: hash,
+      });
+      savePlayTableSnapshot(localTable);
+      rememberPreviewGame(game);
+      router.push(`/room/${localTable.id}`);
+
       if (publicClient) {
-        try {
-          await publicClient.waitForTransactionReceipt({
+        void publicClient
+          .waitForTransactionReceipt({
             hash,
-            timeout: 12_000,
+            timeout: 20_000,
             confirmations: 1,
+          })
+          .catch(() => {
+            // The room is already open. Server seating retries on its own.
           });
-        } catch {
-          // Browser RPC can fail even after the wallet broadcast. The server
-          // confirms the payment on chain before opening the room.
-        }
       }
 
-      setSitPhase("seating");
-      savePlayPlayer(address);
-
-      let seated: SeatPayload | null = null;
-      for (let attempt = 0; attempt < 4; attempt += 1) {
-        seated = await requestSeat({ game, tableId, address, txHash: hash });
-        if (seated.ok) break;
-        refunded = seated.refunded;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const seated = await requestSeat({ game, tableId, address, txHash: hash });
+        if (seated.ok) {
+          savePlayPlayer(address);
+          savePlaySeat({
+            tableId: seated.tableId,
+            address,
+            seat: seated.seat,
+            leaveToken: seated.leaveToken,
+            txHash: seated.txHash ?? hash,
+          });
+          if (seated.table) savePlayTableSnapshot(seated.table);
+          return;
+        }
         const retryable =
           seated.code === "BAD_TX" ||
           /empty response|not found on Robinhood Chain yet/i.test(seated.error);
-        if (!retryable || attempt === 3) break;
-        await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+        if (!retryable) return;
+        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
       }
-
-      if (!seated?.ok) {
-        throw new Error(seated?.error ?? "Could not sit at the table.");
-      }
-      openRoom(seated, game, address);
     } catch (caught) {
       const message = sitErrorMessage(caught, refunded);
       setSitError(message);

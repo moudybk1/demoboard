@@ -1,4 +1,6 @@
-import type { GameType } from "@/lib/types";
+import { PLAY_ENTRY_FEE } from "@/lib/game/play-player";
+import { shortenAddress } from "@/lib/wallet/chains";
+import { MAX_PLAYERS_PER_ROOM, type GameType } from "@/lib/types";
 
 export type PlayTableStatus = "waiting" | "playing" | "cancelled";
 
@@ -139,6 +141,46 @@ export function readPlayTableSnapshot(tableId: string): PlayTableView | null {
   } catch {
     return null;
   }
+}
+
+/** Local waiting table so the room can open the moment the wallet returns a sit tx. */
+export function buildLocalWaitingTable(input: {
+  tableId: string;
+  game: GameType;
+  address: string;
+}): PlayTableView {
+  const id = input.tableId.toUpperCase();
+  const slot = PLAY_LOBBY_SLOTS.find((row) => row.id === id);
+  const address = input.address.toLowerCase();
+  const seats: PlayTableSeatView[] = [
+    {
+      address,
+      username: shortenAddress(address),
+      seat: 1,
+      ready: false,
+    },
+  ];
+  for (const npc of PLAY_HOUSE_NPCS) {
+    if (seats.length >= MAX_PLAYERS_PER_ROOM) break;
+    seats.push({
+      address: npc.id,
+      username: npc.username,
+      seat: seats.length + 1,
+      ready: true,
+    });
+  }
+  return {
+    id,
+    game: slot?.game ?? input.game,
+    label: slot?.label ?? id,
+    slot: slot?.slot ?? 1,
+    status: "waiting",
+    entryFee: PLAY_ENTRY_FEE,
+    maxPlayers: MAX_PLAYERS_PER_ROOM,
+    seats,
+    refundTxHash: null,
+    version: 1,
+  };
 }
 
 export function isPlayBot(id: string) {
