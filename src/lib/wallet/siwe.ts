@@ -12,6 +12,7 @@ export function buildWalletVerifyMessage(input: {
   nonce: string;
   domain?: string;
   chainId?: number;
+  accountId?: string;
 }): string {
   const domain =
     input.domain?.trim() ||
@@ -26,7 +27,10 @@ export function buildWalletVerifyMessage(input: {
     `Wallet: ${address}`,
     `Chain: ${getBoardChainLabel()} (${chainId})`,
     `Nonce: ${input.nonce}`,
+    input.accountId ? `Link to account: ${input.accountId}` : "Purpose: Sign in to BOARD",
     "",
-    "Sign this message to link your wallet. This does not spend tokens.",
+    input.accountId
+      ? "Sign to authorize this wallet for the named BOARD account. Only sign if this is your account. This does not spend funds."
+      : "Sign to log in with this wallet. This does not authorize linking to another account or spending funds.",
   ].join("\n");
 }

@@ -1,3 +1,4 @@
+import { paidGameRoute } from "@/server/lib/paid-game-route";
 import { NextResponse } from "next/server";
 
 import { getLudoState } from "@/server/services/ludo-state.service";
@@ -9,8 +10,10 @@ type RouteContext = {
 /**
  * GET /api/ludo/rooms/[roomId] · current Ludo board snapshot.
  */
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const { roomId } = await context.params;
+  const paid = await paidGameRoute(request, roomId, "ludo");
+  if (paid) return paid;
   if (!roomId) {
     return NextResponse.json({ error: "Missing room id." }, { status: 400 });
   }

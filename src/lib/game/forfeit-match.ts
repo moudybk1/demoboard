@@ -1,5 +1,6 @@
 import { clearMatch } from "@/lib/game/match-storage";
 import { clearPlaySeat, readPlaySeat } from "@/lib/game/play-table";
+import { recoverPlaySeat } from "@/lib/game/recover-play-seat";
 
 /**
  * Leave a match in progress. The sit fee stays with the house. No refund.
@@ -26,16 +27,20 @@ export async function forfeitPlayMatch(input?: {
     return false;
   }
   try {
+    if (!body.leaveToken && address) {
+      body.leaveToken = (await recoverPlaySeat(tableId, address)).leaveToken;
+    }
     const response = await fetch(`/api/play/tables/${tableId}/forfeit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (response.ok) {
+      clearMatch(tableId);
+      clearPlaySeat();
+    }
     return response.ok;
   } catch {
     return false;
-  } finally {
-    clearMatch(tableId);
-    clearPlaySeat();
   }
 }

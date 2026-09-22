@@ -1,6 +1,8 @@
 "use client";
 
-import { PixelButtonLink } from "@/components/ui/pixel-button";
+import { PixelButton, PixelButtonLink } from "@/components/ui/pixel-button";
+import { WorkInProgressWatermark } from "@/components/game/work-in-progress";
+import { isGameEnabled, WORK_IN_PROGRESS } from "@/lib/game-availability";
 import { PixelCard } from "@/components/ui/pixel-card";
 import { LudoDemo, MonopolyDemo } from "@/components/welcome/game-demos";
 import { WELCOME_GAMES } from "@/lib/mock/welcome";
@@ -25,6 +27,7 @@ export function GameChoice({ className }: { className?: string }) {
         const href = playPathForGame(game.id);
         const Demo = game.id === "monopoly" ? MonopolyDemo : LudoDemo;
         const isMonopoly = game.id === "monopoly";
+        const enabled = isGameEnabled(game.id);
 
         return (
           <div key={game.id} className="contents">
@@ -67,6 +70,7 @@ export function GameChoice({ className }: { className?: string }) {
 
               <div className="pointer-events-none relative mx-auto mt-5 w-full max-w-[20rem] px-4 sm:mt-6">
                 <Demo />
+                {!enabled && <WorkInProgressWatermark />}
               </div>
 
               <div className="flex flex-1 flex-col px-5 pb-2 pt-5">
@@ -87,15 +91,26 @@ export function GameChoice({ className }: { className?: string }) {
               </div>
 
               <div className="px-5 pb-5 pt-2">
-                <PixelButtonLink
-                  href={href}
-                  size="md"
-                  variant={isMonopoly ? "monopoly" : "ludo"}
-                  className="w-full justify-center"
-                  onClick={() => rememberPreviewGame(game.id)}
-                >
-                  {game.cta}
-                </PixelButtonLink>
+                {!enabled ? (
+                  <PixelButton
+                    disabled
+                    size="md"
+                    variant="outline"
+                    className="w-full justify-center"
+                  >
+                    {WORK_IN_PROGRESS}
+                  </PixelButton>
+                ) : (
+                  <PixelButtonLink
+                    href={href}
+                    size="md"
+                    variant={isMonopoly ? "monopoly" : "ludo"}
+                    className="w-full justify-center"
+                    onClick={() => rememberPreviewGame(game.id)}
+                  >
+                    {game.cta}
+                  </PixelButtonLink>
+                )}
               </div>
             </PixelCard>
           </div>

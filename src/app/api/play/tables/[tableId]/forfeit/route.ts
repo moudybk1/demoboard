@@ -1,3 +1,4 @@
+import { requirePlayWallet } from "@/server/lib/require-play-wallet";
 import { NextResponse } from "next/server";
 
 import {
@@ -23,7 +24,7 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const body = await readJsonBody(request);
     const leaveToken = readOptionalString(body, "leaveToken");
-    const address = readOptionalString(body, "address");
+    const address = await requirePlayWallet(request, readOptionalString(body, "address"));
     if (!leaveToken && !address) {
       throw new InvalidBodyError("leaveToken or address is required.", 400);
     }

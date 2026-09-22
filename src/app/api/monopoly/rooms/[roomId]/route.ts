@@ -1,3 +1,4 @@
+import { paidGameRoute } from "@/server/lib/paid-game-route";
 import { NextResponse } from "next/server";
 
 import { getMonopolyState } from "@/server/services/monopoly-state.service";
@@ -9,8 +10,10 @@ type RouteContext = {
 /**
  * GET /api/monopoly/rooms/[roomId] · current Monopoly board snapshot.
  */
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const { roomId } = await context.params;
+  const paid = await paidGameRoute(request, roomId, "monopoly");
+  if (paid) return paid;
   if (!roomId) {
     return NextResponse.json({ error: "Missing room id." }, { status: 400 });
   }

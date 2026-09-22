@@ -190,8 +190,8 @@ function who(player: MonopolyPlayer) {
   return player.isYou ? "You" : player.username;
 }
 
-function pickCard(cards: readonly DrawnCard[]): DrawnCard {
-  return cards[Math.floor(Math.random() * cards.length)] ?? cards[0]!;
+function pickCard(cards: readonly DrawnCard[], randomIndex: (max: number) => number): DrawnCard {
+  return cards[randomIndex(cards.length)] ?? cards[0]!;
 }
 
 function applyCashDelta(
@@ -336,6 +336,7 @@ export function resolveLanding(
   state: MonopolyPlayState,
   seat: number,
   extraTurn: boolean,
+  randomIndex: (max: number) => number = (max) => Math.floor(Math.random() * max),
 ): LandingResult {
   const player = playerAt(state, seat);
   const empty: LandingResult = {
@@ -408,7 +409,7 @@ export function resolveLanding(
   }
 
   if (tile.kind === "chance" || tile.kind === "treasury") {
-    const card = pickCard(tile.kind === "chance" ? CHANCE_CARDS : TREASURY_CARDS);
+    const card = pickCard(tile.kind === "chance" ? CHANCE_CARDS : TREASURY_CARDS, randomIndex);
     next = resolveCardMove(next, seat, card);
     const after = playerAt(next, seat);
     const jailed = Boolean(next.extras[seat]?.inJail);
@@ -416,7 +417,7 @@ export function resolveLanding(
       return { state: next, pendingBuy: null, rent: null, goToJail: true, extraTurn: false };
     }
     if (after && after.tile !== player.tile && after.status === "alive") {
-      return resolveLanding(next, seat, extraTurn);
+      return resolveLanding(next, seat, extraTurn, randomIndex);
     }
     return { state: next, pendingBuy: null, rent: null, goToJail: false, extraTurn };
   }
@@ -555,8 +556,7 @@ export function nextAliveSeat(state: MonopolyPlayState, fromSeat: number) {
   if (alive.length === 0) {
     return { activeSeat: fromSeat, turnDelta: 0 };
   }
-  const index = alive.findIndex((player) => player.position === fromSeat);
-  const next = alive[(index + 1) % alive.length] ?? alive[0];
+  const next = alive.find((player) => player.position > fromSeat) ?? alive[0];
   return {
     activeSeat: next.position,
     turnDelta: next.position <= fromSeat ? 1 : 0,

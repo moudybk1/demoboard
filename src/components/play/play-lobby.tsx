@@ -1,25 +1,37 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 
 import { PixelArt } from "@/components/game/pixel-art";
+import { WorkInProgressWatermark } from "@/components/game/work-in-progress";
+import {
+  enabledPlayGame,
+  isGameEnabled,
+  WORK_IN_PROGRESS,
+} from "@/lib/game-availability";
 import { SeatDots } from "@/components/lobby/seat-dots";
 import { PlayArena, PlaySign } from "@/components/play/play-arena";
 import { PixelButton } from "@/components/ui/pixel-button";
 import { ludoPawnSprite, pawnSprite } from "@/lib/game/pawn-sprite";
-import { formatPlayEth, PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import {
-  PLAY_LOBBY_SLOTS,
-  type PlayLobbyGame,
-} from "@/lib/game/play-table";
+  formatPlayEth,
+  PLAY_ENTRY_FEE,
+  PLAY_STAKE_SYMBOL,
+} from "@/lib/game/play-player";
+import { PLAY_LOBBY_SLOTS, type PlayLobbyGame } from "@/lib/game/play-table";
 import { PLAY_WORLDS } from "@/lib/mock/play";
 import { prefersReducedMotion } from "@/lib/motion/gsap-config";
-import {
-  rememberPreviewGame,
-  type PreviewGame,
-} from "@/lib/preview-game";
+import { rememberPreviewGame, type PreviewGame } from "@/lib/preview-game";
 import { cn } from "@/lib/utils";
 import {
   getBoardChainLabel,
@@ -28,7 +40,9 @@ import {
 import { MAX_PLAYERS_PER_ROOM } from "@/lib/types";
 import type { PlaySit } from "@/hooks/use-play-sit";
 
-const EMPTY_GAMES: PlayLobbyGame[] = PLAY_LOBBY_SLOTS.map(emptyLobbyFromSlot);
+const EMPTY_GAMES: PlayLobbyGame[] = PLAY_LOBBY_SLOTS.filter((slot) =>
+  isGameEnabled(slot.game),
+).map(emptyLobbyFromSlot);
 const LOBBY_POLL_MS = 8000;
 
 function readForfeitNotice(): "leave" | "afk" | null {
@@ -74,14 +88,27 @@ export function PlayLobby({
   initialGame: PreviewGame;
   play: PlaySit;
 }) {
+  const router = useRouter();
   const root = useRef<HTMLElement>(null);
-  const { wallet, sit, sitPhase, sitTableId, sitError, switching, switchNetwork } =
-    play;
+  const {
+    wallet,
+    sit,
+    sitPhase,
+    sitTableId,
+    sitError,
+    switching,
+    switchNetwork,
+    pendingPayment,
+  } = play;
   const [games, setGames] = useState<PlayLobbyGame[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [lobbyEpoch, setLobbyEpoch] = useState(0);
-  const [selected, setSelected] = useState<PreviewGame>(initialGame);
-  const selectMonopoly = useCallback(() => setSelected("monopoly"), []);
+  const [selected, setSelected] = useState<PreviewGame>(
+    enabledPlayGame(initialGame),
+  );
+  const selectMonopoly = useCallback(
+    () => setSelected(enabledPlayGame("monopoly")),
+    [],
+  );
   const selectLudo = useCallback(() => setSelected("ludo"), []);
 
   useEffect(() => {
@@ -134,7 +161,9 @@ export function PlayLobby({
       } catch (caught) {
         if (!cancelled) {
           setLoadError(
-            caught instanceof Error ? caught.message : "Could not load the lobby.",
+            caught instanceof Error
+              ? caught.message
+              : "Could not load the lobby.",
           );
         }
       } finally {
@@ -155,7 +184,7 @@ export function PlayLobby({
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [lobbyEpoch, wallet.address]);
+  }, [wallet.address]);
 
   useEffect(() => {
     const node = root.current;
@@ -205,51 +234,16 @@ export function PlayLobby({
   const tables = games ?? EMPTY_GAMES;
   const [refundQueued, setRefundQueued] = useState(false);
   const [forfeitNotice] = useState(readForfeitNotice);
-  const [releasing, setReleasing] = useState(() => readForfeitNotice() !== null);
+  const releasing = false;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setRefundQueued(params.get("refund") === "queued");
+    void Promise.resolve().then(() =>
+      setRefundQueued(params.get("refund") === "queued"),
+    );
   }, []);
 
-  useEffect(() => {
-    if (!forfeitNotice || !wallet.address) return;
-    let ignore = false;
-    setReleasing(true);
-
-    void (async () => {
-      try {
-        const query = `?address=${encodeURIComponent(wallet.address!)}`;
-        const response = await fetch(`/api/play/lobby${query}`, {
-          cache: "no-store",
-        });
-        const payload = (await response.json()) as { games?: PlayLobbyGame[] };
-        const address = wallet.address!.toLowerCase();
-        const seated = payload.games?.find((table) =>
-          table.seats.some((seat) => seat.address.toLowerCase() === address),
-        );
-        if (seated) {
-          await fetch(`/api/play/tables/${seated.tableId}/forfeit`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ address: wallet.address }),
-          });
-        }
-      } catch {
-        // A failed release keeps the Sit button; the next poll retries occupancy.
-      } finally {
-        if (ignore) return;
-        setReleasing(false);
-        setLobbyEpoch((epoch) => epoch + 1);
-      }
-    })();
-
-    return () => {
-      ignore = true;
-    };
-  }, [forfeitNotice, wallet.address]);
-
-  const mine = useMemo(() => {
+  const mine = (() => {
     if (!wallet.address) return null;
     const address = wallet.address.toLowerCase();
     for (const table of tables) {
@@ -257,16 +251,18 @@ export function PlayLobby({
       const seat = table.seats.find(
         (row) => row.address.toLowerCase() === address,
       );
-      if (seat) return { game: table.game, tableId: table.tableId, seat: seat.seat };
+      if (seat)
+        return { game: table.game, tableId: table.tableId, seat: seat.seat };
     }
     return null;
-  }, [tables, wallet.address]);
+  })();
 
   const selectedTables = useMemo(
     () => tables.filter((table) => table.game === selected),
     [tables, selected],
   );
-  const world = PLAY_WORLDS.find((item) => item.id === selected) ?? PLAY_WORLDS[0];
+  const world =
+    PLAY_WORLDS.find((item) => item.id === selected) ?? PLAY_WORLDS[0];
   const handleSit = useCallback(
     (game: PreviewGame, tableId: string) => {
       void sit(game, tableId);
@@ -286,19 +282,20 @@ export function PlayLobby({
         <PlaySign label="LOBBY" compact />
 
         <p className="mt-3 max-w-[42ch] text-center font-pixel text-[10px] font-semibold uppercase leading-relaxed tracking-wide text-void/80">
-          Pick a game, then sit any open table. Four seats. Last player standing wins.
+          Ludo is live. Sit any open table. Monopoly is a work in progress.
         </p>
 
         {refundQueued ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
-            You left the table. Your 0.002 ETH refund is queued and will retry when the house wallet has gas.
+            You left the table. Your 0.002 ETH refund is queued and will retry
+            when the house wallet has gas.
           </p>
         ) : null}
 
         {forfeitNotice === "afk" ? (
           <p className="mt-3 max-w-md text-center font-pixel text-[10px] uppercase leading-relaxed text-[#5a1e00]">
-            You were kicked for missing three rolls. Your entry fee is not refunded.
-            Sit again to play. The entry fee is charged again.
+            You were kicked for missing three rolls. Your entry fee is not
+            refunded. Sit again to play. The entry fee is charged again.
           </p>
         ) : null}
 
@@ -356,6 +353,32 @@ export function PlayLobby({
           </p>
         ) : null}
 
+        {pendingPayment && (
+          <div className="mt-3 text-center">
+            <p className="text-sm">
+              Entry payment for {pendingPayment.tableId} is awaiting
+              verification.
+            </p>
+            <PixelButton
+              disabled={sitPhase !== "idle"}
+              onClick={() =>
+                void sit(pendingPayment.game, pendingPayment.tableId)
+              }
+            >
+              Check existing payment
+            </PixelButton>
+          </div>
+        )}
+
+        {mine && !isGameEnabled(mine.game) && (
+          <div className="mt-4 text-center">
+            <p className="mb-2 text-sm">You have an existing entry at {mine.tableId}.</p>
+            <PixelButton onClick={() => router.push(`/room/${mine.tableId}`)}>
+              Recover existing entry
+            </PixelButton>
+          </div>
+        )}
+
         <div data-lobby-list className="mt-5 w-full">
           <div className="pixel-card-shadow-lg">
             <div
@@ -404,7 +427,9 @@ export function PlayLobby({
           </div>
         </div>
 
-        {!wallet.canEnter && wallet.onNetwork && wallet.chainEnv === "testnet" ? (
+        {!wallet.canEnter &&
+        wallet.onNetwork &&
+        wallet.chainEnv === "testnet" ? (
           <a
             href={ROBINHOOD_TESTNET_FAUCET}
             target="_blank"
@@ -436,11 +461,19 @@ const GamePickCard = memo(function GamePickCard({
       type="button"
       role="option"
       aria-selected={active}
+      disabled={!isGameEnabled(game)}
+      aria-label={
+        !isGameEnabled(game) ? `${world.sign}: ${WORK_IN_PROGRESS}` : world.sign
+      }
       data-lobby-game
       onClick={onSelect}
       className={cn(
         "min-w-0 text-left transition-[transform,filter] duration-200",
-        active ? "brightness-100" : "brightness-[0.78] hover:brightness-95",
+        !isGameEnabled(game)
+          ? "cursor-not-allowed"
+          : active
+            ? "brightness-100"
+            : "brightness-[0.78] hover:brightness-95",
       )}
     >
       <div className="pixel-card-shadow-lg">
@@ -458,6 +491,7 @@ const GamePickCard = memo(function GamePickCard({
           >
             <div className="pointer-events-none relative mx-auto w-full max-w-[16rem] px-2 pt-2">
               <GamePickStill game={game} />
+              {!isGameEnabled(game) && <WorkInProgressWatermark />}
             </div>
             <div className="border-t-[3px] border-void bg-[#1a0c06]/85 px-2.5 py-2">
               <p
@@ -487,19 +521,32 @@ const GamePickStill = memo(function GamePickStill({
   const monopoly = game === "monopoly";
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[14rem]" aria-hidden>
+    <div
+      className="relative mx-auto aspect-square w-full max-w-[14rem]"
+      aria-hidden
+    >
       {monopoly ? (
         <div className="absolute inset-[6%] grid grid-cols-5 grid-rows-5 gap-px border-[3px] border-void bg-void">
           {Array.from({ length: 25 }, (_, index) => {
             const row = Math.floor(index / 5);
             const col = index % 5;
             const edge = row === 0 || row === 4 || col === 0 || col === 4;
-            const colors = ["#c45a32", "#3ec9b0", "#ff7a59", "#6cff9f", "#d4a017"];
+            const colors = [
+              "#c45a32",
+              "#3ec9b0",
+              "#ff7a59",
+              "#6cff9f",
+              "#d4a017",
+            ];
             return (
               <span
                 key={index}
                 className={edge ? "block" : "block bg-[#1a6b4a]"}
-                style={edge ? { backgroundColor: colors[index % colors.length] } : undefined}
+                style={
+                  edge
+                    ? { backgroundColor: colors[index % colors.length] }
+                    : undefined
+                }
               />
             );
           })}
@@ -523,7 +570,9 @@ const GamePickStill = memo(function GamePickStill({
             seat === 4 && "top-[10%] left-[10%]",
           )}
         >
-          <PixelArt sprite={monopoly ? pawnSprite(seat) : ludoPawnSprite(seat)} />
+          <PixelArt
+            sprite={monopoly ? pawnSprite(seat) : ludoPawnSprite(seat)}
+          />
         </span>
       ))}
     </div>
@@ -589,7 +638,9 @@ const LobbyTableRow = memo(function LobbyTableRow({
     );
   } else if (inPlay && !seatedHere) {
     action = (
-      <span className="font-pixel text-[10px] uppercase text-gold">In play</span>
+      <span className="font-pixel text-[10px] uppercase text-gold">
+        In play
+      </span>
     );
   } else if (table.blocked) {
     action = (
@@ -616,7 +667,9 @@ const LobbyTableRow = memo(function LobbyTableRow({
     );
   } else if (!onNetwork) {
     action = (
-      <span className="font-pixel text-[10px] uppercase text-cream/55">Network</span>
+      <span className="font-pixel text-[10px] uppercase text-cream/55">
+        Network
+      </span>
     );
   } else if (walletError) {
     action = (
@@ -662,7 +715,9 @@ const LobbyTableRow = memo(function LobbyTableRow({
             >
               <PixelArt
                 sprite={
-                  table.game === "ludo" ? ludoPawnSprite(seat) : pawnSprite(seat)
+                  table.game === "ludo"
+                    ? ludoPawnSprite(seat)
+                    : pawnSprite(seat)
                 }
               />
             </span>

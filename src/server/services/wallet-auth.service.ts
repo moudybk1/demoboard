@@ -1,7 +1,7 @@
 /**
  * Wallet-only auth: challenge + signature → find/create user → session.
  */
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import { verifyMessage } from "viem";
 
@@ -24,14 +24,14 @@ import {
   sessionExpiryDate,
 } from "@/server/lib/session-token";
 import { isDbConfigured as dbConfigured } from "@/server/lib/db-config";
+import { withPlayDocument } from "@/server/lib/play-store";
+import { withWalletIdentity, WALLET_OWNERSHIP_VERSION, assertWalletAccount } from "@/server/lib/wallet-identity";
 
 type Challenge = {
   nonce: string;
   expiresAt: number;
 };
 
-/** Address → pending login challenge (single-process; fine for launch/dev). */
-const pendingChallenges = new Map<string, Challenge>();
 
 /** Mock-mode sessions keyed by raw token. */
 const mockWalletSessions = new Map<
@@ -101,7 +101,7 @@ async function assertSignature(input: {
 
 async function insertSession(
   userId: string,
-  meta: { userAgent?: string; ipAddress?: string },
+  meta: { userAgent?: string; ipAddress?: string; address: string },
 ) {
   const token = createSessionToken();
   const tokenHash = hashSessionToken(token);
@@ -111,6 +111,7 @@ async function insertSession(
   await db.insert(sessions).values({
     userId,
     tokenHash,
+    walletAddress: meta.address.toLowerCase(),
     userAgent: meta.userAgent ?? null,
     ipAddress: meta.ipAddress ?? null,
     expiresAt,
@@ -123,13 +124,16 @@ async function insertSession(
 /**
  * Issue a one-time login challenge for an address.
  */
-export function issueWalletLoginChallenge(addressRaw: string) {
+export async function issueWalletLoginChallenge(addressRaw: string) {
   const address = normalizeAddress(addressRaw);
-  const nonce = `board-${randomBytes(8).toString("hex")}`;
-  pendingChallenges.set(address, {
-    nonce,
-    expiresAt: Date.now() + CHALLENGE_TTL_MS,
+  const challenge = await withPlayDocument<{ challenge?: Challenge }, Challenge>(`wallet-login-${address}`, () => ({}), async (document) => {
+    // Anonymous challenge requests must not invalidate an outstanding signature.
+    if (!document.challenge || document.challenge.expiresAt <= Date.now()) {
+      document.challenge = { nonce: `board-${randomBytes(16).toString("hex")}`, expiresAt: Date.now() + CHALLENGE_TTL_MS };
+    }
+    return document.challenge;
   });
+  const { nonce, expiresAt } = challenge;
 
   const message = buildWalletVerifyMessage({ address, nonce });
   return {
@@ -137,27 +141,26 @@ export function issueWalletLoginChallenge(addressRaw: string) {
     nonce,
     message,
     chain: ROBINHOOD_CHAIN_LABEL,
-    expiresAt: new Date(Date.now() + CHALLENGE_TTL_MS).toISOString(),
+    expiresAt: new Date(expiresAt).toISOString(),
   };
 }
 
-function consumeChallenge(address: string, message: string) {
-  const challenge = pendingChallenges.get(address);
-  if (!challenge || challenge.expiresAt < Date.now()) {
-    pendingChallenges.delete(address);
-    throw new AuthError("Login challenge expired. Request a new one.", 401);
-  }
-
-  const expected = buildWalletVerifyMessage({
-    address,
-    nonce: challenge.nonce,
-  });
-  if (message.trim() !== expected) {
-    throw new AuthError("Signed message does not match login challenge.", 401);
-  }
-
-  pendingChallenges.delete(address);
-  return challenge.nonce;
+async function consumeChallenge(address: string, message: string, signature: string) {
+  return withPlayDocument<{ challenge?: Challenge }, string>(
+    `wallet-login-${address}`, () => ({}), async (document) => {
+      const challenge = document.challenge;
+      if (!challenge || challenge.expiresAt < Date.now()) {
+        throw new AuthError("Login challenge expired. Request a new one.", 401);
+      }
+      const expected = buildWalletVerifyMessage({ address, nonce: challenge.nonce });
+      if (message.trim() !== expected) {
+        throw new AuthError("Signed message does not match login challenge.", 401);
+      }
+      await assertSignature({ address, nonce: challenge.nonce, message, signature });
+      delete document.challenge;
+      return challenge.nonce;
+    },
+  );
 }
 
 /**
@@ -180,13 +183,7 @@ export async function loginWithWallet(input: {
     throw new AuthError("signature is required.");
   }
 
-  const nonce = consumeChallenge(address, input.message);
-  await assertSignature({
-    address,
-    nonce,
-    signature,
-    message: input.message,
-  });
+  await consumeChallenge(address, input.message, signature);
 
   if (!dbConfigured()) {
     const token = `mock_${createSessionToken()}`;
@@ -214,11 +211,10 @@ export async function loginWithWallet(input: {
     };
   }
 
-  const db = getDb();
   const now = new Date();
   const chain = ROBINHOOD_CHAIN_LABEL;
 
-  const result = await db.transaction(async (tx) => {
+  const result = await withWalletIdentity(address, async (tx) => {
     const [existingWallet] = await tx
       .select()
       .from(wallets)
@@ -227,36 +223,10 @@ export async function loginWithWallet(input: {
 
     let userRow: typeof users.$inferSelect;
 
-    if (existingWallet) {
-      const [found] = await tx
-        .select()
-        .from(users)
-        .where(eq(users.id, existingWallet.userId))
-        .limit(1);
-      if (!found) {
-        throw new AuthError("Wallet linked to a missing account.", 500);
-      }
-      userRow = found;
-
-      await tx
-        .update(wallets)
-        .set({ isPrimary: false, updatedAt: now })
-        .where(
-          and(
-            eq(wallets.userId, userRow.id),
-            ne(wallets.id, existingWallet.id),
-          ),
-        );
-
-      await tx
-        .update(wallets)
-        .set({
-          verifiedAt: now,
-          verifyNonce: null,
-          isPrimary: true,
-          updatedAt: now,
-        })
-        .where(eq(wallets.id, existingWallet.id));
+    if (existingWallet?.verifiedAt) {
+      if (existingWallet.ownershipVersion !== WALLET_OWNERSHIP_VERSION)
+        throw new AuthError("Legacy wallet ownership requires review. Your funds and matches are preserved; contact support.", 403);
+      userRow = await assertWalletAccount(tx, existingWallet.userId);
     } else {
       const baseName = usernameFromAddress(address);
       let username = baseName;
@@ -292,20 +262,26 @@ export async function loginWithWallet(input: {
         updatedAt: now,
       });
 
-      await tx.insert(wallets).values({
+      const verifiedWallet = {
         userId: created.id,
         address,
         chain,
         isPrimary: true,
         verifiedAt: now,
+        ownershipVersion: WALLET_OWNERSHIP_VERSION,
         verifyNonce: null,
+        verifyExpiresAt: null,
+        pendingPrimary: false,
         label: displayNameFromAddress(address),
         createdAt: now,
         updatedAt: now,
-      });
+      };
+      // A pending address reservation proves no ownership of its user account.
+      if (existingWallet) await tx.update(wallets).set(verifiedWallet).where(eq(wallets.id, existingWallet.id));
+      else await tx.insert(wallets).values(verifiedWallet);
     }
 
-    await tx
+    if (!existingWallet?.verifiedAt || existingWallet.isPrimary) await tx
       .insert(userBalances)
       .values({
         userId: userRow.id,

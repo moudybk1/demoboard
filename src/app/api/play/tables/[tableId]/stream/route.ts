@@ -23,7 +23,7 @@ export async function GET(request: Request, context: RouteContext) {
     });
   }
 
-  const initial = getPlayTable(tableId);
+  const initial = await getPlayTable(tableId);
   if (!initial) {
     return new Response(
       JSON.stringify({ error: "Table not found.", code: "NOT_FOUND" }),

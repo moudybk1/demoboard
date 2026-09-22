@@ -1,3 +1,4 @@
+import { paidGameRoute } from "@/server/lib/paid-game-route";
 import { NextResponse } from "next/server";
 
 import {
@@ -27,6 +28,8 @@ function readPawnId(body: unknown): string | null {
  */
 export async function POST(request: Request, context: RouteContext) {
   const { roomId } = await context.params;
+  const paid = await paidGameRoute(request, roomId, "ludo", "move");
+  if (paid) return paid;
   if (!roomId) {
     return NextResponse.json({ error: "Missing room id." }, { status: 400 });
   }

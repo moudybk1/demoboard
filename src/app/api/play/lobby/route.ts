@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const address =
       raw && /^0x[a-fA-F0-9]{40}$/.test(raw) ? raw.toLowerCase() : null;
     return NextResponse.json({
-      games: listPlayLobby(address),
+      games: await listPlayLobby(address),
       symbol: PLAY_STAKE_SYMBOL,
     });
   } catch (error) {

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const challenge = issueWalletLoginChallenge(address);
+    const challenge = await issueWalletLoginChallenge(address);
     return NextResponse.json(challenge);
   } catch (error) {
     if (error instanceof AuthError) {

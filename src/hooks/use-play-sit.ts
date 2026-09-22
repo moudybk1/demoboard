@@ -1,264 +1,193 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseEther, stringToHex } from "viem";
+import { parseEther, stringToHex, type Hex } from "viem";
 import { usePublicClient, useSendTransaction, useSwitchChain } from "wagmi";
-
 import { useBoardTokenBalance } from "@/hooks/use-board-token-balance";
+import { usePlaySession } from "@/hooks/use-play-session";
 import { readResponseJson } from "@/lib/fetch-json";
 import { PLAY_ENTRY_FEE_ETH, savePlayPlayer } from "@/lib/game/play-player";
 import {
-  buildLocalWaitingTable,
-  clearPlaySeat,
-  readPlaySeat,
+  clearPendingPlayPayment,
+  readPendingPlayPayment,
+  savePendingPlayPayment,
   savePlaySeat,
-  savePlayTableSnapshot,
+  type PendingPlayPayment,
   type PlayTableView,
 } from "@/lib/game/play-table";
 import { rememberPreviewGame, type PreviewGame } from "@/lib/preview-game";
+import { isGameEnabled, GAME_DISABLED_MESSAGE } from "@/lib/game-availability";
 
 export type SitPhase = "idle" | "sending" | "confirming" | "seating";
 
-function sitErrorMessage(caught: unknown, refunded: boolean) {
-  const raw =
-    caught instanceof Error ? caught.message : "Could not sit at the table.";
-  if (
-    /user rejected|user denied|denied transaction|request rejected|rejected the request|action_rejected/i.test(
-      raw,
-    )
-  ) {
-    return "Sit cancelled in wallet.";
-  }
-  if (refunded) {
-    return `${raw} Your 0.002 ETH is being returned.`;
-  }
-  return raw;
-}
+type SeatResponse = {
+  table?: PlayTableView;
+  seat?: number;
+  leaveToken?: string;
+  txHash?: string;
+  code?: string;
+  error?: string;
+  refund?: boolean;
+};
 
 export function usePlaySit() {
   const router = useRouter();
   const wallet = useBoardTokenBalance();
+  const ensureSession = usePlaySession();
   const { switchChainAsync, isPending: switching } = useSwitchChain();
   const { sendTransactionAsync } = useSendTransaction();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: wallet.expectedChainId });
+  const busy = useRef(false);
   const [sitPhase, setSitPhase] = useState<SitPhase>("idle");
   const [sitTableId, setSitTableId] = useState<string | null>(null);
   const [sitError, setSitError] = useState<string | null>(null);
+  const [pendingPayment, setPendingPayment] =
+    useState<PendingPlayPayment | null>(null);
+  useEffect(() => {
+    void Promise.resolve().then(() =>
+      setPendingPayment(readPendingPlayPayment()),
+    );
+  }, []);
 
   async function sit(game: PreviewGame, tableId: string) {
     const address = wallet.address;
-    if (!address || sitPhase !== "idle") return;
+    if (!address || busy.current) return;
+    busy.current = true;
     setSitError(null);
-
-    const existing = readPlaySeat();
-    if (existing && existing.address.toLowerCase() === address.toLowerCase()) {
-      const sameTable = existing.tableId.toUpperCase() === tableId.toUpperCase();
-      if (sameTable && existing.txHash) {
-        rememberPreviewGame(game);
-        router.push(`/room/${existing.tableId}`);
-        return;
-      }
-      if (!sameTable) {
-        clearPlaySeat();
-      } else {
-        let stillSeated = false;
-        try {
-          const live = await fetch(`/api/play/tables/${existing.tableId}`, {
-            cache: "no-store",
-          });
-          const payload = (await readResponseJson(live)) as {
-            table?: { seats?: Array<{ address: string }> };
-          } | null;
-          stillSeated = Boolean(
-            live.ok &&
-              payload?.table?.seats?.some(
-                (row) => row.address.toLowerCase() === address.toLowerCase(),
-              ),
-          );
-        } catch {
-          stillSeated = false;
-        }
-        if (stillSeated) {
-          rememberPreviewGame(game);
-          router.push(`/room/${existing.tableId}`);
-          return;
-        }
-        clearPlaySeat();
-      }
-    }
-
-    if (!wallet.canEnter) return;
     setSitTableId(tableId);
     setSitPhase("seating");
-
-    let refunded = false;
     try {
-      const claimed = await requestSeat({ game, tableId, address });
-      if (claimed.ok) {
-        openRoom(claimed, game, address);
-        return;
+      await ensureSession(address);
+      let pending = readPendingPlayPayment();
+      if (pending && pending.address.toLowerCase() !== address.toLowerCase()) {
+        throw new Error(
+          "Reconnect the wallet with the pending entry payment before starting another entry.",
+        );
       }
-      if (claimed.code !== "NO_PAYMENT") {
-        refunded = claimed.refunded;
-        throw new Error(claimed.error);
+      if (pending && pending.tableId.toUpperCase() !== tableId.toUpperCase()) {
+        throw new Error(
+          `An entry for ${pending.tableId} is awaiting verification. Retry that table first.`,
+        );
       }
-
-      setSitPhase("sending");
-      const configResponse = await fetch("/api/play/config");
-      const config = (await readResponseJson(configResponse)) as {
-        treasury?: `0x${string}`;
-        error?: string;
-      } | null;
-      if (!configResponse.ok || !config?.treasury) {
-        throw new Error(config?.error ?? "Play treasury is not ready.");
+      const requestSeat = async (hash?: Hex) => {
+        const response = await fetch("/api/play/sit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ game, tableId, address, txHash: hash }),
+        });
+        const payload = (await readResponseJson(
+          response,
+        )) as SeatResponse | null;
+        return { response, payload };
+      };
+      let result = await requestSeat(pending?.txHash);
+      if (
+        !result.response.ok &&
+        !pending &&
+        result.payload?.code === "NO_PAYMENT"
+      ) {
+        // Never open a wallet transfer for a disabled game, even with a stale server.
+        if (!isGameEnabled(game)) throw new Error(GAME_DISABLED_MESSAGE);
+        if (!wallet.canEnter)
+          throw new Error(
+            "Check your network and entry balance before paying.",
+          );
+        const configResponse = await fetch("/api/play/config", {
+          cache: "no-store",
+        });
+        const config = (await readResponseJson(configResponse)) as {
+          treasury?: Hex;
+          entriesAllowed?: boolean;
+          entryBlockReason?: string;
+          error?: string;
+        } | null;
+        if (!configResponse.ok || !config?.treasury)
+          throw new Error(config?.error ?? "Play treasury is not ready.");
+        if (!config.entriesAllowed)
+          throw new Error(config.entryBlockReason ?? "Paid entries are paused.");
+        setSitPhase("sending");
+        const hash = await sendTransactionAsync({
+          to: config.treasury,
+          value: parseEther(PLAY_ENTRY_FEE_ETH),
+          data: stringToHex(tableId),
+          chainId: wallet.expectedChainId,
+        });
+        pending = { tableId, game, address, txHash: hash };
+        savePendingPlayPayment(pending);
+        setPendingPayment(pending);
+        setSitPhase("confirming");
+        if (publicClient) {
+          const receipt = await publicClient.waitForTransactionReceipt({
+            hash,
+            confirmations: 1,
+            timeout: 60_000,
+          });
+          if (receipt.status !== "success") {
+            clearPendingPlayPayment();
+            setPendingPayment(null);
+            throw new Error("Entry transaction reverted. No seat was opened.");
+          }
+        }
+        result = await requestSeat(hash);
       }
-
-      const hash = await sendTransactionAsync({
-        to: config.treasury,
-        value: parseEther(PLAY_ENTRY_FEE_ETH),
-        data: stringToHex(tableId),
-        chainId: wallet.expectedChainId,
-      });
-
-      setSitPhase("confirming");
-      const localTable = buildLocalWaitingTable({ tableId, game, address });
+      for (
+        let attempt = 0;
+        pending &&
+        !result.response.ok &&
+        result.payload?.code === "BAD_TX" &&
+        attempt < 3;
+        attempt += 1
+      ) {
+        setSitPhase("confirming");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        result = await requestSeat(pending.txHash);
+      }
+      const seated = result.payload;
+      if (
+        !result.response.ok ||
+        !seated?.table ||
+        !seated.leaveToken ||
+        seated.seat == null
+      ) {
+        // Keep unresolved hashes recoverable. No invented seat or local-ready fallback.
+        if (seated?.refund || seated?.code === "TX_FAILED" || seated?.code === "TX_USED") {
+          clearPendingPlayPayment();
+          setPendingPayment(null);
+        }
+        throw new Error(
+          seated?.error ??
+            "Entry is not verified yet. Retry this table to check the same payment.",
+        );
+      }
+      clearPendingPlayPayment();
+      setPendingPayment(null);
       savePlayPlayer(address);
       savePlaySeat({
-        tableId: localTable.id,
+        tableId: seated.table.id,
         address,
-        seat: 1,
-        leaveToken: hash,
-        txHash: hash,
-      });
-      savePlayTableSnapshot(localTable);
-      rememberPreviewGame(game);
-      router.push(`/room/${localTable.id}`);
-
-      if (publicClient) {
-        void publicClient
-          .waitForTransactionReceipt({
-            hash,
-            timeout: 20_000,
-            confirmations: 1,
-          })
-          .catch(() => {
-            // The room is already open. Server seating retries on its own.
-          });
-      }
-
-      for (let attempt = 0; attempt < 6; attempt += 1) {
-        const seated = await requestSeat({ game, tableId, address, txHash: hash });
-        if (seated.ok) {
-          savePlayPlayer(address);
-          savePlaySeat({
-            tableId: seated.tableId,
-            address,
-            seat: seated.seat,
-            leaveToken: seated.leaveToken,
-            txHash: seated.txHash ?? hash,
-          });
-          if (seated.table) savePlayTableSnapshot(seated.table);
-          return;
-        }
-        const retryable =
-          seated.code === "BAD_TX" ||
-          /empty response|not found on Robinhood Chain yet/i.test(seated.error);
-        if (!retryable) return;
-        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
-      }
-    } catch (caught) {
-      const message = sitErrorMessage(caught, refunded);
-      setSitError(message);
-      setSitPhase("idle");
-      setSitTableId(null);
-      void wallet.refetch();
-    }
-
-    type SeatPayload =
-      | {
-          ok: true;
-          tableId: string;
-          seat: number;
-          leaveToken: string;
-          txHash?: string;
-          table?: PlayTableView;
-        }
-      | {
-          ok: false;
-          code?: string;
-          error: string;
-          refunded: boolean;
-        };
-
-    async function requestSeat(body: {
-      game: PreviewGame;
-      tableId: string;
-      address: `0x${string}`;
-      txHash?: `0x${string}`;
-    }): Promise<SeatPayload> {
-      const response = await fetch("/api/play/sit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const payload = (await readResponseJson(response)) as {
-        table?: PlayTableView;
-        seat?: number;
-        leaveToken?: string;
-        txHash?: string;
-        error?: string;
-        code?: string;
-        refund?: boolean;
-      } | null;
-      if (!payload) {
-        return {
-          ok: false,
-          code: "BAD_TX",
-          error: "Seat request returned an empty response.",
-          refunded: false,
-        };
-      }
-      if (response.ok && payload.table && payload.leaveToken && payload.seat != null) {
-        return {
-          ok: true,
-          tableId: payload.table.id,
-          seat: payload.seat,
-          leaveToken: payload.leaveToken,
-          txHash: payload.txHash ?? body.txHash,
-          table: payload.table,
-        };
-      }
-      return {
-        ok: false,
-        code: payload.code,
-        error: payload.error ?? "Could not sit at the table.",
-        refunded: Boolean(payload.refund),
-      };
-    }
-
-    function openRoom(
-      seated: Extract<SeatPayload, { ok: true }>,
-      game: PreviewGame,
-      player: `0x${string}`,
-    ) {
-      savePlayPlayer(player);
-      savePlaySeat({
-        tableId: seated.tableId,
-        address: player,
         seat: seated.seat,
         leaveToken: seated.leaveToken,
         txHash: seated.txHash,
       });
-      if (seated.table) savePlayTableSnapshot(seated.table);
       rememberPreviewGame(game);
       void wallet.refetch();
-      router.push(`/room/${seated.tableId}`);
+      router.push(`/room/${seated.table.id}`);
+    } catch (caught) {
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : "Could not verify your entry.";
+      setSitError(
+        /user rejected|user denied/i.test(message)
+          ? "Cancelled in wallet."
+          : message,
+      );
+    } finally {
+      busy.current = false;
+      setSitPhase("idle");
+      setSitTableId(null);
     }
-  }
-
-  function switchNetwork() {
-    void switchChainAsync({ chainId: wallet.expectedChainId });
   }
 
   return {
@@ -268,8 +197,10 @@ export function usePlaySit() {
     sitTableId,
     sitError,
     switching,
-    switchNetwork,
+    pendingPayment,
+    switchNetwork: () => {
+      void switchChainAsync({ chainId: wallet.expectedChainId });
+    },
   };
 }
-
 export type PlaySit = ReturnType<typeof usePlaySit>;

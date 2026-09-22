@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { isGameEnabled, GAME_DISABLED_MESSAGE } from "@/lib/game-availability";
 
 import { MOCK_BALANCE, MOCK_PLAYER, MOCK_ROOMS } from "@/lib/mock/lobby";
 import type { LudoRoomState } from "@/lib/mock/ludo";
@@ -69,7 +70,8 @@ export type JoinRoomResult =
         | "ALREADY_JOINED"
         | "INSUFFICIENT_BALANCE"
         | "USER_NOT_FOUND"
-        | "WRONG_GAME";
+        | "WRONG_GAME"
+        | "GAME_DISABLED";
       message: string;
       shortfall?: number;
     };
@@ -83,6 +85,10 @@ export type JoinRoomOptions = {
    */
   deferStart?: boolean;
 };
+
+function isRetiredLegacyEntry(game: string): boolean {
+  return game === "ludo";
+}
 
 /**
  * Join a waiting room: validate balance, take the next free seat, deduct the
@@ -150,6 +156,17 @@ export async function joinRoom(
       };
     }
 
+    if (!isGameEnabled(room.gameType)) {
+      return {
+        ok: false as const,
+        code: "GAME_DISABLED" as const,
+        message: GAME_DISABLED_MESSAGE,
+      };
+    }
+    if (isRetiredLegacyEntry(room.gameType)) {
+      return { ok: false as const, code: "GAME_DISABLED" as const,
+        message: "Legacy BOARD-stake entry is retired. Use the four-human ETH Ludo rooms at /play. Existing records are preserved for recovery." };
+    }
     if (options.requireGame && room.gameType !== options.requireGame) {
       return {
         ok: false as const,
@@ -379,6 +396,11 @@ function joinRoomMock(
   if (!room) {
     return { ok: false, code: "NOT_FOUND", message: "Room not found." };
   }
+  if (!isGameEnabled(room.gameType)) {
+    return { ok: false, code: "GAME_DISABLED", message: GAME_DISABLED_MESSAGE };
+  }
+  if (isRetiredLegacyEntry(room.gameType)) return { ok: false, code: "GAME_DISABLED",
+    message: "Legacy BOARD-stake entry is retired. Use the four-human ETH Ludo rooms at /play." };
   if (options.requireGame && room.gameType !== options.requireGame) {
     return {
       ok: false,
@@ -491,4 +513,3 @@ function joinRoomMock(
     ready,
   };
 }
-

@@ -7,6 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:paid-play": "NODE_ENV=test tsx --test tests/paid-play.test.ts",
+    "test:wallet-security": "NODE_ENV=test tsx --test tests/wallet-security.db.test.ts",
+    "test:ludo-rules": "NODE_ENV=test tsx --test tests/ludo-rules.test.ts",
+    "play:worker": "tsx scripts/play-worker.ts",
+    "play:import-store": "tsx scripts/import-play-store.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -41,6 +46,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

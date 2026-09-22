@@ -7,8 +7,6 @@
  */
 import { and, eq, gt, isNull } from "drizzle-orm";
 
-import { MOCK_ACCOUNT } from "@/lib/mock/account";
-import { MOCK_PLAYER } from "@/lib/mock/lobby";
 import { getDb } from "@/server/db";
 import { sessions, users } from "@/server/db/schema";
 import { hashSessionToken } from "@/server/lib/session-token";
@@ -63,21 +61,12 @@ export async function resolveSessionToken(token: string | null | undefined) {
       return {
         user: walletSession.user,
         sessionId: "mock-wallet-session",
+        walletAddress: walletSession.address,
         source: "mock" as const,
       };
     }
 
-    return {
-      user: {
-        id: MOCK_PLAYER.id,
-        username: MOCK_ACCOUNT.username,
-        email: MOCK_ACCOUNT.email,
-        avatarId: MOCK_ACCOUNT.avatarId,
-        balance: 0,
-      },
-      sessionId: "mock-session",
-      source: "mock" as const,
-    };
+    return null;
   }
 
   const tokenHash = hashSessionToken(raw);
@@ -100,7 +89,7 @@ export async function resolveSessionToken(token: string | null | undefined) {
     )
     .limit(1);
 
-  if (!row) return null;
+  if (!row || row.user.walletSecurityHold) return null;
 
   await db
     .update(sessions)
@@ -110,6 +99,7 @@ export async function resolveSessionToken(token: string | null | undefined) {
   return {
     user: mapUser(row.user),
     sessionId: row.session.id,
+    walletAddress: row.session.walletAddress,
     source: "database" as const,
   };
 }

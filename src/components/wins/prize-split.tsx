@@ -21,11 +21,15 @@ export function PrizeSplit({
   className,
   compact = false,
   ticker = "BOARD",
+  allocationsOnly = false,
+  retainedFeeOnly = false,
 }: {
   values: PrizeSplitValues;
   className?: string;
   compact?: boolean;
   ticker?: string;
+  allocationsOnly?: boolean;
+  retainedFeeOnly?: boolean;
 }) {
   return (
     <PixelCard
@@ -37,7 +41,7 @@ export function PrizeSplit({
     >
       <SplitRow label="Gross pot" value={values.grossPot} compact={compact} ticker={ticker} />
       <SplitRow
-        label={`Fee (${values.feePercent}%) → development`}
+        label={`Fee (${values.feePercent}%) → ${retainedFeeOnly ? "treasury" : "development"}`}
         value={values.treasuryAmount}
         icon={
           <Landmark className={compact ? "size-3" : "size-3.5"} aria-hidden />
@@ -45,7 +49,7 @@ export function PrizeSplit({
         compact={compact}
         ticker={ticker}
       />
-      <SplitRow
+      {!retainedFeeOnly && <><SplitRow
         label="Buyback"
         value={values.buybackAmount}
         icon={
@@ -55,15 +59,15 @@ export function PrizeSplit({
         ticker={ticker}
       />
       <SplitRow
-        label="Burned"
+        label={allocationsOnly ? "Burn allocation" : "Burned"}
         value={values.burnAmount}
         tone="danger"
         icon={<Flame className={compact ? "size-3" : "size-3.5"} aria-hidden />}
         compact={compact}
         ticker={ticker}
-      />
+      /></>}
       <SplitRow
-        label="Winner receives"
+        label={allocationsOnly ? "Winner allocation" : "Winner receives"}
         value={values.netPayout}
         tone="gold"
         emphasize

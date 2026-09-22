@@ -8,14 +8,19 @@ import {
 import { PLAY_ENTRY_FEE, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import { getPlayTreasuryStatus } from "@/server/lib/play-chain";
 import { getPlayConfig } from "@/server/services/play-table.service";
+import { getPlayEntryReadiness } from "@/server/lib/play-readiness";
 
 /** GET /api/play/config · treasury + sit fee for the play client. */
 export async function GET() {
   try {
     const config = getPlayConfig();
     const treasury = await getPlayTreasuryStatus();
+    const readiness = await getPlayEntryReadiness();
     return NextResponse.json({
       ...config,
+      ...readiness,
+      entriesAllowed: readiness.entriesAllowed && treasury.canRefund,
+      entryBlockReason: readiness.entryBlockReason ?? (treasury.canRefund ? null : "Paid entries paused: treasury gas reserve is insufficient."),
       symbol: PLAY_STAKE_SYMBOL,
       chainId: getBoardChainId(),
       chainLabel: getBoardChainLabel(),

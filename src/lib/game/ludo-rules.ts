@@ -5,11 +5,12 @@ import {
   TRACK_STEPS_BEFORE_HOME,
   pawnCell,
   trackCellForSeat,
+  sharedTrack,
 } from "@/lib/game/ludo-geometry";
 import type { LudoPawn, LudoPlayer, LudoRoomState } from "@/lib/mock/ludo";
 
 /**
- * BOARD Ludo rules · aligned with common classic / Ludo King play:
+ * BOARD Ludo rules. Version 2 uses a 52-square shared circuit.
  *
  * 1. One die. Roll a 6 to leave the yard onto your start square (safe).
  * 2. A 6 grants another roll. Three consecutive 6s voids the third roll
@@ -53,10 +54,11 @@ export function occupantsOnCell(
 ): Occupant[] {
   const found: Occupant[] = [];
   for (const player of state.players) {
+    if (player.status !== "alive") continue;
     for (const pawn of player.pawns) {
       if (pawn.id === ignorePawnId) continue;
       if (pawn.status !== "track") continue;
-      const cell = pawnCell(player.position, pawn);
+      const cell = pawnCell(player.position, pawn, state.rulesVersion);
       if (!cell) continue;
       if (cell[0] === row && cell[1] === col) {
         found.push({ seat: player.position, pawnId: pawn.id });
@@ -95,8 +97,11 @@ function blockedByOpponent(
   col: number,
   movingPawnId: string,
 ): boolean {
-  const blockSeat = blockadeSeatOnCell(state, row, col, movingPawnId);
-  return blockSeat !== null && blockSeat !== moverSeat;
+  const opponents = occupantsOnCell(state, row, col, movingPawnId)
+    .filter((occupant) => occupant.seat !== moverSeat);
+  return opponents.some((occupant) =>
+    opponents.filter((other) => other.seat === occupant.seat).length >= 2,
+  );
 }
 
 function pathIsLegal(
@@ -134,7 +139,7 @@ export function previewMove(
 
   if (pawn.status === "yard") {
     if (roll !== 6) return null;
-    const entry = trackCellForSeat(seat, 0);
+    const entry = trackCellForSeat(seat, 0, state.rulesVersion);
     const path: [number, number][] = [entry];
     if (!pathIsLegal(state, seat, pawn.id, path)) return null;
     return {
@@ -145,11 +150,11 @@ export function previewMove(
   }
 
   if (pawn.status === "track") {
-    const remaining = TRACK_BEFORE_HOME - pawn.steps;
+    const remaining = sharedTrack(state.rulesVersion).length - 2 - pawn.steps;
     const lane = HOME_LANES[seat];
 
     if (roll <= remaining) {
-      const path = pathAlongTrack(seat, pawn.steps, roll);
+      const path = pathAlongTrack(seat, pawn.steps, roll, state.rulesVersion);
       if (!pathIsLegal(state, seat, pawn.id, path)) return null;
       return {
         pawnId: pawn.id,
@@ -164,7 +169,7 @@ export function previewMove(
     const intoHome = roll - remaining - 1;
     if (intoHome < 0 || intoHome > lane.length) return null;
 
-    const onTrack = pathAlongTrack(seat, pawn.steps, remaining);
+    const onTrack = pathAlongTrack(seat, pawn.steps, remaining, state.rulesVersion);
     if (intoHome === lane.length) {
       const path: [number, number][] = [
         ...onTrack,
@@ -223,9 +228,10 @@ function pathAlongTrack(
   seat: number,
   fromSteps: number,
   count: number,
+  rulesVersion = 2,
 ): [number, number][] {
   return Array.from({ length: count }, (_, i) =>
-    trackCellForSeat(seat, fromSteps + i + 1),
+    trackCellForSeat(seat, fromSteps + i + 1, rulesVersion),
   );
 }
 
@@ -246,7 +252,7 @@ export function findCaptures(
 ): CaptureResult[] {
   if (movedPawn.status !== "track") return [];
 
-  const cell = pawnCell(moverSeat, movedPawn);
+  const cell = pawnCell(moverSeat, movedPawn, state.rulesVersion);
   if (!cell) return [];
   if (isSafeCell(cell[0], cell[1])) return [];
 
@@ -258,10 +264,10 @@ export function findCaptures(
   const captures: CaptureResult[] = [];
 
   for (const player of state.players) {
-    if (player.position === moverSeat) continue;
+    if (player.position === moverSeat || player.status !== "alive") continue;
     for (const pawn of player.pawns) {
       if (pawn.status !== "track") continue;
-      const other = pawnCell(player.position, pawn);
+      const other = pawnCell(player.position, pawn, state.rulesVersion);
       if (!other) continue;
       if (other[0] === cell[0] && other[1] === cell[1]) {
         captures.push({
@@ -329,9 +335,7 @@ export function nextActiveSeat(
     return { activeSeat: currentSeat, turnDelta: 0 };
   }
 
-  const idx = rotation.indexOf(currentSeat);
-  const from = idx === -1 ? 0 : idx;
-  const activeSeat = rotation[(from + 1) % rotation.length];
+  const activeSeat = rotation.find((seat) => seat > currentSeat) ?? rotation[0];
   const turnDelta = activeSeat <= currentSeat ? 1 : 0;
   return { activeSeat, turnDelta };
 }
@@ -372,7 +376,7 @@ export function recordLudoAfkMiss(
     let next: LudoRoomState = push(
       { ...state, players, afkStrikes: strikes, lastRoll: null },
       seat,
-      `${who} missed ${MATCH_AFK_STRIKES} rolls and was kicked. Entry fee is not refunded.`,
+      `${who} missed ${MATCH_AFK_STRIKES} decisions and was kicked. Entry fee is not refunded.`,
       `afk-kick-${stamp}`,
     );
     if (next.activeSeat === seat) {

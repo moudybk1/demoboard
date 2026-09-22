@@ -1,13 +1,8 @@
-import {
-  getEconomyExample,
-  getRoomEconomyConfig,
-} from "@/server/services/economy.service";
+import { LUDO_LAUNCH_RULES } from "@/lib/game/ludo-launch-rules";
 import {
   HOW_TO_CTAS,
-  HOW_TO_INTRO,
-  HOW_TO_STEPS,
 } from "@/lib/mock/how-to";
-import { PRIZE_CTAS, PRIZE_RULES, PRIZE_RULES_INTRO } from "@/lib/mock/prize-rules";
+import { PRIZE_CTAS } from "@/lib/mock/prize-rules";
 import { ROADMAP, TOKEN_INFO } from "@/lib/mock/token-roadmap";
 import {
   ONBOARDING_ACTIONS,
@@ -51,8 +46,8 @@ export function getWelcomeGuide() {
 
 export function getHowToGuide() {
   return {
-    intro: HOW_TO_INTRO,
-    steps: HOW_TO_STEPS,
+    intro: { title: "How to play Ludo", punch: "Four paying humans. One winner.", support: "Native ETH entries; read BOARD Ludo v2 rules before paying." },
+    steps: LUDO_LAUNCH_RULES.map((rule, index) => ({ id: `ludo-${index}`, number: index + 1, label: rule.title, title: rule.title, body: rule.text, answer: [{ type: "p", text: rule.text }] })),
     ctas: HOW_TO_CTAS,
   };
 }
@@ -65,24 +60,14 @@ export function getWinGoalsGuide() {
 }
 
 export function getRulesGuide() {
-  const example = getEconomyExample();
-  const config = getRoomEconomyConfig();
-
   return {
-    intro: PRIZE_RULES_INTRO,
-    rules: [...PRIZE_RULES],
+    intro: { title: "BOARD Ludo v2", support: "Custodial native ETH entries. Only confirmed transfers are paid." },
+    rules: LUDO_LAUNCH_RULES.map((rule, index) => ({ id: `ludo-${index}`, title: rule.title, body: rule.text, answer: [{ type: "p", text: rule.text }] })),
     example: {
-      entryFee: example.entryFee,
-      seats: example.seats,
-      grossPot: example.grossPot,
-      feePercent: config.prizeFeePercent,
-      feeAmount: example.feeAmount,
-      winnerPayout: example.winnerPayout,
-      treasuryAmount: example.treasuryAmount,
-      buybackAmount: example.buybackAmount,
-      burnAmount: example.burnAmount,
+      entryFee: 0.002, seats: 4, grossPot: 0.008, feePercent: 2,
+      feeAmount: 0.00016, winnerPayout: 0.00784, treasuryAmount: 0.00016, buybackAmount: 0, burnAmount: 0,
     },
-    economy: config,
+    economy: { symbol: "ETH", custody: "operator treasury", prizeFeePercent: 2 },
     ctas: PRIZE_CTAS,
   };
 }

@@ -195,8 +195,9 @@ export function ProfileMenu({ className }: { className?: string }) {
 
           <div className="border-b-2 border-edge px-3 py-3">
             <p className="font-pixel text-xs uppercase tracking-wider text-faint">
-              Game history
+              Legacy BOARD history
             </p>
+            <Link href="/play/history" onClick={() => setOpen(false)} className="mt-3 block text-sm text-gold underline">ETH Ludo matches and refunds</Link>
 
             {winsLoading ? (
               <p className="mt-3 font-pixel text-xs uppercase text-muted">

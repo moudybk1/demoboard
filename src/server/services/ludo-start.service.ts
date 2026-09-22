@@ -118,6 +118,7 @@ export function buildLudoState(args: {
   );
 
   return {
+    rulesVersion: 1,
     roomId: args.roomId,
     entryFee: args.entryFee,
     maxPlayers: args.maxPlayers,

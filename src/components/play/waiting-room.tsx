@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 
 import { PixelButton } from "@/components/ui/pixel-button";
@@ -10,14 +12,15 @@ import { ludoPawnSprite, pawnSprite } from "@/lib/game/pawn-sprite";
 import {
   clearPlaySeat,
   isPlayBot,
-  readPlaySeat,
-  readPlayTableSnapshot,
   type PlayTableView,
 } from "@/lib/game/play-table";
 import { PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import { readResponseJson } from "@/lib/fetch-json";
 import { shortenAddress } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
+import { usePlaySession } from "@/hooks/use-play-session";
+import { recoverPlaySeat } from "@/lib/game/recover-play-seat";
+import { isGameEnabled, WORK_IN_PROGRESS } from "@/lib/game-availability";
 
 export function WaitingRoom({
   table,
@@ -29,11 +32,11 @@ export function WaitingRoom({
   note?: string | null;
 }) {
   const router = useRouter();
-  const seatRecord = readPlaySeat();
+  const ensureSession = usePlaySession();
+  const { address } = useAccount();
   const mine = table.seats.find(
     (seat) =>
-      seatRecord &&
-      seat.address.toLowerCase() === seatRecord.address.toLowerCase(),
+      address && seat.address.toLowerCase() === address.toLowerCase(),
   );
   const [busy, setBusy] = useState<"ready" | "leave" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +57,12 @@ export function WaitingRoom({
   const readyCount = table.seats.filter((seat) => seat.ready).length;
 
   async function readyUp() {
-    if (!seatRecord || busy) return;
+    if (!address || !mine || busy || !isGameEnabled(table.game)) return;
     setBusy("ready");
     setError(null);
     try {
+      await ensureSession(address);
+      const seatRecord = await recoverPlaySeat(table.id, address);
       const response = await fetch(`/api/play/tables/${table.id}/ready`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,16 +77,6 @@ export function WaitingRoom({
         error?: string;
       } | null;
       if (!response.ok || !payload?.table) {
-        const snap = readPlayTableSnapshot(table.id);
-        const viewer = seatRecord.address.toLowerCase();
-        if (snap?.seats.some((seat) => seat.address.toLowerCase() === viewer)) {
-          onTable({
-            ...snap,
-            status: "playing",
-            seats: snap.seats.map((seat) => ({ ...seat, ready: true })),
-          });
-          return;
-        }
         throw new Error(payload?.error ?? "Could not ready up.");
       }
       onTable(payload.table);
@@ -93,10 +88,12 @@ export function WaitingRoom({
   }
 
   async function leaveTable() {
-    if (!seatRecord || busy) return;
+    if (!address || !mine || busy) return;
     setBusy("leave");
     setError(null);
     try {
+      await ensureSession(address);
+      const seatRecord = await recoverPlaySeat(table.id, address);
       const response = await fetch(`/api/play/tables/${table.id}/leave`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -146,7 +143,11 @@ export function WaitingRoom({
               · {readyCount}/{table.maxPlayers} ready
             </p>
             <p className="mt-2 text-center font-pixel text-[10px] uppercase leading-relaxed text-cream/55">
-              Open seats fill with house NPCs. Tap ready to start.
+              Four paying humans required. No bots in paid rooms. Winner receives 0.00784 ETH; the treasury retains a 2% fee.
+            </p>
+            <p className="mt-2 text-center text-xs text-cream/70">
+              Ready within 2 minutes. If four players are not ready within 5 minutes of the first entry, the room closes and full entry refunds are queued.
+              {table.waitingUntil ? ` Room deadline: ${new Date(table.waitingUntil).toISOString().slice(11, 19)} UTC.` : ""}
             </p>
 
             <ol className="mt-5 grid grid-cols-2 gap-3">
@@ -211,7 +212,11 @@ export function WaitingRoom({
             ) : null}
 
             <div className="mt-5 flex flex-col gap-2">
-              {mine && !mine.ready ? (
+              {!isGameEnabled(table.game) ? (
+                <p className="text-center font-pixel text-gold">
+                  Monopoly · {WORK_IN_PROGRESS}. Leave this table to request your entry refund.
+                </p>
+              ) : mine && !mine.ready ? (
                 <PixelButton
                   type="button"
                   size="lg"
@@ -243,11 +248,12 @@ export function WaitingRoom({
               ) : null}
             </div>
             <p className="mt-3 text-center font-pixel text-[10px] uppercase leading-relaxed text-cream/50">
-              Leave refunds your 0.002 ETH. If the house is short on gas, the refund queues and retries.
+              Leave before the start to queue a full 0.002 ETH refund. It is complete only after confirmation on-chain.
             </p>
+            <Link href="/play/history" className="mt-3 block text-center text-sm text-gold underline">My matches and refunds</Link>
             {treasury ? (
               <p className="mt-4 break-all text-center font-pixel text-[10px] uppercase leading-relaxed text-cream/50">
-                House {shortenAddress(treasury)} · faucet it so refunds have gas
+                Custodial treasury {shortenAddress(treasury)} · gas is paid by the operator
               </p>
             ) : null}
           </div>

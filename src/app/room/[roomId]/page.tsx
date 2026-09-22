@@ -10,9 +10,11 @@ export const metadata: Metadata = {
 
 export default async function RoomPage(props: PageProps<"/room/[roomId]">) {
   const { roomId } = await props.params;
+  const search = await props.searchParams;
+  const matchId = typeof search.match === "string" ? search.match : undefined;
   return (
     <div className="board-atmosphere flex min-h-[100dvh] flex-col">
-      <GameRoom roomId={roomId} />
+      <GameRoom key={roomId} roomId={roomId} requestedMatchId={matchId} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { paidGameRoute } from "@/server/lib/paid-game-route";
 import { NextResponse } from "next/server";
 
 import {
@@ -22,6 +23,8 @@ const TILE_RANGE = { min: 0, max: 39 };
  */
 export async function POST(request: Request, context: RouteContext) {
   const { roomId } = await context.params;
+  const paid = await paidGameRoute(request, roomId, "monopoly", "buy");
+  if (paid) return paid;
   if (!roomId) {
     return NextResponse.json({ error: "Missing room id." }, { status: 400 });
   }

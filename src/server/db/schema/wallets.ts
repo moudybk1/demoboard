@@ -5,6 +5,7 @@
 import {
   boolean,
   index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -28,6 +29,9 @@ export const wallets = pgTable(
     /** Challenge nonce for signature verification. */
     verifyNonce: text("verify_nonce"),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    ownershipVersion: integer("ownership_version").notNull().default(0),
+    verifyExpiresAt: timestamp("verify_expires_at", { withTimezone: true }),
+    pendingPrimary: boolean("pending_primary").notNull().default(false),
     label: text("label"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

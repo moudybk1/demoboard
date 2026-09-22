@@ -15,3 +15,4 @@ export * from "./ludo";
 export * from "./transactions";
 export * from "./reward-payouts";
 export * from "./fee-ledger";
+export * from "./play-documents";

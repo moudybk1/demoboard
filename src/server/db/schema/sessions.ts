@@ -21,6 +21,7 @@ export const sessions = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     /** SHA-256 (or similar) of the opaque session token. */
     tokenHash: text("token_hash").notNull().unique(),
+    walletAddress: text("wallet_address"),
     userAgent: text("user_agent"),
     ipAddress: text("ip_address"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

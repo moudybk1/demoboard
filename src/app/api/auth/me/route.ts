@@ -21,6 +21,7 @@ export async function GET(request: Request) {
 
   const { wallets, source } = await listWallets(session.user.id);
   let primary =
+    wallets.find((wallet) => wallet.verified && wallet.address.toLowerCase() === session.walletAddress?.toLowerCase()) ??
     wallets.find((wallet) => wallet.isPrimary && wallet.verified) ??
     wallets.find((wallet) => wallet.verified) ??
     null;

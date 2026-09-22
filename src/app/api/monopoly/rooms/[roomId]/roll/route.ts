@@ -1,3 +1,4 @@
+import { paidGameRoute } from "@/server/lib/paid-game-route";
 import { NextResponse } from "next/server";
 
 import { errorResponse, failureResponse } from "@/server/lib/api-response";
@@ -11,6 +12,8 @@ type RouteContext = {
 /** POST /api/monopoly/rooms/[roomId]/roll · authoritative dice + pawn move. */
 export async function POST(request: Request, context: RouteContext) {
   const { roomId } = await context.params;
+  const paid = await paidGameRoute(request, roomId, "monopoly", "roll");
+  if (paid) return paid;
   if (!roomId) {
     return NextResponse.json({ error: "Missing room id." }, { status: 400 });
   }

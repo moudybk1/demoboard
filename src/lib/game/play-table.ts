@@ -5,6 +5,8 @@ import { MAX_PLAYERS_PER_ROOM, type GameType } from "@/lib/types";
 export type PlayTableStatus = "waiting" | "playing" | "cancelled";
 
 export const PLAY_LOBBIES_PER_GAME = 4;
+export const PLAY_READY_TIMEOUT_MS = 2 * 60 * 1000;
+export const PLAY_WAIT_TIMEOUT_MS = 5 * 60 * 1000;
 
 export type PlayLobbySlot = {
   id: string;
@@ -34,6 +36,7 @@ export type PlayTableSeatView = {
   username: string;
   seat: number;
   ready: boolean;
+  readyBy?: number;
 };
 
 export type PlayTableView = {
@@ -47,6 +50,8 @@ export type PlayTableView = {
   seats: PlayTableSeatView[];
   refundTxHash: string | null;
   version: number;
+  matchId?: string | null;
+  waitingUntil?: number | null;
 };
 
 /** Public lobby snapshot for one sit table. Occupancy is live, never invented. */
@@ -80,6 +85,22 @@ export type PlaySeatRecord = {
 
 const SEAT_KEY = "board.play.seat";
 const TABLE_KEY = "board.play.table";
+
+export type PendingPlayPayment = { tableId: string; game: GameType; address: `0x${string}`; txHash: `0x${string}` };
+const PAYMENT_KEY = "board.play.pending-payment";
+
+export function savePendingPlayPayment(payment: PendingPlayPayment) {
+  // Persist the hash before waiting for a receipt so retries never charge twice.
+  window.localStorage.setItem(PAYMENT_KEY, JSON.stringify(payment));
+}
+
+export function readPendingPlayPayment(): PendingPlayPayment | null {
+  if (typeof window === "undefined") return null;
+  try { return JSON.parse(window.localStorage.getItem(PAYMENT_KEY) ?? "null") as PendingPlayPayment | null; }
+  catch { return null; }
+}
+
+export function clearPendingPlayPayment() { window.localStorage.removeItem(PAYMENT_KEY); }
 
 export function savePlaySeat(record: PlaySeatRecord) {
   if (typeof window === "undefined") return;
@@ -160,15 +181,6 @@ export function buildLocalWaitingTable(input: {
       ready: false,
     },
   ];
-  for (const npc of PLAY_HOUSE_NPCS) {
-    if (seats.length >= MAX_PLAYERS_PER_ROOM) break;
-    seats.push({
-      address: npc.id,
-      username: npc.username,
-      seat: seats.length + 1,
-      ready: true,
-    });
-  }
   return {
     id,
     game: slot?.game ?? input.game,
@@ -187,7 +199,7 @@ export function isPlayBot(id: string) {
   return id.startsWith("bot-");
 }
 
-/** House seats that fill a table so a solo sit can start a match. */
+/** Free-practice rivals. Never create these seats in a paid waiting table. */
 export const PLAY_HOUSE_NPCS = [
   { id: "bot-pixel", username: "PixelBaron" },
   { id: "bot-dice", username: "DiceDuchess" },

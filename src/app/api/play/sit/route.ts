@@ -1,3 +1,4 @@
+import { requirePlayWallet } from "@/server/lib/require-play-wallet";
 import { NextResponse } from "next/server";
 
 import {
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     if (game !== "monopoly" && game !== "ludo") {
       throw new InvalidBodyError("game must be monopoly or ludo.", 400);
     }
-    const address = readHex(body, "address", 20);
+    const address = await requirePlayWallet(request, readHex(body, "address", 20));
     const tableId = readOptionalString(body, "tableId") ?? undefined;
     const rawTx = readOptionalString(body, "txHash");
     const result = rawTx

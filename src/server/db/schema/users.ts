@@ -7,6 +7,7 @@
  */
 import {
   index,
+  boolean,
   numeric,
   pgTable,
   text,
@@ -18,6 +19,7 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    walletSecurityHold: boolean("wallet_security_hold").notNull().default(false),
     username: text("username").notNull().unique(),
     /** Login email · unique when set (guest/mock rows may omit it). */
     email: text("email").unique(),

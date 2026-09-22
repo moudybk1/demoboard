@@ -6,6 +6,8 @@ import gsap from "gsap";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { WelcomeStage } from "@/components/welcome/welcome-stage";
+import { LudoDemo } from "@/components/welcome/game-demos";
+import { isGameEnabled } from "@/lib/game-availability";
 import { WELCOME_HERO } from "@/lib/mock/welcome";
 import { prefersReducedMotion } from "@/lib/motion/gsap-config";
 import { cn } from "@/lib/utils";
@@ -111,7 +113,21 @@ export function WelcomeHero({ className }: WelcomeHeroProps) {
           </div>
         </div>
 
-        <WelcomeStage />
+        {isGameEnabled("monopoly") ? (
+          <WelcomeStage />
+        ) : (
+          <div id="try-a-turn" className="mx-auto w-full max-w-lg scroll-mt-28">
+            <div className="border-[3px] border-void bg-cream p-4 shadow-pixel sm:p-6">
+              <p className="mb-4 text-center font-pixel text-lg font-bold text-ludo">
+                Ludo is live
+              </p>
+              <LudoDemo />
+              <p className="mt-4 text-center font-pixel text-sm text-parchment">
+                Race your pawns home. One winner.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -38,6 +38,8 @@ export type LudoLogEntry = {
 };
 
 export type LudoRoomState = {
+  /** 1 preserves archived 56-cell games; new games use the 52-cell ruleset. */
+  rulesVersion?: 1 | 2;
   roomId: string;
   entryFee: number;
   maxPlayers: number;
@@ -99,6 +101,7 @@ export function createLudoMatchForSeats(
   seats: { id: string; username: string; seat: number }[],
 ): LudoRoomState {
   return {
+    rulesVersion: 2,
     roomId,
     entryFee: PLAY_ENTRY_FEE,
     maxPlayers: MAX_PLAYERS_PER_ROOM,

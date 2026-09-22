@@ -5,14 +5,16 @@ import gsap from "gsap";
 import { Trophy } from "lucide-react";
 
 import { BoardAmount } from "@/components/ui/board-amount";
-import { PixelButtonLink } from "@/components/ui/pixel-button";
+import { PixelButton, PixelButtonLink } from "@/components/ui/pixel-button";
 import { PixelPanel } from "@/components/ui/pixel-panel";
 import { PrizeSplit } from "@/components/wins/prize-split";
 import { StartMatchButton } from "@/components/lobby/start-match-button";
 import { ludoSeatColor } from "@/lib/game/ludo-board";
 import { seatColor } from "@/lib/game/seats";
 import { PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
-import { PRIZE_FEE_RATE, type GameType } from "@/lib/types";
+import type { GameType } from "@/lib/types";
+import type { PlaySettlement } from "@/lib/game/live-match";
+import { getBoardExplorerUrl } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
 export type WinnerSummary = {
@@ -32,22 +34,36 @@ export type WinnerSummary = {
 export function WinnerScreen({
   winner,
   game = "monopoly",
+  settlement,
+  matchId,
+  onSettle,
+  settling,
 }: {
   winner: WinnerSummary;
   game?: GameType;
+  settlement: PlaySettlement | null;
+  matchId: string;
+  onSettle: () => void;
+  settling: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const color =
     game === "ludo" ? ludoSeatColor(winner.seat) : seatColor(winner.seat);
-  const fee = winner.pot * PRIZE_FEE_RATE;
-  // Matches economy.service feeDestination: 30% / 35% / 35%.
-  const treasury = fee * 0.3;
-  const buyback = fee * 0.35;
-  const burn = fee - treasury - buyback;
-  const payout = winner.pot - fee;
-  const feePercent = Math.round(PRIZE_FEE_RATE * 100);
-  const subtitle =
-    winner.subtitle ?? "Last player standing takes the pot.";
+  const fee = Number(settlement?.feeAmount ?? 0);
+  const grossPot = Number(settlement?.grossPot ?? 0);
+  const payout = settlement ? Number(settlement.netPayout) : null;
+  const feePercent = grossPot ? (fee / grossPot) * 100 : 0;
+  const confirmed = settlement?.status === "confirmed";
+  const statusText = confirmed
+    ? "Payout confirmed"
+    : settlement?.status === "submitted"
+      ? "Awaiting transaction confirmation"
+      : settlement?.status === "failed"
+        ? "Payout not confirmed"
+        : settlement?.status === "house"
+          ? "House NPC won · no player payout"
+          : "Settlement pending";
+  const subtitle = winner.subtitle ?? "Last player standing takes the pot.";
 
   useEffect(() => {
     const node = ref.current;
@@ -71,7 +87,7 @@ export function WinnerScreen({
         { y: 0, opacity: 1, scale: 0.4 },
         {
           y: (i) => -40 - (i % 5) * 12,
-          x: (i) => ((i % 2 === 0 ? 1 : -1) * (20 + (i % 4) * 10)),
+          x: (i) => (i % 2 === 0 ? 1 : -1) * (20 + (i % 4) * 10),
           opacity: 0,
           scale: 1,
           rotate: (i) => (i % 2 === 0 ? 120 : -120),
@@ -151,30 +167,77 @@ export function WinnerScreen({
           <div className="flex flex-col gap-4 p-5">
             <div className="text-center">
               <p className="text-[10px] uppercase tracking-wide text-faint">
-                Payout
+                {statusText}
               </p>
-              <BoardAmount
-                value={payout}
-                size="xl"
-                tone="gold"
-                ticker={PLAY_STAKE_SYMBOL}
-                className="mt-2 justify-center"
-              />
+              {payout !== null && (
+                <BoardAmount
+                  value={payout}
+                  size="xl"
+                  tone="gold"
+                  ticker={PLAY_STAKE_SYMBOL}
+                  className="mt-2 justify-center"
+                />
+              )}
+              {!confirmed && settlement?.status !== "house" && (
+                <p className="mt-2 text-xs text-muted">
+                  This amount has not been confirmed as paid.
+                </p>
+              )}
+              {settlement?.error && (
+                <p role="alert" className="mt-2 text-xs text-gold">
+                  {settlement.error}
+                </p>
+              )}
+              {settlement?.txHash && (
+                <a
+                  className="mt-2 block text-xs text-gold underline"
+                  href={`${getBoardExplorerUrl()}/tx/${settlement.txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View payout transaction
+                </a>
+              )}
+              <p className="mt-2 break-all text-[10px] text-faint">
+                Match {matchId}
+              </p>
+              {settlement?.confirmedAt && (
+                <p className="mt-1 text-xs text-muted">
+                  Confirmed {new Date(settlement.confirmedAt).toLocaleString()}
+                </p>
+              )}
             </div>
 
-            <PrizeSplit
-              compact
-              ticker={PLAY_STAKE_SYMBOL}
-              className="border-t-2 border-edge pt-4"
-              values={{
-                grossPot: winner.pot,
-                feePercent,
-                treasuryAmount: treasury,
-                buybackAmount: buyback,
-                burnAmount: burn,
-                netPayout: payout,
-              }}
-            />
+            {settlement && (
+              <PrizeSplit
+                allocationsOnly
+                retainedFeeOnly
+                compact
+                ticker={PLAY_STAKE_SYMBOL}
+                className="border-t-2 border-edge pt-4"
+                values={{
+                  grossPot,
+                  feePercent,
+                  treasuryAmount: fee,
+                  buybackAmount: 0,
+                  burnAmount: 0,
+                  netPayout: payout ?? 0,
+                }}
+              />
+            )}
+            <p className="text-center text-[10px] text-faint">
+              Prize funded by verified entries. The full fee remains in the treasury;
+              no automatic buyback or burn is performed.
+            </p>
+            {!confirmed && settlement?.status !== "house" && (
+              <PixelButton disabled={settling} onClick={onSettle}>
+                {settling
+                  ? "Checking settlement…"
+                  : settlement?.status === "submitted"
+                    ? "Check confirmation"
+                    : "Retry settlement"}
+              </PixelButton>
+            )}
 
             <StartMatchButton
               game={game}

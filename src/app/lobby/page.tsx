@@ -5,7 +5,7 @@ import { parsePreviewGame, playPathForGame } from "@/lib/preview-game";
 
 export const metadata: Metadata = {
   title: "Lobby | BOARD",
-  description: "Connect a wallet, pick Monopoly or Ludo, and sit a table.",
+  description: "Connect a wallet and play Ludo. Monopoly is a work in progress.",
 };
 
 type LobbyPageProps = {

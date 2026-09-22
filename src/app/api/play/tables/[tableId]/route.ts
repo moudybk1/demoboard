@@ -1,6 +1,11 @@
+import { requirePlayWallet } from "@/server/lib/require-play-wallet";
 import { NextResponse } from "next/server";
 
-import { readJsonBody, readOptionalString } from "@/server/lib/api-response";
+import {
+  errorResponse,
+  readJsonBody,
+  readOptionalString,
+} from "@/server/lib/api-response";
 import {
   getPlayTable,
   resumePlayTable,
@@ -18,7 +23,7 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!tableId) {
     return NextResponse.json({ error: "Missing table id." }, { status: 400 });
   }
-  const table = getPlayTable(tableId);
+  const table = await getPlayTable(tableId);
   if (!table) {
     return NextResponse.json(
       { error: "Table not found.", code: "NOT_FOUND" },
@@ -39,22 +44,29 @@ export async function POST(request: Request, context: RouteContext) {
   if (!tableId) {
     return NextResponse.json({ error: "Missing table id." }, { status: 400 });
   }
-  const body = await readJsonBody(request);
-  const result = await resumePlayTable({
-    tableId,
-    leaveToken: readOptionalString(body, "leaveToken"),
-    address: readOptionalString(body, "address"),
-    txHash: readOptionalString(body, "txHash"),
-  });
-  if (!result.table) {
-    return NextResponse.json(
-      { error: "Table not found.", code: "NOT_FOUND" },
-      { status: 404 },
-    );
+  try {
+    const body = await readJsonBody(request);
+    const result = await resumePlayTable({
+      tableId,
+      leaveToken: readOptionalString(body, "leaveToken"),
+      address: await requirePlayWallet(
+        request,
+        readOptionalString(body, "address"),
+      ),
+      txHash: readOptionalString(body, "txHash"),
+    });
+    if (!result.table) {
+      return NextResponse.json(
+        { error: "Table not found.", code: "NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+    return NextResponse.json({
+      table: result.table,
+      note: result.note,
+      blocked: result.blocked,
+    });
+  } catch (error) {
+    return errorResponse(error, "POST /api/play/tables/:tableId");
   }
-  return NextResponse.json({
-    table: result.table,
-    note: result.note,
-    blocked: result.blocked,
-  });
 }

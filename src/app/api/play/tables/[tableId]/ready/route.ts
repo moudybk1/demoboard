@@ -1,3 +1,4 @@
+import { requirePlayWallet } from "@/server/lib/require-play-wallet";
 import { NextResponse } from "next/server";
 
 import {
@@ -31,7 +32,7 @@ export async function POST(request: Request, context: RouteContext) {
     const result = await readyPlayTable({
       tableId,
       leaveToken,
-      address: readOptionalString(body, "address"),
+      address: await requirePlayWallet(request, readOptionalString(body, "address")),
       txHash: readOptionalString(body, "txHash"),
     });
     if (!result.ok) return failureResponse(result);

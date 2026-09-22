@@ -36,7 +36,7 @@ export function yardPadCells(seat: number): [number, number][] {
  * After a near-full lap each seat turns into its home lane from the cell
  * immediately before re-passing its start (see {@link TRACK_STEPS_BEFORE_HOME}).
  */
-export const SHARED_TRACK: readonly [number, number][] = [
+const LEGACY_SHARED_TRACK: readonly [number, number][] = [
   // Seat 1 entry · bottom arm, left of home column
   [13, 6],
   [12, 6],
@@ -103,35 +103,47 @@ export const SHARED_TRACK: readonly [number, number][] = [
   [14, 6], // last cell before wrapping to entry
 ];
 
+/** The four corners of the central home area are not playable track squares. */
+export const SHARED_TRACK = LEGACY_SHARED_TRACK.filter(
+  ([row, col]) => !((row === 6 || row === 8) && (col === 6 || col === 8)),
+);
+
+export function sharedTrack(rulesVersion = 2) {
+  return rulesVersion === 1 ? LEGACY_SHARED_TRACK : SHARED_TRACK;
+}
+
 /**
  * Steps from a seat's entry to its home-approach cell (inclusive of entry as 0).
  * On this cell, further pips turn into the coloured home lane.
  */
-export const TRACK_STEPS_BEFORE_HOME = SHARED_TRACK.length - 2; // 54
+export const TRACK_STEPS_BEFORE_HOME = SHARED_TRACK.length - 2; // 50; entry is step 0
 
 /** Track index of each seat's entry cell. */
 export const SEAT_ENTRY_INDEX: Record<number, number> = {
   1: 0, // [13, 6]
-  2: 14, // [6, 1]
-  3: 28, // [1, 8]
-  4: 42, // [8, 13]
+  2: 13, // [6, 1]
+  3: 26, // [1, 8]
+  4: 39, // [8, 13]
 };
 
 export function trackCellForSeat(
   seat: number,
   steps: number,
+  rulesVersion = 2,
 ): [number, number] {
-  const start = SEAT_ENTRY_INDEX[seat];
-  const index = (start + steps) % SHARED_TRACK.length;
-  return SHARED_TRACK[index];
+  const track = sharedTrack(rulesVersion);
+  const start = (seat - 1) * (track.length / 4);
+  const index = (start + steps) % track.length;
+  return track[index];
 }
 
 export function pawnCell(
   seat: number,
   pawn: LudoPawn,
+  rulesVersion = 2,
 ): [number, number] | null {
   if (pawn.status === "yard") return yardPadCells(seat)[pawn.index];
-  if (pawn.status === "track") return trackCellForSeat(seat, pawn.steps);
+  if (pawn.status === "track") return trackCellForSeat(seat, pawn.steps, rulesVersion);
   if (pawn.status === "home") {
     const lane = HOME_LANES[seat];
     return lane[Math.min(pawn.steps, lane.length - 1)];
@@ -208,6 +220,7 @@ function yardApproach(
 export function captureReturnPath(
   seat: number,
   pawn: LudoPawn,
+  rulesVersion = 2,
 ): [number, number][] {
   const home = yardPadCells(seat)[pawn.index];
   if (pawn.status !== "track") return [home];
@@ -220,16 +233,16 @@ export function captureReturnPath(
   };
 
   for (let step = pawn.steps - 1; step >= 0; step -= 1) {
-    push(trackCellForSeat(seat, step));
+    push(trackCellForSeat(seat, step, rulesVersion));
   }
-  for (const cell of yardApproach(seat, trackCellForSeat(seat, 0), home)) {
+  for (const cell of yardApproach(seat, trackCellForSeat(seat, 0, rulesVersion), home)) {
     push(cell);
   }
   return cells;
 }
 
-export function pawnPoint(seat: number, pawn: LudoPawn): BoardPoint | null {
-  const cell = pawnCell(seat, pawn);
+export function pawnPoint(seat: number, pawn: LudoPawn, rulesVersion = 2): BoardPoint | null {
+  const cell = pawnCell(seat, pawn, rulesVersion);
   if (!cell) return null;
   return cellCenter(cell[0], cell[1]);
 }
@@ -243,11 +256,11 @@ export type LudoPawnView = {
   point: BoardPoint;
 };
 
-export function pawnsForBoard(players: LudoPlayer[]): LudoPawnView[] {
+export function pawnsForBoard(players: LudoPlayer[], rulesVersion = 2): LudoPawnView[] {
   const views: LudoPawnView[] = [];
   for (const player of players) {
     for (const pawn of player.pawns) {
-      const point = pawnPoint(player.position, pawn);
+      const point = pawnPoint(player.position, pawn, rulesVersion);
       if (!point) continue;
       views.push({
         id: pawn.id,

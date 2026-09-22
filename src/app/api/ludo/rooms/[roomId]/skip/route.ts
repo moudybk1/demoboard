@@ -1,3 +1,4 @@
+import { paidGameRoute } from "@/server/lib/paid-game-route";
 import { NextResponse } from "next/server";
 
 import { errorResponse, failureResponse } from "@/server/lib/api-response";
@@ -11,6 +12,8 @@ type RouteContext = {
 /** POST /api/ludo/rooms/[roomId]/skip · skip the active seat's turn. */
 export async function POST(request: Request, context: RouteContext) {
   const { roomId } = await context.params;
+  const paid = await paidGameRoute(request, roomId, "ludo", "skip");
+  if (paid) return paid;
   if (!roomId) {
     return NextResponse.json({ error: "Missing room id." }, { status: 400 });
   }

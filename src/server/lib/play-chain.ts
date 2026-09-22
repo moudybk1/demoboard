@@ -7,13 +7,18 @@ import {
   hexToString,
   http,
   parseEther,
+  keccak256,
+  parseTransaction,
+  recoverTransactionAddress,
   type Hex,
+  type TransactionSerialized,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 import { PLAY_ENTRY_FEE_ETH } from "@/lib/game/play-player";
 import { boardRpcFetch } from "@/server/lib/board-rpc-fetch";
 import { playDataPath } from "@/server/lib/play-data-path";
+import { withPlayDocument } from "@/server/lib/play-store";
 import {
   getBoardChain,
   getBoardChainId,
@@ -32,7 +37,9 @@ type TreasuryFile = {
 
 function readTreasuryFile(): TreasuryFile | null {
   try {
-    const parsed = JSON.parse(readFileSync(TREASURY_PATH, "utf8")) as TreasuryFile;
+    const parsed = JSON.parse(
+      readFileSync(TREASURY_PATH, "utf8"),
+    ) as TreasuryFile;
     if (
       /^0x[a-fA-F0-9]{40}$/.test(parsed.address) &&
       /^0x[a-fA-F0-9]{64}$/.test(parsed.privateKey)
@@ -59,6 +66,16 @@ function loadTreasury(): TreasuryFile {
     return { address: account.address, privateKey: fromEnv as Hex };
   }
 
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME
+  ) {
+    throw new Error(
+      "PLAY_TREASURY_PRIVATE_KEY is required for paid play outside local development.",
+    );
+  }
+
   const existing = readTreasuryFile();
   if (existing) return existing;
 
@@ -82,10 +99,17 @@ function loadTreasury(): TreasuryFile {
   return created;
 }
 
-const treasury = loadTreasury();
+let treasury: TreasuryFile | undefined;
+function getTreasury() {
+  return (treasury ??= loadTreasury());
+}
 
 export function getPlayTreasuryAddress(): Hex {
-  return treasury.address;
+  return getTreasury().address;
+}
+
+export async function getPlayChainHead() {
+  return publicClient().getBlockNumber();
 }
 
 function publicClient() {
@@ -138,7 +162,7 @@ export function sitPaymentMatchesTable(
     const text = hexToString(input).replace(/\0/g, "").trim().toUpperCase();
     if (!text) return true;
     const wanted = tableId.toUpperCase();
-    return text === wanted || text.includes(wanted);
+    return text === wanted;
   } catch {
     return false;
   }
@@ -150,7 +174,7 @@ export async function verifySitTransaction(input: {
   tableId?: string;
 }): Promise<{ ok: true } | { ok: false; error: SitTxError }> {
   const client = publicClient();
-  const expectedTo = treasury.address.toLowerCase();
+  const expectedTo = getTreasury().address.toLowerCase();
   const expectedFrom = input.from.toLowerCase();
 
   let tx: Awaited<ReturnType<typeof client.getTransaction>> | null = null;
@@ -224,7 +248,8 @@ export async function verifySitTransaction(input: {
       ok: false,
       error: {
         code: "TX_MISMATCH",
-        message: "Sit transaction does not pay the play treasury from this wallet.",
+        message:
+          "Sit transaction does not pay the play treasury from this wallet.",
       },
     };
   }
@@ -249,6 +274,12 @@ export async function verifySitTransaction(input: {
     };
   }
 
+  const cutoff = await withPlayDocument<{ entryCutoverBlock?: string }, string | undefined>(
+    "play-tables", () => ({}), async (record) => record.entryCutoverBlock,
+  );
+  if (!cutoff || !/^\d+$/.test(cutoff) || receipt.blockNumber < BigInt(cutoff)) {
+    return { ok: false, error: { code: "TX_MISMATCH", message: "This payment predates the current ledger or its cutover is not approved. Do not pay again for recovery; contact support with this transaction hash." } };
+  }
   return { ok: true };
 }
 
@@ -263,7 +294,7 @@ type ExplorerTx = {
 };
 
 async function treasuryExplorerRows(): Promise<ExplorerTx[]> {
-  const url = `${getBoardExplorerUrl()}/api?module=account&action=txlist&address=${treasury.address}&sort=desc&page=1&offset=80`;
+  const url = `${getBoardExplorerUrl()}/api?module=account&action=txlist&address=${getTreasury().address}&sort=desc&page=1&offset=80`;
   try {
     const response = await boardRpcFetch(url, {
       signal: AbortSignal.timeout(4_000),
@@ -280,7 +311,7 @@ async function treasuryExplorerRows(): Promise<ExplorerTx[]> {
 export async function listSuccessfulSitHashes(from: Hex): Promise<Hex[]> {
   const rows = await treasuryExplorerRows();
   const fromKey = from.toLowerCase();
-  const treasuryKey = treasury.address.toLowerCase();
+  const treasuryKey = getTreasury().address.toLowerCase();
   const value = PLAY_SIT_VALUE.toString();
   return rows
     .filter(
@@ -312,7 +343,7 @@ export async function sitWasRefunded(input: {
   const sitTime = Number(sit.timeStamp);
   if (!Number.isFinite(sitTime)) return false;
   const player = input.from.toLowerCase();
-  const house = treasury.address.toLowerCase();
+  const house = getTreasury().address.toLowerCase();
   const value = PLAY_SIT_VALUE.toString();
   return rows.some(
     (row) =>
@@ -327,27 +358,137 @@ export async function sitWasRefunded(input: {
 }
 
 export type RefundSitResult =
-  | { ok: true; hash: Hex }
+  | { ok: true; hash: Hex; status: "submitted" | "confirmed" }
   | { ok: false; code: "INSUFFICIENT_FUNDS" | "SEND_FAILED"; message: string };
+
+export type SignedPlayTransfer = { raw: Hex; hash: Hex; nonce: number };
+
+/** Validate signed bytes, not caller-provided or stale journal metadata. */
+export async function assertPlayTransfer(transfer: SignedPlayTransfer, to?: Hex, amount?: string) {
+  const serializedTransaction = transfer.raw as TransactionSerialized;
+  const tx = parseTransaction(serializedTransaction);
+  const sender = await recoverTransactionAddress({ serializedTransaction });
+  if (keccak256(transfer.raw) !== transfer.hash || tx.nonce !== transfer.nonce ||
+      tx.chainId !== getBoardChainId() || sender.toLowerCase() !== getTreasury().address.toLowerCase() ||
+      (to && tx.to?.toLowerCase() !== to.toLowerCase()) ||
+      (amount && tx.value !== parseEther(amount))) {
+    throw new Error("Signed payment intent does not match its network, treasury, recipient or amount. Manual review required.");
+  }
+}
+
+function nonceDocumentKey() {
+  return `play-nonce-${getBoardChainId()}-${getTreasury().address.toLowerCase()}`;
+}
+
+/** Called while holding the shared treasury lock. Save the signed intent before sending it. */
+export async function preparePlayTransfer(
+  to: Hex,
+  amount: string,
+  intentId: string,
+): Promise<SignedPlayTransfer> {
+  const account = privateKeyToAccount(getTreasury().privateKey);
+  const client = publicClient();
+  const value = parseEther(amount);
+  const wallet = createWalletClient({
+    account,
+    chain: getBoardChain(),
+    transport: http(getBoardRpcUrl(), { fetchFn: boardRpcFetch }),
+  });
+  return withPlayDocument<
+    { nextNonce?: number; transfers?: Record<string, SignedPlayTransfer> },
+    SignedPlayTransfer
+  >(
+    nonceDocumentKey(),
+    () => ({}),
+    async (record) => {
+      record.transfers ??= {};
+      if (record.transfers[intentId]) {
+        await assertPlayTransfer(record.transfers[intentId], to, amount);
+        return record.transfers[intentId];
+      }
+      const chainNonce = await client.getTransactionCount({
+        address: account.address,
+        blockTag: "pending",
+      });
+      const nonce = Math.max(chainNonce, record.nextNonce ?? chainNonce);
+      const prepared = await wallet.prepareTransactionRequest({
+        account,
+        to,
+        value,
+        nonce,
+      });
+      const balance = await client.getBalance({ address: account.address });
+      const cost =
+        value +
+        prepared.gas *
+          (prepared.maxFeePerGas ?? prepared.gasPrice ?? BigInt(0));
+      if (balance < cost)
+        throw new Error(
+          "The house has insufficient funds for the payout and gas.",
+        );
+      const raw = await account.signTransaction({
+        chainId: getBoardChainId(),
+        to,
+        value,
+        nonce,
+        gas: prepared.gas,
+        ...(prepared.maxFeePerGas != null
+          ? {
+              type: "eip1559" as const,
+              maxFeePerGas: prepared.maxFeePerGas,
+              maxPriorityFeePerGas: prepared.maxPriorityFeePerGas ?? BigInt(0),
+            }
+          : { type: "legacy" as const, gasPrice: prepared.gasPrice! }),
+      });
+      record.nextNonce = nonce + 1;
+      const transfer = { raw, hash: keccak256(raw), nonce };
+      record.transfers[intentId] = transfer;
+      return transfer;
+    },
+  );
+}
+
+export async function broadcastPlayTransfer(transfer: SignedPlayTransfer) {
+  await assertPlayTransfer(transfer);
+  const hash = await publicClient().sendRawTransaction({
+    serializedTransaction: transfer.raw,
+  });
+  if (hash.toLowerCase() !== transfer.hash.toLowerCase())
+    throw new Error("Unexpected payout transaction hash.");
+}
+
+export async function playTransferReceipt(
+  hash: Hex,
+): Promise<"confirmed" | "failed" | "pending"> {
+  try {
+    const client = publicClient();
+    const receipt = await client.getTransactionReceipt({ hash });
+    if (receipt.status !== "success") return "failed";
+    const head = await client.getBlockNumber();
+    return head >= receipt.blockNumber ? "confirmed" : "pending";
+  } catch {
+    return "pending";
+  }
+}
 
 export async function getPlayTreasuryStatus() {
   const client = publicClient();
   try {
-    const balance = await client.getBalance({ address: treasury.address });
+    const balance = await client.getBalance({ address: getTreasury().address });
     const fees = await client.estimateFeesPerGas();
     const zero = BigInt(0);
     const fallbackGas = BigInt(21_000);
     const maxFee = fees.maxFeePerGas ?? fees.gasPrice ?? zero;
     const gasCost = fallbackGas * maxFee;
     return {
-      address: treasury.address,
+      address: getTreasury().address,
       balanceWei: balance.toString(),
       balanceEth: formatEther(balance),
       canRefund: balance >= PLAY_SIT_VALUE + gasCost,
     };
   } catch {
     return {
-      address: treasury.address,
+      address: getTreasury().address,
       balanceWei: "0",
       balanceEth: "0",
       canRefund: false,
@@ -360,74 +501,56 @@ export async function getPlayTreasuryStatus() {
  * only holds the sit amount, this fails with INSUFFICIENT_FUNDS so the table
  * service can unseat the player and retry later.
  */
-export async function refundSit(to: Hex): Promise<RefundSitResult> {
-  const account = privateKeyToAccount(treasury.privateKey);
-  const public_ = publicClient();
-
+export async function refundSit(
+  to: Hex,
+  intentId: string,
+): Promise<RefundSitResult> {
   try {
-    const balance = await public_.getBalance({ address: account.address });
-    const fees = await public_.estimateFeesPerGas();
-    const zero = BigInt(0);
-    const fallbackGas = BigInt(21_000);
-    const maxFee = fees.maxFeePerGas ?? fees.gasPrice ?? zero;
-    const maxPriority = fees.maxPriorityFeePerGas ?? zero;
-    const gas = await public_
-      .estimateGas({
-        account,
-        to,
-        value: PLAY_SIT_VALUE,
-      })
-      .catch(() => fallbackGas);
-
-    const need = PLAY_SIT_VALUE + gas * maxFee;
-    if (balance < need) {
-      return {
-        ok: false,
-        code: "INSUFFICIENT_FUNDS",
-        message:
-          "House wallet needs a little extra ETH for gas. You can still leave; the 0.002 ETH refund is queued.",
-      };
-    }
-
-    const wallet = createWalletClient({
-      account,
-      chain: getBoardChain(),
-      transport: http(getBoardRpcUrl(), {
-        fetchFn: boardRpcFetch,
-        timeout: 12_000,
-        retryCount: 1,
-      }),
-    });
-    const hash = await wallet.sendTransaction({
-      account,
+    const transfer = await preparePlayTransfer(
       to,
-      value: PLAY_SIT_VALUE,
-      gas,
-      ...(maxFee > zero
-        ? { maxFeePerGas: maxFee, maxPriorityFeePerGas: maxPriority }
-        : {}),
-      chain: getBoardChain(),
-    });
-    try {
-      await withTimeout(
-        public_.waitForTransactionReceipt({ hash, timeout: 20_000 }),
-        22_000,
-      );
-    } catch {
-      // Broadcast succeeded; receipt lag should not fail the refund claim.
-    }
-    return { ok: true, hash };
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Refund transaction failed.";
-    if (/exceeds the balance|insufficient funds/i.test(message)) {
+      PLAY_ENTRY_FEE_ETH,
+      `refund:${intentId}`,
+    );
+    const receipt = await playTransferReceipt(transfer.hash);
+    if (receipt === "failed")
       return {
         ok: false,
-        code: "INSUFFICIENT_FUNDS",
-        message:
-          "House wallet needs a little extra ETH for gas. You can still leave; the 0.002 ETH refund is queued.",
+        code: "SEND_FAILED",
+        message: "The refund reverted. Contact support.",
       };
-    }
-    return { ok: false, code: "SEND_FAILED", message };
+    if (receipt !== "confirmed") await broadcastPlayTransfer(transfer);
+    return { ok: true, hash: transfer.hash, status: receipt === "confirmed" ? "confirmed" : "submitted" };
+  } catch {
+    return {
+      ok: false,
+      code: "SEND_FAILED",
+      message:
+        "Refund pending. The house will retry the same refund transaction.",
+    };
   }
+}
+
+/** Recover reservations committed before broadcast, including historical refunds.
+ * A missing receipt never justifies allocating a replacement nonce.
+ */
+export async function reconcileTreasuryTransfers() {
+  const transfers = await withPlayDocument<{ transfers?: Record<string, SignedPlayTransfer> }, SignedPlayTransfer[]>(
+    nonceDocumentKey(), () => ({}), async (record) => Object.values(record.transfers ?? {}),
+  );
+  let pending = 0;
+  const failures: string[] = [];
+  for (const transfer of transfers.sort((a, b) => a.nonce - b.nonce)) {
+    try {
+      await assertPlayTransfer(transfer);
+      const receipt = await playTransferReceipt(transfer.hash);
+      if (receipt === "failed") failures.push(`Reverted transfer ${transfer.hash}`);
+      if (receipt === "pending") {
+        pending += 1;
+        await broadcastPlayTransfer(transfer);
+      }
+    } catch {
+      failures.push(`Transfer ${transfer.hash} needs reconciliation`);
+    }
+  }
+  return { pending, failures };
 }
