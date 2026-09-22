@@ -67,8 +67,7 @@ export const TOKEN_ECONOMY = {
       body: "Every game entry carries a 2% protocol fee.",
       splits: [
         { label: "Development", percent: 30 },
-        { label: "Buyback", percent: 35 },
-        { label: "Burn", percent: 35 },
+        { label: "Buyback and Burn", percent: 70 },
       ],
     },
     {

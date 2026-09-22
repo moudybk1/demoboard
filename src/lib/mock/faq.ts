@@ -142,19 +142,18 @@ export const FAQ_ITEMS: FaqItem[] = [
       },
       {
         type: "p",
-        text: "The collected fee is allocated across three parts of the BOARD ecosystem:",
+        text: "The collected fee is allocated across the BOARD ecosystem:",
       },
       {
         type: "list",
         items: [
           "30% Development. Supports continued game development, infrastructure, operations, and new features.",
-          "35% Buyback. Allocated to $BOARD buybacks.",
-          "35% Burn. Allocated to permanently removing $BOARD from circulation.",
+          "70% Buyback and Burn. Allocated to $BOARD buybacks and permanently removing $BOARD from circulation.",
         ],
       },
       {
         type: "callout",
-        text: "2% Fee → 30% Build · 35% Buyback · 35% Burn",
+        text: "2% Fee → 30% Development · 70% Buyback and Burn",
       },
     ],
   },

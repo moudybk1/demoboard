@@ -122,7 +122,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
           <h3 className="font-pixel text-xs font-semibold uppercase tracking-widest text-gold-deep">
             Where the {formatBoard(ex.feeAmount)} $BOARD fee goes
           </h3>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             <li className="border-[3px] border-void bg-cream px-3 py-3">
               <p className="font-sans text-xl font-bold tabular-nums text-gold-deep">
                 {formatBoard(ex.feeSplit.development)} $BOARD
@@ -134,21 +134,12 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             </li>
             <li className="border-[3px] border-void bg-cream px-3 py-3">
               <p className="font-sans text-xl font-bold tabular-nums text-gold-deep">
-                {formatBoard(ex.feeSplit.buyback)} $BOARD
+                {formatBoard(ex.feeSplit.buybackAndBurn)} $BOARD
               </p>
               <p className="mt-1 font-pixel text-xs font-semibold uppercase tracking-wider text-parchment">
-                Buyback
+                Buyback and Burn
               </p>
-              <p className="mt-1 text-sm text-muted">35% of the protocol fee.</p>
-            </li>
-            <li className="border-[3px] border-void bg-cream px-3 py-3">
-              <p className="font-sans text-xl font-bold tabular-nums text-gold-deep">
-                {formatBoard(ex.feeSplit.burn)} $BOARD
-              </p>
-              <p className="mt-1 font-pixel text-xs font-semibold uppercase tracking-wider text-parchment">
-                Burn
-              </p>
-              <p className="mt-1 text-sm text-muted">35% of the protocol fee.</p>
+              <p className="mt-1 text-sm text-muted">70% of the protocol fee.</p>
             </li>
           </ul>
         </div>

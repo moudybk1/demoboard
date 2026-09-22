@@ -133,17 +133,12 @@ export const HOW_TO_FEE = {
       body: "Supports ongoing development, infrastructure, operations, and future features.",
     },
     {
-      percent: 35,
-      label: "Buyback",
-      body: "Allocated to $BOARD buybacks.",
-    },
-    {
-      percent: 35,
-      label: "Burn",
-      body: "Allocated to permanently removing $BOARD from circulation.",
+      percent: 70,
+      label: "Buyback and Burn",
+      body: "Allocated to $BOARD buybacks and permanently removing $BOARD from circulation.",
     },
   ],
-  formula: "2% Fee → 30% Build · 35% Buyback · 35% Burn",
+  formula: "2% Fee → 30% Development · 70% Buyback and Burn",
 } as const;
 
 export const HOW_TO_CLOSING = {

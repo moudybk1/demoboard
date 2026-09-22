@@ -1,6 +1,6 @@
 /**
  * Prize & fee rules for /rules. Numbers: 4× entry pot, 2% protocol fee,
- * winner keeps 98%; fee split 30/35/35; DEX fees 50/50.
+ * winner keeps 98%; fee split 30% development / 70% buyback and burn; DEX fees 50/50.
  */
 
 export type PrizeBlock =
@@ -24,8 +24,7 @@ export type FeeExample = {
   winnerPayout: number;
   feeSplit: {
     development: number;
-    buyback: number;
-    burn: number;
+    buybackAndBurn: number;
   };
 };
 
@@ -96,13 +95,12 @@ export const PRIZE_RULES: PrizeRule[] = [
         type: "list",
         items: [
           "30% Development. Supports ongoing game development, infrastructure, operations, and future features.",
-          "35% Buyback. Allocated to $BOARD buybacks.",
-          "35% Burn. Allocated to permanently removing $BOARD from circulation.",
+          "70% Buyback and Burn. Allocated to $BOARD buybacks and permanently removing $BOARD from circulation.",
         ],
       },
       {
         type: "callout",
-        text: "2% Fee → 30% Build · 35% Buyback · 35% Burn",
+        text: "2% Fee → 30% Development · 70% Buyback and Burn",
       },
     ],
   },
@@ -133,8 +131,7 @@ export const FEE_EXAMPLE: FeeExample = {
   winnerPayout: 3_920,
   feeSplit: {
     development: 24,
-    buyback: 28,
-    burn: 28,
+    buybackAndBurn: 56,
   },
 };
 
@@ -163,7 +160,7 @@ export const PRIZE_ECOSYSTEM = {
     {
       id: "gameplay",
       title: "Gameplay fees",
-      body: "30% Development · 35% Buyback · 35% Burn",
+      body: "30% Development · 70% Buyback and Burn",
     },
     {
       id: "dex",

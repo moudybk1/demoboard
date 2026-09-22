@@ -77,7 +77,7 @@ function HowToFeeCallout() {
         {HOW_TO_FEE.lead}
       </p>
 
-      <ul className="mt-6 grid gap-3 sm:grid-cols-3">
+      <ul className="mt-6 grid gap-3 sm:grid-cols-2">
         {HOW_TO_FEE.splits.map((split) => (
           <li
             key={split.label}
