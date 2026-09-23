@@ -72,7 +72,7 @@ export function PixelCard<T extends React.ElementType = "div">({
 
   return (
     <Comp className={cn(sizeShadow[size], className)} {...props}>
-      <div className={cn(sizeShell[size], strokeClasses[stroke])}>
+      <div className={cn("h-full", sizeShell[size], strokeClasses[stroke])}>
         <div
           className={cn(
             "h-full min-h-full",

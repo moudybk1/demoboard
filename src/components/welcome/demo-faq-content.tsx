@@ -1,9 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import Link from "next/link";
 
-import { GuideActionBar } from "@/components/welcome/guide-action-bar";
 import {
   FAQ_INTRO,
   FAQ_ITEMS,
@@ -49,23 +47,6 @@ export function DemoFaqContent({ className }: { className?: string }) {
           />
         ))}
       </div>
-
-      <p className="text-sm text-muted">
-        New here?{" "}
-        <Link href="/how-to" className="text-link underline hover:text-parchment">
-          How to play
-        </Link>
-        {" · "}
-        <Link href="/rules" className="text-link underline hover:text-parchment">
-          Prizes and fees
-        </Link>
-      </p>
-
-      <GuideActionBar
-        secondaryHref="/how-to"
-        secondaryLabel="How to play"
-        hint="Wallet connect is almost ready. Until then, explore how to play and the prize rules."
-      />
     </div>
   );
 }

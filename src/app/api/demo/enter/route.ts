@@ -11,12 +11,10 @@ import {
 import { errorResponse, readJsonBody } from "@/server/lib/api-response";
 
 /**
- * Unlock the closed demo.
+ * Legacy unlock endpoint. Access-code gating is retired; prefer /play.
  *
- * GET  `/api/demo/enter?code=&next=`. Project-link entry; sets the cookie
- *      and redirects. This is the URL you attach to the GitHub website field
- *      when you want the link itself to open the tables.
- * POST `{ code, next? }`. Form entry from `/demo`.
+ * GET  `/api/demo/enter?code=&next=`.
+ * POST `{ code, next? }`.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);

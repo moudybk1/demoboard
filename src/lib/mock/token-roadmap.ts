@@ -5,9 +5,9 @@
 export const TOKEN_INFO = {
   symbol: "BOARD",
   chain: "Robinhood Chain",
-  role: "BOARD is separate from paid Ludo. Ludo entries, refunds and winner payouts use native ETH.",
+  role: "BOARD is the ecosystem token. Paid table entries, refunds, and winner payouts use $USDG.",
   feeNote:
-    "The operator treasury retains 2% of a settled Ludo pot. No automatic token buyback or burn is implemented.",
+    "The operator treasury retains 2% of a settled pot. A share of gameplay fees funds $BOARD buyback and burn.",
 };
 
 export type RoadmapItem = {
@@ -23,7 +23,7 @@ export const ROADMAP: RoadmapItem[] = [
     id: "tables",
     phase: "Now",
     title: "Ludo-first testing",
-    body: "Server-authoritative Ludo with four paying humans and native ETH settlement. Mainnet entry is gated. Monopoly is disabled: Work in progress.",
+    body: "Server-authoritative Ludo with four paying humans and $USDG settlement. Monopoly is disabled: Work in progress.",
     status: "live",
   },
   {
@@ -75,8 +75,8 @@ export const TOKEN_ECONOMY = {
       title: "DEX trading",
       body: "Fees generated from BOARD trading on supported DEXs are allocated back into the ecosystem.",
       splits: [
-        { label: "Development", percent: 50 },
-        { label: "Buyback", percent: 50 },
+        { label: "Development", percent: 20 },
+        { label: "Buyback and Burn", percent: 80 },
       ],
     },
   ] satisfies EconomyLane[],

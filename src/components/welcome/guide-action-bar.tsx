@@ -1,7 +1,7 @@
 "use client";
 
-import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
+import { playAppHref } from "@/lib/play-app-url";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  */
 export function GuideActionBar({
   className,
-  hint = "Wallet connect is almost ready. Until then, explore how to play and the prize rules.",
+  hint = "Connect your wallet, pick a table, and take on three rivals.",
   hintClassName,
   secondaryHref = "/rules",
   secondaryLabel = "Prizes and fees",
@@ -28,7 +28,14 @@ export function GuideActionBar({
       )}
     >
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-        <ConnectWalletButton className="w-full sm:w-auto" />
+        <PixelButtonLink
+          href={playAppHref()}
+          size="lg"
+          variant="primary"
+          className="w-full justify-center sm:w-auto"
+        >
+          Play
+        </PixelButtonLink>
         <PixelButtonLink
           href={secondaryHref}
           size="lg"

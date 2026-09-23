@@ -86,7 +86,7 @@ export const MOCK_TRANSACTIONS: MockTx[] = [
   },
 ];
 
-/** Amount that intentionally fails on confirm so the UI can demo errors. */
+/** Amount that intentionally fails on confirm so the UI can test errors. */
 export const MOCK_DEPOSIT_FAIL_AMOUNT = 666;
 
 export const DEPOSIT_STATUS_COPY = {
@@ -95,5 +95,5 @@ export const DEPOSIT_STATUS_COPY = {
   failed:
     "Deposit failed. The chain rejected the transfer · try a different amount or check gas.",
   invalid: "Enter a valid amount greater than zero.",
-  failDemo: `Use ${MOCK_DEPOSIT_FAIL_AMOUNT} BOARD to demo a failed deposit.`,
+  failDemo: `Use ${MOCK_DEPOSIT_FAIL_AMOUNT} BOARD to test a failed deposit.`,
 } as const;

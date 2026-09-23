@@ -117,7 +117,7 @@ export function WinResultBoard({
             />
 
             <p className="pt-2 text-xs leading-relaxed text-faint">
-              Entry {result.entryFee.toLocaleString("en-US")} BOARD ×{" "}
+              Entry {result.entryFee.toLocaleString("en-US")} USDG ×{" "}
               {result.seats} seats. Room {result.roomId}.
             </p>
           </div>

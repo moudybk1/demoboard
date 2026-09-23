@@ -20,7 +20,7 @@ export function PrizeSplit({
   values,
   className,
   compact = false,
-  ticker = "BOARD",
+  ticker = "USDG",
   allocationsOnly = false,
   retainedFeeOnly = false,
 }: {
@@ -85,7 +85,7 @@ function SplitRow({
   icon,
   emphasize = false,
   compact = false,
-  ticker = "BOARD",
+  ticker = "USDG",
 }: {
   label: string;
   value: number;

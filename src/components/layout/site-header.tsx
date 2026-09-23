@@ -5,15 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ProfileMenu } from "@/components/account/profile-menu";
-import { SignInButton } from "@/components/account/sign-in-button";
 import { AudioControlsPopover } from "@/components/audio/audio-controls-popover";
-import { DemoLeaveButton } from "@/components/demo/demo-leave-button";
 import { BoardLogo } from "@/components/layout/board-logo";
 import { LinksMenu } from "@/components/layout/links-menu";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { BalanceWidget } from "@/components/wallet/balance-widget";
 import { useAuthMe } from "@/hooks/use-auth-me";
-import { useDemoAccess } from "@/hooks/use-demo-access";
 import { playAppHref } from "@/lib/play-app-url";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +25,7 @@ const NAV_CHIP =
 
 export function SiteHeader({ className }: { className?: string }) {
   const pathname = usePathname();
-  const { authenticated, loading } = useAuthMe();
-  const { unlocked } = useDemoAccess();
+  const { authenticated } = useAuthMe();
   const navLinks = NAV_LINKS;
   const playHref = playAppHref();
   const playActive = playHref.startsWith("/") && isActivePath(pathname, "/play");
@@ -93,7 +89,7 @@ export function SiteHeader({ className }: { className?: string }) {
 
                 <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
                   <AudioControlsPopover />
-                  {unlocked && authenticated ? (
+                  {authenticated ? (
                     <BalanceWidget
                       compact
                       live
@@ -101,23 +97,7 @@ export function SiteHeader({ className }: { className?: string }) {
                     />
                   ) : null}
 
-                  {unlocked ? (
-                    authenticated ? (
-                      <ProfileMenu />
-                    ) : (
-                      <SignInButton
-                        variant="ghost"
-                        size="sm"
-                        className="hidden rounded-full px-3 text-xs text-parchment hover:bg-gold hover:text-void sm:inline-flex"
-                      >
-                        {loading ? "…" : "Sign in"}
-                      </SignInButton>
-                    )
-                  ) : null}
-
-                  {unlocked ? (
-                    <DemoLeaveButton className="hidden rounded-full px-3 text-xs text-parchment hover:bg-gold hover:text-void lg:inline-flex" />
-                  ) : null}
+                  {authenticated ? <ProfileMenu /> : null}
 
                   <button
                     type="button"
@@ -186,11 +166,6 @@ export function SiteHeader({ className }: { className?: string }) {
                     className="w-full"
                     triggerClassName={cn(NAV_CHIP, "w-full justify-start px-3 py-3")}
                   />
-                  {unlocked ? (
-                    <div className="mt-2 px-1 pt-2">
-                      <DemoLeaveButton className="rounded-full px-3 text-xs text-parchment hover:bg-gold hover:text-void" />
-                    </div>
-                  ) : null}
                 </nav>
               ) : null}
             </div>

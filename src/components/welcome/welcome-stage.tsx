@@ -44,7 +44,7 @@ type GuidedBeat = {
   dieB: DieValue;
   /** Plain-language outcome after the hop. Must match dice total and destination. */
   result: string;
-  /** Demo balance delta shown in the center after the turn. */
+  /** Balance delta shown in the center after the turn. */
   balanceNote: string;
 };
 
@@ -59,8 +59,8 @@ const GUIDED: readonly GuidedBeat[] = [
     dieA: 4,
     dieB: 5,
     // 0 + 9 → Rome (9)
-    result: "You landed on Rome. Bought it for 120 demo coins.",
-    balanceNote: "You · 1,000 → 880 demo coins",
+    result: "You landed on Rome. Bought it for 120 $BOARD.",
+    balanceNote: "You · 1,000 → 880 $BOARD",
   },
   {
     seat: 1,
@@ -68,7 +68,7 @@ const GUIDED: readonly GuidedBeat[] = [
     dieA: 2,
     dieB: 1,
     // 6 + 3 → Rome (9)
-    result: "Teal landed on your Rome. You collected 120 demo coins in rent.",
+    result: "Teal landed on your Rome. You collected 120 $BOARD in rent.",
     balanceNote: "You · +120 · Teal paid rent",
   },
   {
@@ -77,8 +77,8 @@ const GUIDED: readonly GuidedBeat[] = [
     dieA: 3,
     dieB: 3,
     // 44 + 6 → tile 2 (passes GO)
-    result: "Coral passed GO and collected 200 demo coins.",
-    balanceNote: "Coral · +200 demo bonus",
+    result: "Coral passed GO and collected 200 $BOARD.",
+    balanceNote: "Coral · +200 GO bonus",
   },
   {
     seat: 3,
@@ -87,7 +87,7 @@ const GUIDED: readonly GuidedBeat[] = [
     dieB: 1,
     // 10 + 3 → Paris (13)
     result: "Red bought Paris. A new street joins the fight.",
-    balanceNote: "Red · −140 demo coins",
+    balanceNote: "Red · −140 $BOARD",
   },
 ] as const;
 
@@ -118,7 +118,7 @@ export function WelcomeStage({ className }: { className?: string }) {
   const [activeSeat, setActiveSeat] = useState(1);
   const [phase, setPhase] = useState<TurnPhase>("ready");
   const [centerText, setCenterText] = useState("Your turn. Roll the dice.");
-  const [balanceNote, setBalanceNote] = useState("Demo balances · not real BOARD");
+  const [balanceNote, setBalanceNote] = useState("Four players · one board · one winner");
   const [dice, setDice] = useState<readonly [DieValue, DieValue]>([4, 5]);
   const [hotTile, setHotTile] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
@@ -206,7 +206,7 @@ export function WelcomeStage({ className }: { className?: string }) {
         setHotTile(null);
         setActiveSeat(1);
         setCenterText("Your turn. Roll the dice.");
-        setBalanceNote("Demo balances · not real BOARD");
+        setBalanceNote("Four players · one board · one winner");
         setDice([4, 5]);
       };
       return;
@@ -425,7 +425,7 @@ export function WelcomeStage({ className }: { className?: string }) {
       setHotTile(null);
       setActiveSeat(1);
       setDice([4, 5]);
-      showCenter("Your turn. Roll the dice.", "Demo balances · not real BOARD");
+      showCenter("Your turn. Roll the dice.", "Four players · one board · one winner");
       resetPawns();
       if (!pausedRef.current) {
         waitTimer = window.setTimeout(() => {
@@ -439,7 +439,7 @@ export function WelcomeStage({ className }: { className?: string }) {
     resumeRef.current = () => {
       if (!pausedRef.current && !busyLocal) scheduleNext();
     };
-    showCenter("Your turn. Roll the dice.", "Demo balances · not real BOARD");
+    showCenter("Your turn. Roll the dice.", "Four players · one board · one winner");
     waitTimer = window.setTimeout(() => {
       if (!pausedRef.current) playScripted();
     }, 700);

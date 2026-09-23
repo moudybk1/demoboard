@@ -1,22 +1,11 @@
 import { PixelCard } from "@/components/ui/pixel-card";
-import { TokenCaPromo } from "@/components/welcome/token-ca-promo";
 import { TOKEN_ECONOMY, type EconomyLane } from "@/lib/mock/token-roadmap";
-import { ROBINHOOD_CHAIN_LABEL } from "@/lib/wallet/chains";
 import { cn } from "@/lib/utils";
 
 /**
  * Token economy: gameplay + DEX fee cards on the hero sky atmosphere.
- * Optional CA promo when set.
  */
-export function TokenRoadmapSection({
-  className,
-  tokenAddress,
-  tokenExplorerUrl,
-}: {
-  className?: string;
-  tokenAddress?: `0x${string}` | null;
-  tokenExplorerUrl?: string | null;
-}) {
+export function TokenRoadmapSection({ className }: { className?: string }) {
   return (
     <section
       id="token"
@@ -51,16 +40,6 @@ export function TokenRoadmapSection({
         <p className="mt-10 max-w-[44ch] font-pixel text-sm font-semibold leading-snug text-parchment sm:mt-12 sm:text-base">
           {TOKEN_ECONOMY.closing}
         </p>
-
-        {tokenAddress !== undefined ? (
-          <TokenCaPromo
-            className="mt-8"
-            compact
-            address={tokenAddress}
-            explorerUrl={tokenExplorerUrl ?? null}
-            chainLabel={ROBINHOOD_CHAIN_LABEL}
-          />
-        ) : null}
       </div>
     </section>
   );

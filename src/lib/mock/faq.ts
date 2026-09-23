@@ -16,7 +16,7 @@ export type FaqItem = {
 export const FAQ_INTRO = {
   title: "FAQ",
   support: "Questions before your first roll? Start here.",
-  lead: "Everything you need to know about BOARD, gameplay, $BOARD, fees, rewards, and how the ecosystem works. This closed demo uses invitation codes and demo balances. Live staking is not available yet.",
+  lead: "Everything you need to know about BOARD, gameplay, $USDG entries, $BOARD, fees, rewards, and how the ecosystem works on Robinhood Chain.",
 } as const;
 
 export const FAQ_ITEMS: FaqItem[] = [
@@ -74,11 +74,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "Not for this closed demo. You enter with an invitation code and play with demo balances.",
-      },
-      {
-        type: "p",
-        text: "When live rooms that use $BOARD ship, a compatible wallet will be required to hold $BOARD, enter those rooms, and receive applicable rewards.",
+        text: "Yes. BOARD is wallet-only. Connect a compatible wallet to hold $USDG for entries and interact with the ecosystem.",
       },
       {
         type: "callout",
@@ -92,25 +88,21 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "$BOARD is the token that powers the BOARD ecosystem.",
+        text: "$BOARD is the token that powers the BOARD ecosystem. Gameplay fees help fund $BOARD buybacks and burns. Table entry and match pots use $USDG.",
       },
       {
         type: "p",
-        text: "When staking is live, it can be used for game entries, match settlements, rewards, and other ecosystem features introduced over time. This closed demo does not move real $BOARD.",
+        text: "Use it for game entries, match settlements, rewards, and other ecosystem features introduced over time.",
       },
     ],
   },
   {
     id: "need-board-to-enter",
-    question: "Do I need $BOARD to enter a game?",
+    question: "Do I need $USDG to enter a game?",
     answer: [
       {
         type: "p",
-        text: "Not in this closed demo. Demo tables use demo balances only.",
-      },
-      {
-        type: "p",
-        text: "When live, token-based rooms will require $BOARD to enter. Different rooms may have different entry amounts, shown before you join.",
+        text: "Yes. Token-based rooms require $USDG to enter. Different rooms may have different entry amounts, shown before you join.",
       },
     ],
   },
@@ -120,7 +112,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "When live, each player contributes the required amount when entering a room. All four entries form one match pool.",
+        text: "Each player contributes the required amount when entering a room. All four entries form one match pool.",
       },
       {
         type: "p",
@@ -128,7 +120,7 @@ export const FAQ_ITEMS: FaqItem[] = [
       },
       {
         type: "p",
-        text: "You'll be able to review the entry amount and applicable fees before confirming. This closed demo uses demo pots only.",
+        text: "You'll review the entry amount and applicable fees before confirming.",
       },
     ],
   },
@@ -138,7 +130,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "When live staking ships, each game entry carries a 2% protocol fee. This closed demo does not charge real $BOARD.",
+        text: "Each game entry carries a 2% protocol fee.",
       },
       {
         type: "p",
@@ -168,13 +160,13 @@ export const FAQ_ITEMS: FaqItem[] = [
       {
         type: "list",
         items: [
-          "50% Development. Supports product development and the continued growth of BOARD.",
-          "50% Buyback. Allocated to $BOARD buybacks.",
+          "20% Development. Supports product development and the continued growth of BOARD.",
+          "80% Buyback and Burn. Allocated to $BOARD buybacks and permanently removing $BOARD from circulation.",
         ],
       },
       {
         type: "callout",
-        text: "DEX Fees → 50% Development · 50% Buyback",
+        text: "DEX Fees → 20% Development · 80% Buyback and Burn",
       },
     ],
   },
@@ -258,10 +250,10 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "network",
     question: "What network is BOARD built on?",
     answer: [
-      { type: "p", text: "BOARD is being built for Robinhood Chain." },
+      { type: "p", text: "BOARD runs on Robinhood Chain." },
       {
         type: "p",
-        text: "$BOARD, wallet interactions, and supported onchain features will operate through the Robinhood Chain ecosystem.",
+        text: "$BOARD, wallet interactions, and onchain features operate through the Robinhood Chain ecosystem.",
       },
     ],
   },
@@ -271,20 +263,16 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "For this closed demo the flow is:",
+        text: "The flow is:",
       },
       {
         type: "list",
         items: [
-          "Enter with your invitation code.",
+          "Connect your wallet and sign in.",
           "Choose your game.",
-          "Join a demo table.",
-          "Take on three rivals with demo balances.",
+          "Pick a table and confirm the $USDG entry.",
+          "Take on three rivals until one winner remains.",
         ],
-      },
-      {
-        type: "p",
-        text: "When live rooms ship, the flow will add wallet connect, real $BOARD entry, and fee review before you join.",
       },
       {
         type: "callout",
@@ -313,15 +301,15 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer: [
       {
         type: "p",
-        text: "In live competitive rooms, yes. Only the winning outcome receives the reward according to that room's rules.",
+        text: "Yes. Only the winning outcome receives the reward according to that room's rules.",
       },
       {
         type: "p",
-        text: "This closed demo does not stake or pay out real $BOARD. Always check entry amount, reward structure, and fees before joining a live match.",
+        text: "Always check entry amount, reward structure, and fees before joining a match.",
       },
       {
         type: "callout",
-        text: "Only enter a live room with an amount you're comfortable using for gameplay.",
+        text: "Only enter a room with an amount you're comfortable using for gameplay.",
       },
     ],
   },

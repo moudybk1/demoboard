@@ -1,4 +1,3 @@
-import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { PixelCard } from "@/components/ui/pixel-card";
 import { PixelHeading } from "@/components/ui/pixel-label";
@@ -12,6 +11,7 @@ import {
   PRIZE_RULES_INTRO,
   type PrizeBlock,
 } from "@/lib/mock/prize-rules";
+import { playAppHref } from "@/lib/play-app-url";
 import { cn, formatBoard } from "@/lib/utils";
 
 /**
@@ -79,7 +79,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
           Example room
         </h2>
         <p className="mt-3 text-base leading-[1.65] text-parchment sm:text-lg">
-          {formatBoard(ex.entryFee)} $BOARD entry · {ex.seats} players
+          {formatBoard(ex.entryFee)} $USDG entry · {ex.seats} players
         </p>
 
         <dl className="mt-6 grid gap-5 sm:grid-cols-3">
@@ -90,7 +90,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             <dd className="mt-2 font-sans text-2xl font-bold tabular-nums leading-none text-parchment">
               {formatBoard(ex.grossPot)}
               <span className="ml-1 font-pixel text-xs font-semibold uppercase tracking-wider text-muted">
-                $BOARD
+                $USDG
               </span>
             </dd>
           </div>
@@ -101,7 +101,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             <dd className="mt-2 font-sans text-2xl font-bold tabular-nums leading-none text-danger">
               {formatBoard(ex.feeAmount)}
               <span className="ml-1 font-pixel text-xs font-semibold uppercase tracking-wider text-muted">
-                $BOARD
+                $USDG
               </span>
             </dd>
           </div>
@@ -112,7 +112,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             <dd className="mt-2 font-sans text-2xl font-bold tabular-nums leading-none text-success">
               {formatBoard(ex.winnerPayout)}
               <span className="ml-1 font-pixel text-xs font-semibold uppercase tracking-wider text-muted">
-                $BOARD
+                $USDG
               </span>
             </dd>
           </div>
@@ -120,12 +120,12 @@ export function PrizeRulesContent({ className }: { className?: string }) {
 
         <div className="mt-8 border-t-[3px] border-void pt-6">
           <h3 className="font-pixel text-xs font-semibold uppercase tracking-widest text-gold-deep">
-            Where the {formatBoard(ex.feeAmount)} $BOARD fee goes
+            Where the {formatBoard(ex.feeAmount)} $USDG fee goes
           </h3>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             <li className="border-[3px] border-void bg-cream px-3 py-3">
               <p className="font-sans text-xl font-bold tabular-nums text-gold-deep">
-                {formatBoard(ex.feeSplit.development)} $BOARD
+                {formatBoard(ex.feeSplit.development)} $USDG
               </p>
               <p className="mt-1 font-pixel text-xs font-semibold uppercase tracking-wider text-parchment">
                 Development
@@ -134,7 +134,7 @@ export function PrizeRulesContent({ className }: { className?: string }) {
             </li>
             <li className="border-[3px] border-void bg-cream px-3 py-3">
               <p className="font-sans text-xl font-bold tabular-nums text-gold-deep">
-                {formatBoard(ex.feeSplit.buybackAndBurn)} $BOARD
+                {formatBoard(ex.feeSplit.buybackAndBurn)} $USDG
               </p>
               <p className="mt-1 font-pixel text-xs font-semibold uppercase tracking-wider text-parchment">
                 Buyback and Burn
@@ -231,11 +231,10 @@ export function PrizeRulesContent({ className }: { className?: string }) {
           {PRIZE_CLOSING.support}
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
-          <ConnectWalletButton label="Connect Wallet" />
-          {PRIZE_CTAS.filter((cta) => cta.variant !== "primary").map((cta) => (
+          {PRIZE_CTAS.map((cta) => (
             <PixelButtonLink
               key={cta.href}
-              href={cta.href}
+              href={cta.variant === "primary" ? playAppHref(cta.href) : cta.href}
               variant={cta.variant}
               size="lg"
             >

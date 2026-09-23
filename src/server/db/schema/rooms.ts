@@ -15,7 +15,7 @@ import { gameTypeEnum, roomStatusEnum } from "./enums";
 export const rooms = pgTable("rooms", {
   id: uuid("id").defaultRandom().primaryKey(),
   gameType: gameTypeEnum("game_type").notNull(),
-  /** Entry fee in BOARD tokens charged when a player joins. */
+  /** Entry fee in $USDG charged when a player joins. */
   entryFee: numeric("entry_fee", { precision: 20, scale: 2 }).notNull(),
   maxPlayers: integer("max_players").notNull().default(4),
   status: roomStatusEnum("status").notNull().default("waiting"),

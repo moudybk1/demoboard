@@ -26,7 +26,7 @@ export function RoomEconomyHighlight({
   seats = 4,
   balance,
   className,
-  ticker = "BOARD",
+  ticker = "USDG",
   variant = "panel",
 }: RoomEconomyProps) {
   const gross = prizePool({ entryFee, maxPlayers: seats });

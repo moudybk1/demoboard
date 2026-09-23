@@ -58,7 +58,7 @@ export function TokenCaPromo({
         </div>
 
         <p className="mt-2 text-xs leading-relaxed text-muted">
-          BOARD token only. Paid Ludo uses native ETH, not this contract.
+          BOARD token only. Paid tables use $USDG, not this contract.
         </p>
 
         {address ? (
@@ -126,8 +126,8 @@ export function TokenCaPromo({
         BOARD token CA
       </h3>
       <p className="mt-2 max-w-[48ch] text-xs leading-relaxed text-muted sm:text-xs">
-        Optional BOARD token on {chainLabel}. Paid Ludo entries and payouts use
-        native ETH through the operator treasury, not this token contract.
+        Optional BOARD token on {chainLabel}. Paid table entries and payouts use
+        $USDG through the operator treasury, not this token contract.
       </p>
 
       {address ? (

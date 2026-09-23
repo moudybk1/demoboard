@@ -1,4 +1,4 @@
-/* Pixelify Sans: titles, buttons, scores. Outfit: body copy. */
+/* Pixelify Sans: titles, buttons, chrome. Outfit: body copy + numerals. */
 @import "@fontsource/pixelify-sans/400.css";
 @import "@fontsource/pixelify-sans/500.css";
 @import "@fontsource/pixelify-sans/600.css";
@@ -6,7 +6,49 @@
 @import "@fontsource/outfit/400.css";
 @import "@fontsource/outfit/500.css";
 @import "@fontsource/outfit/600.css";
+@import "@fontsource/outfit/700.css";
 @import "tailwindcss";
+
+/*
+ * Digits, %, and money punctuation inside pixel chrome use Outfit so values
+ * like 0.002 / 20% stay readable. Letters still fall through to Pixelify Sans.
+ */
+@font-face {
+  font-family: "Board Numerals";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("../../node_modules/@fontsource/outfit/files/outfit-latin-400-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039, U+0024-0025, U+002B-002E, U+2212;
+}
+@font-face {
+  font-family: "Board Numerals";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("../../node_modules/@fontsource/outfit/files/outfit-latin-500-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039, U+0024-0025, U+002B-002E, U+2212;
+}
+@font-face {
+  font-family: "Board Numerals";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("../../node_modules/@fontsource/outfit/files/outfit-latin-600-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039, U+0024-0025, U+002B-002E, U+2212;
+}
+@font-face {
+  font-family: "Board Numerals";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("../../node_modules/@fontsource/outfit/files/outfit-latin-700-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039, U+0024-0025, U+002B-002E, U+2212;
+}
 
 /* ==========================================================================
    BOARD design system (cartoon pixel playground)
@@ -42,10 +84,10 @@
   --color-success: #1a9f4b;
   --color-felt: #2ecf7a;
 
-  --font-pixel: "Pixelify Sans", "Trebuchet MS", sans-serif;
+  --font-pixel: "Board Numerals", "Pixelify Sans", "Trebuchet MS", sans-serif;
   --font-sans: "Outfit", "Trebuchet MS", sans-serif;
-  --font-mono: "Pixelify Sans", ui-monospace, monospace;
-  --font-mark: "Pixelify Sans", "Trebuchet MS", sans-serif;
+  --font-mono: "Board Numerals", "Pixelify Sans", ui-monospace, monospace;
+  --font-mark: "Board Numerals", "Pixelify Sans", "Trebuchet MS", sans-serif;
 
   --spacing-px-1: 4px;
   --spacing-px-2: 8px;

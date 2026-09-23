@@ -38,9 +38,9 @@ export type Room = {
 };
 
 export type WalletBalance = {
-  /** Spendable BOARD held by the platform on the player's behalf. */
+  /** Spendable balance held by the platform on the player's behalf. */
   available: number;
-  /** BOARD locked as entry fees in rooms that are still running. */
+  /** $USDG locked as entry fees in rooms that are still running. */
   locked: number;
   chain: string;
   address: string;

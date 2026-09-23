@@ -194,7 +194,7 @@ export function DepositForm({ className }: { className?: string }) {
           }}
           className="pixel-corners border border-danger/50 px-3 py-1.5 font-pixel text-xs text-danger/80 hover:border-danger hover:text-danger"
         >
-          Fail demo
+          Fail test
         </button>
       </div>
 

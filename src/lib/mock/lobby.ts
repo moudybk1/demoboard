@@ -46,7 +46,7 @@ export const GAME_OPTIONS: GameOption[] = [
 ];
 
 /**
- * Entry-fee tiers offered in the lobby, in BOARD tokens. The top tier sits
+ * Entry-fee tiers offered in the lobby, in $USDG. The top tier sits
  * above the mock balance on purpose so the "not enough balance" state on the
  * join button is reachable while the backend is still stubbed.
  */

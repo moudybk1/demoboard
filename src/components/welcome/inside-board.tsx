@@ -45,46 +45,45 @@ export function InsideBoard({ className }: { className?: string }) {
           </header>
 
           <div className="grid gap-4 sm:gap-5">
-            {INSIDE_BOARD.stories.map((story, index) => {
-              const look = STORY_TONE[index] ?? STORY_TONE[0];
-              return (
-                <PixelCard
-                  key={story.id}
-                  as="article"
-                  size="lg"
-                  tone={look.tone}
-                  stroke={look.stroke}
-                  className={cn(
-                    "transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1",
-                    index === 1 && "lg:ml-8",
-                  )}
-                  faceClassName="overflow-hidden"
-                >
-                  <div
-                    aria-hidden
-                    className={cn(
-                      "flex items-center justify-between px-4 py-2",
-                      look.bar,
-                    )}
+            <div className="grid grid-rows-2 gap-4 sm:gap-5">
+              {INSIDE_BOARD.stories.map((story, index) => {
+                const look = STORY_TONE[index] ?? STORY_TONE[0];
+                return (
+                  <PixelCard
+                    key={story.id}
+                    as="article"
+                    size="lg"
+                    tone={look.tone}
+                    stroke={look.stroke}
+                    className="h-full transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-1"
+                    faceClassName="flex h-full flex-col overflow-hidden"
                   >
-                    <span className="font-sans text-sm font-bold tabular-nums text-cream">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="font-pixel text-[10px] font-semibold uppercase tracking-[0.14em] text-cream/85">
-                      {story.title}
-                    </span>
-                  </div>
-                  <div className="px-5 py-5 sm:px-6 sm:py-6">
-                    <h3 className="font-pixel text-base font-bold uppercase leading-snug tracking-wide text-parchment sm:text-lg">
-                      {story.title}
-                    </h3>
-                    <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-muted sm:text-base">
-                      {story.body}
-                    </p>
-                  </div>
-                </PixelCard>
-              );
-            })}
+                    <div
+                      aria-hidden
+                      className={cn(
+                        "flex shrink-0 items-center justify-between px-4 py-2",
+                        look.bar,
+                      )}
+                    >
+                      <span className="font-sans text-sm font-bold tabular-nums text-cream">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className="font-pixel text-[10px] font-semibold uppercase tracking-[0.14em] text-cream/85">
+                        {story.title}
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col px-5 py-5 sm:px-6 sm:py-6">
+                      <h3 className="font-pixel text-base font-bold uppercase leading-snug tracking-wide text-parchment sm:text-lg">
+                        {story.title}
+                      </h3>
+                      <p className="mt-3 max-w-[46ch] text-sm leading-relaxed text-muted sm:text-base">
+                        {story.body}
+                      </p>
+                    </div>
+                  </PixelCard>
+                );
+              })}
+            </div>
 
             <PixelCard
               size="lg"

@@ -7,7 +7,7 @@ import { PixelButton } from "@/components/ui/pixel-button";
 import { PixelCard } from "@/components/ui/pixel-card";
 
 /**
- * Centered notice used while wallet connect is not live yet.
+ * Centered notice for temporary feature messaging.
  * Portaled to body so hero transforms / overflow never trap the dialog.
  */
 export function ComingSoonModal({
@@ -57,20 +57,20 @@ export function ComingSoonModal({
         faceClassName="px-6 py-8 text-center sm:px-8 sm:py-10"
       >
         <p className="font-pixel text-xs font-semibold uppercase leading-none tracking-[0.14em] text-gold-deep">
-          Work in progress
+          Wallet
         </p>
         <h2
           id="coming-soon-title"
           className="mt-3 font-pixel text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-tight text-parchment"
         >
-          Coming soon
+          Connect to play
         </h2>
         <p
           id="coming-soon-body"
           className="mx-auto mt-4 max-w-[34ch] text-base leading-relaxed text-muted"
         >
-          Wallet connect is almost ready. We&apos;re putting the finishing
-          touches on so you can jump in and play for real.
+          Connect a supported wallet to hold $USDG, enter tables, and settle
+          match rewards on Robinhood Chain.
         </p>
         <PixelButton
           type="button"

@@ -24,7 +24,7 @@ export const HOW_TO_INTRO = {
   title: "How to play",
   punch: "Five steps. Four players. One winner.",
   support:
-    "Choose your game, learn the flow, and get ready to compete. Wallet connect is almost here. We're really close to play.",
+    "Choose your game, connect your wallet, enter a room, and compete until one winner remains.",
 };
 
 export const HOW_TO_STEPS: HowToStep[] = [
@@ -33,15 +33,15 @@ export const HOW_TO_STEPS: HowToStep[] = [
     number: 1,
     label: "Connect your wallet",
     title: "Connect your wallet",
-    body: "Wallet connect is almost ready. When it ships, you'll use it to hold $BOARD and enter live rooms.",
+    body: "Connect a supported wallet to hold $USDG and enter rooms.",
     answer: [
       {
         type: "p",
-        text: "When live play opens, connect a supported wallet and make sure you have enough $BOARD for the room you want to enter.",
+        text: "Connect a supported wallet and make sure you have enough $USDG for the room you want to enter.",
       },
       {
         type: "p",
-        text: "Wallet connect is still finishing up. Tap Connect Wallet anywhere on the site for a status update.",
+        text: "Use Sign in in the header to connect and verify ownership of your wallet.",
       },
       {
         type: "callout",
@@ -144,9 +144,9 @@ export const HOW_TO_FEE = {
 export const HOW_TO_CLOSING = {
   title: "Ready to enter the board?",
   support:
-    "Connect your wallet when it goes live, pick a table, and take on three rivals.",
-  cta: "Connect Wallet",
-  href: "#connect-wallet",
+    "Connect your wallet, pick a table, and take on three rivals.",
+  cta: "Play",
+  href: "/play",
   tagline: "Same memories. Different stakes.",
 } as const;
 
@@ -155,8 +155,8 @@ export const HOW_TO_PLANNED: HowToStep[] = [];
 
 export const HOW_TO_CTAS = [
   {
-    label: "Connect Wallet",
-    href: "#connect-wallet",
+    label: "Play",
+    href: "/play",
     variant: "primary" as const,
   },
   { label: "Prizes & fees", href: "/rules", variant: "secondary" as const },

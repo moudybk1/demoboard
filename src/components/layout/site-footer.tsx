@@ -48,7 +48,7 @@ export function SiteFooter({
               <p className="font-pixel text-xs font-semibold uppercase tracking-wider text-faint">
                 {PLAY_IS_LIVE
                   ? "BOARD · Robinhood Chain"
-                  : "BOARD · closed demo, staking not live"}
+                  : "BOARD · staking coming soon"}
               </p>
               {!PLAY_IS_LIVE ? (
                 <p className="mt-2 max-w-[40ch] text-sm leading-relaxed text-muted">

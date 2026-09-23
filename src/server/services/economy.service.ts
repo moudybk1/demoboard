@@ -5,7 +5,7 @@ import {
 } from "@/lib/types";
 
 /**
- * Canonical room-economy knobs for BOARD tables: seats, fee rate, entry tiers,
+ * Canonical room-economy knobs for paid tables: seats, fee rate, entry tiers,
  * and pot math. Settle services and the guide/rules API should read from here
  * instead of hard-coding 4 / 2% / example numbers in multiple places.
  *
@@ -107,9 +107,9 @@ export function calculateRoomEconomy(
   };
 }
 
-/** Example used by the prize-rules guide (1,000 BOARD entry × 4 seats). */
+/** Example used by the prize-rules guide (10 $USDG entry × 4 seats). */
 export function getEconomyExample(
-  entryFee = 1_000,
+  entryFee = 10,
 ): RoomEconomyBreakdown {
   return calculateRoomEconomy(entryFee);
 }

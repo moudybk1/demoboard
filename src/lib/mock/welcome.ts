@@ -68,7 +68,7 @@ export const WELCOME_HIGHLIGHTS: WelcomeHighlight[] = [
   {
     id: "wallet",
     title: "Do I need a wallet?",
-    body: "Not to play. Sit a table now. Wallet connection is for staking when that ships.",
+    body: "Yes. Connect a wallet to hold $USDG, enter rooms, and receive rewards.",
   },
   {
     id: "includes",
@@ -78,7 +78,7 @@ export const WELCOME_HIGHLIGHTS: WelcomeHighlight[] = [
   {
     id: "code",
     title: "How do I start?",
-    body: "Tap Play, pick Monopoly or Ludo, and the match begins. No access code.",
+    body: "Tap Play, connect your wallet, pick Monopoly or Ludo, and sit a table.",
   },
 ];
 
@@ -88,7 +88,7 @@ export const WELCOME_LIVE_PULSE = {
   potToday: 184_500,
 };
 
-/** Honest facts for the public closed-demo landing. Not live occupancy. */
+/** Honest facts for the public landing. Not live occupancy. */
 export const DEMO_FACTS = [
   { label: "Games", value: "2" },
   { label: "Seats", value: "4" },

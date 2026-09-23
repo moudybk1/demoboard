@@ -12,14 +12,14 @@ import { wagmiConfig } from "@/lib/wallet/wagmi-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BOARD | Closed demo · cartoon pixel Monopoly & Ludo",
+  title: "BOARD | Monopoly & Ludo on Robinhood Chain",
   description:
-    "Closed demo of Monopoly and Ludo on a cartoon pixel tabletop. Staking on Robinhood Chain is not live yet. Enter with an access code to try the tables.",
+    "Play Monopoly and Ludo with $USDG entry fees on Robinhood Chain. Connect your wallet, enter a table, and compete four players to one winner.",
 };
 
 /**
  * Typography: Pixelify Sans for titles and chrome, Outfit for body copy
- * (loaded in globals.css).
+ * and numerals (digits stay readable inside pixel text).
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const headerStore = await headers();

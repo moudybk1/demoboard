@@ -1,24 +1,22 @@
 "use client";
 
-import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { PixelButtonLink } from "@/components/ui/pixel-button";
 import { HOW_TO_CTAS } from "@/lib/mock/how-to";
+import { playAppHref } from "@/lib/play-app-url";
 
 export function HowToHeroActions() {
-  const secondary = HOW_TO_CTAS.find((cta) => cta.variant === "secondary");
-
   return (
     <>
-      <ConnectWalletButton size="md" />
-      {secondary ? (
+      {HOW_TO_CTAS.map((cta) => (
         <PixelButtonLink
-          href={secondary.href}
-          variant={secondary.variant}
+          key={cta.href}
+          href={cta.variant === "primary" ? playAppHref(cta.href) : cta.href}
+          variant={cta.variant}
           size="md"
         >
-          {secondary.label}
+          {cta.label}
         </PixelButtonLink>
-      ) : null}
+      ))}
     </>
   );
 }

@@ -80,7 +80,7 @@ export function DemoGateForm({
       router.replace(safeNextPath(payload.next));
       router.refresh();
     } catch {
-      setError("Could not reach the demo gate. Try again.");
+      setError("Could not reach the server. Try again.");
       setBusy(false);
     }
   }
@@ -113,7 +113,7 @@ export function DemoGateForm({
         disabled={busy || code.trim().length === 0}
         className="w-full justify-center"
       >
-        {busy ? "Opening…" : "Enter closed demo"}
+        {busy ? "Opening…" : "Enter"}
       </PixelButton>
     </form>
   );
@@ -121,5 +121,5 @@ export function DemoGateForm({
 
 function messageForError(code: string): string {
   if (code === "code") return "That access code did not match.";
-  return "Could not open the demo with that link.";
+  return "Could not open that link.";
 }

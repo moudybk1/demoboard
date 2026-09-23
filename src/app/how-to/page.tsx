@@ -40,7 +40,7 @@ export default function HowToPage() {
                 tone="ink"
                 faceClassName="flex items-center gap-2 px-2.5 py-2.5"
               >
-                <span className="grid size-7 shrink-0 place-items-center border-2 border-gold-deep bg-gold font-pixel text-xs text-void">
+                <span className="grid size-7 shrink-0 place-items-center border-2 border-gold-deep bg-gold font-sans text-xs font-bold tabular-nums text-void">
                   {step.number}
                 </span>
                 <span className="font-pixel text-[11px] uppercase leading-relaxed text-cream">

@@ -118,7 +118,7 @@ export function HeroStat({
       <span className="font-pixel text-xs font-semibold uppercase leading-none text-faint">
         {label}
       </span>
-      <span className="font-pixel text-sm font-bold text-parchment">
+      <span className="font-sans text-sm font-bold tabular-nums text-parchment">
         {value}
       </span>
     </PixelCard>

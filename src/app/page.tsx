@@ -6,21 +6,14 @@ import { InsideBoard } from "@/components/welcome/inside-board";
 import { TokenRoadmapSection } from "@/components/welcome/token-roadmap-section";
 import { WelcomeHero } from "@/components/welcome/welcome-hero";
 import { WelcomeHighlights } from "@/components/welcome/welcome-highlights";
-import {
-  getBoardTokenAddress,
-  getBoardTokenExplorerUrl,
-} from "@/lib/wallet/chains";
 
 export const metadata: Metadata = {
   title: "BOARD | Relive your childhood. Play it differently.",
   description:
-    "The board games you grew up with, reimagined as competitive four-player PvP. Closed demo by invitation.",
+    "The board games you grew up with, reimagined as competitive four-player PvP on Robinhood Chain.",
 };
 
 export default function Home() {
-  const tokenAddress = getBoardTokenAddress();
-  const tokenExplorerUrl = getBoardTokenExplorerUrl();
-
   return (
     <div className="board-atmosphere flex min-h-full flex-col">
       <SiteHeader />
@@ -28,10 +21,7 @@ export default function Home() {
         <WelcomeHero />
         <WelcomeHighlights />
         <InsideBoard />
-        <TokenRoadmapSection
-          tokenAddress={tokenAddress}
-          tokenExplorerUrl={tokenExplorerUrl}
-        />
+        <TokenRoadmapSection />
       </main>
       <SiteFooter seam />
     </div>

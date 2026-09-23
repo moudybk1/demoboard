@@ -219,7 +219,7 @@ export function WithdrawForm({ className }: { className?: string }) {
           }}
           className="pixel-corners border border-danger/40 px-3 py-1.5 font-pixel text-xs text-danger/80 hover:border-danger"
         >
-          Fail demo
+          Fail test
         </button>
       </div>
 
@@ -232,7 +232,7 @@ export function WithdrawForm({ className }: { className?: string }) {
         <span className="inline-flex align-middle">
           <BoardAmount value={MOCK_WALLET_BALANCE.locked} size="sm" />
         </span>{" "}
-        stays in active rooms. Use {FAIL_DEMO} BOARD to demo a failed withdraw.
+        stays in active rooms. Use {FAIL_DEMO} BOARD to test a failed withdraw.
       </p>
 
       <PixelButton

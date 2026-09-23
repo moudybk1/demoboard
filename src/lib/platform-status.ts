@@ -9,4 +9,4 @@ export const DEMO_DATA_LABEL = "Match pot";
 
 /** One sentence explaining prize copy while chain payouts are still catching up. */
 export const DEMO_DATA_NOTE =
-  "Tables are live. Match pots are tracked in-game. On-chain payouts follow when staking is fully wired.";
+  "Tables are live. Match pots are tracked in-game and settle in $USDG.";

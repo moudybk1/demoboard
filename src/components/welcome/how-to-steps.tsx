@@ -1,7 +1,5 @@
-import { ConnectWalletButton } from "@/components/layout/connect-wallet-button";
 import { PixelCard } from "@/components/ui/pixel-card";
 import {
-  HOW_TO_CLOSING,
   HOW_TO_FEE,
   HOW_TO_STEPS,
   type HowToBlock,
@@ -18,7 +16,7 @@ const STEP_TONES = [
 ] as const;
 
 /**
- * How-to steps, fee callout, and closing CTA.
+ * How-to steps and fee callout.
  */
 export function HowToSteps({ className }: { className?: string }) {
   return (
@@ -35,21 +33,6 @@ export function HowToSteps({ className }: { className?: string }) {
       </ol>
 
       <HowToFeeCallout />
-
-      <PixelCard tone="ink" faceClassName="p-5 sm:p-7">
-        <h2 className="font-pixel text-xl font-bold text-cream sm:text-2xl">
-          {HOW_TO_CLOSING.title}
-        </h2>
-        <p className="mt-3 max-w-[42ch] text-sm leading-relaxed text-cream/85 sm:text-base">
-          {HOW_TO_CLOSING.support}
-        </p>
-        <div className="mt-6">
-          <ConnectWalletButton label={HOW_TO_CLOSING.cta} />
-        </div>
-        <p className="mt-4 font-pixel text-xs font-semibold uppercase tracking-wider text-gold">
-          {HOW_TO_CLOSING.tagline}
-        </p>
-      </PixelCard>
     </div>
   );
 }
@@ -122,7 +105,7 @@ function HowToStepCard({
     >
       <div className="flex items-center gap-3">
         <span
-          className="grid size-11 shrink-0 place-items-center border-2 border-gold-deep bg-gold font-pixel text-[12px] text-void shadow-pixel-sm"
+          className="grid size-11 shrink-0 place-items-center border-2 border-gold-deep bg-gold font-sans text-[12px] font-bold tabular-nums text-void shadow-pixel-sm"
           aria-hidden
         >
           {step.number}

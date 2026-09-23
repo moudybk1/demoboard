@@ -31,7 +31,7 @@ export function DemoLeaveButton({ className }: { className?: string }) {
       disabled={busy}
       onClick={leave}
     >
-      {busy ? "Leaving…" : "Leave demo"}
+      {busy ? "Leaving…" : "Leave"}
     </PixelButton>
   );
 }

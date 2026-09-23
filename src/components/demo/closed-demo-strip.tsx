@@ -1,12 +1,11 @@
 import { PixelCard } from "@/components/ui/pixel-card";
 
 /**
- * Persistent strip above product pages. Pass `label` to override the default
- * closed-demo reminder.
+ * Optional status strip above product pages.
  */
 export function ClosedDemoStrip({
   className,
-  label = "Closed demo · demo tables · no BOARD is staked or paid out",
+  label = "Tables are live · match pots settle in $USDG",
 }: {
   className?: string;
   label?: string;

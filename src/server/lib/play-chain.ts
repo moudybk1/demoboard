@@ -15,7 +15,7 @@ import {
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-import { PLAY_ENTRY_FEE_ETH } from "@/lib/game/play-player";
+import { PLAY_ENTRY_FEE_ETH, PLAY_STAKE_SYMBOL } from "@/lib/game/play-player";
 import { boardRpcFetch } from "@/server/lib/board-rpc-fetch";
 import { playDataPath } from "@/server/lib/play-data-path";
 import { withPlayDocument } from "@/server/lib/play-store";
@@ -259,7 +259,7 @@ export async function verifySitTransaction(input: {
       ok: false,
       error: {
         code: "TX_MISMATCH",
-        message: `Sit must send exactly ${PLAY_ENTRY_FEE_ETH} ETH.`,
+        message: `Sit must send exactly ${PLAY_ENTRY_FEE_ETH} ${PLAY_STAKE_SYMBOL}.`,
       },
     };
   }
